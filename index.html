@@ -412,7 +412,6 @@
     </div>
 
     <script>
-        // Try to load XLSX library
         function loadXLSX() {
             return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
@@ -430,14 +429,12 @@
             });
         }
 
-        // Global variables
         let workingEmployees = [];
         let offEmployees = [];
         let allManagers = new Set();
         let manuallyAdded = new Map();
         let xlsxLoaded = false;
 
-        // Initialize the application
         async function init() {
             try {
                 await loadXLSX();
@@ -713,7 +710,7 @@
             filteredEmployees.sort((a, b) => (a.manager || '').localeCompare(b.manager || ''));
             
             let html = '';
-            filteredEmployees.forEach((employee, index) => {
+            filteredEmployees.forEach(employee => {
                 if (tabType === 'working') {
                     html += `
                         <tr>
@@ -749,42 +746,6 @@
             
             tableBody.innerHTML = html;
         }
-
-        function exportData() {
-            if (!xlsxLoaded) {
-                showMessage('Excel export not available. Please refresh the page.', 'error');
-                return;
-            }
-
-            try {
-                const wb = XLSX.utils.book_new();
-                
-                const workingData = [['Employee', 'Manager', 'Schedule', 'Status']];
-                workingEmployees.forEach(emp => {
-                    workingData.push([emp.name, emp.manager, emp.schedule, 'Working']);
-                });
-                const workingWs = XLSX.utils.aoa_to_sheet(workingData);
-                XLSX.utils.book_append_sheet(wb, workingWs, 'Working Today');
-                
-                const offData = [['Employee', 'Manager', 'Status', 'Time Added', 'Type']];
-                offEmployees.forEach(emp => {
-                    offData.push([emp.name, emp.manager, emp.status, emp.timeAdded, emp.type]);
-                });
-                const offWs = XLSX.utils.aoa_to_sheet(offData);
-                XLSX.utils.book_append_sheet(wb, offWs, 'Off Today');
-                
-                const fileName = `Employee_Availability_${new Date().toISOString().split('T')[0]}.xlsx`;
-                XLSX.writeFile(wb, fileName);
-                showMessage('Report exported successfully!', 'success');
-            } catch (error) {
-                showMessage('Error exporting report: ' + error.message, 'error');
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', init);
-    </script>
-</body>
-</html>
 
         function updateSummaries() {
             const workingByManager = {};
@@ -829,3 +790,31 @@
             }
 
             try {
+                const wb = XLSX.utils.book_new();
+                
+                const workingData = [['Employee', 'Manager', 'Schedule', 'Status']];
+                workingEmployees.forEach(emp => {
+                    workingData.push([emp.name, emp.manager, emp.schedule, 'Working']);
+                });
+                const workingWs = XLSX.utils.aoa_to_sheet(workingData);
+                XLSX.utils.book_append_sheet(wb, workingWs, 'Working Today');
+                
+                const offData = [['Employee', 'Manager', 'Status', 'Time Added', 'Type']];
+                offEmployees.forEach(emp => {
+                    offData.push([emp.name, emp.manager, emp.status, emp.timeAdded, emp.type]);
+                });
+                const offWs = XLSX.utils.aoa_to_sheet(offData);
+                XLSX.utils.book_append_sheet(wb, offWs, 'Off Today');
+                
+                const fileName = `Employee_Availability_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                showMessage('Report exported successfully!', 'success');
+            } catch (error) {
+                showMessage('Error exporting report: ' + error.message, 'error');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
