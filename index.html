@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Availability Management</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -434,6 +434,19 @@
                 </div>
             </div>
         </div>
+        // Check if page loaded properly
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded');
+            console.log('XLSX library available:', typeof XLSX !== 'undefined');
+            
+            if (typeof XLSX === 'undefined') {
+                console.error('XLSX library not loaded');
+                alert('Excel processing library failed to load. Please refresh the page.');
+            } else {
+                console.log('XLSX library loaded successfully');
+            }
+        });
+
         let workingEmployees = [];
         let offEmployees = [];
         let allManagers = new Set();
@@ -447,87 +460,131 @@
             const file = event.target.files[0];
             if (!file) return;
 
+            console.log('Processing schedule file:', file.name);
+            
+            // Check if XLSX is loaded
+            if (typeof XLSX === 'undefined') {
+                alert('Excel processing library not loaded. Please refresh the page and try again.');
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                    console.log('Reading schedule file data...');
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    console.log('Schedule workbook sheets:', workbook.SheetNames);
+                    
                     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    console.log('Schedule data rows:', jsonData.length);
                     
                     // Process schedule data
-                    processScheduleData(data);
+                    processScheduleData(jsonData);
                     updateDisplay();
+                    console.log('Schedule processing complete');
                 } catch (error) {
+                    console.error('Schedule file error:', error);
                     alert('Error reading schedule file: ' + error.message);
                 }
             };
-            reader.readAsBinaryString(file);
+            reader.readAsArrayBuffer(file);
         }
 
         function handleTimeOffFile(event) {
             const file = event.target.files[0];
             if (!file) return;
 
+            console.log('Processing time off file:', file.name);
+            
+            // Check if XLSX is loaded
+            if (typeof XLSX === 'undefined') {
+                alert('Excel processing library not loaded. Please refresh the page and try again.');
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                    console.log('Reading time off file data...');
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    console.log('Time off workbook sheets:', workbook.SheetNames);
+                    
                     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    console.log('Time off data rows:', jsonData.length);
                     
                     // Process time off data
-                    processTimeOffData(data);
+                    processTimeOffData(jsonData);
                     updateDisplay();
+                    console.log('Time off processing complete');
                 } catch (error) {
+                    console.error('Time off file error:', error);
                     alert('Error reading time off file: ' + error.message);
                 }
             };
-            reader.readAsBinaryString(file);
+            reader.readAsArrayBuffer(file);
         }
 
         function processScheduleData(data) {
+            console.log('Processing schedule data, rows:', data.length);
             workingEmployees = [];
             
-            // Skip header row
+            // Skip header row, process data rows
             for (let i = 1; i < data.length; i++) {
                 const row = data[i];
-                if (!row[0]) continue; // Skip empty rows
+                if (!row || !row[0]) continue; // Skip empty rows
                 
                 const employee = {
-                    name: row[0], // Worker
-                    manager: row[1], // Supervisory Organization
-                    schedule: row[2], // Published Schedule
+                    name: String(row[0]).trim(), // Worker
+                    manager: String(row[1] || '').trim(), // Supervisory Organization
+                    schedule: String(row[2] || '').trim(), // Published Schedule
                     type: 'scheduled'
                 };
                 
-                workingEmployees.push(employee);
-                allManagers.add(row[1]);
+                if (employee.name) {
+                    workingEmployees.push(employee);
+                    if (employee.manager) {
+                        allManagers.add(employee.manager);
+                    }
+                }
             }
+            console.log('Processed working employees:', workingEmployees.length);
         }
 
         function processTimeOffData(data) {
-            // Skip header row
+            console.log('Processing time off data, rows:', data.length);
+            
+            // Skip header row, process data rows
             for (let i = 1; i < data.length; i++) {
                 const row = data[i];
-                if (!row[2]) continue; // Skip empty rows (Worker column)
+                if (!row || !row[2]) continue; // Skip empty rows (Worker column)
                 
-                const timeOffHours = row[0]; // Time Off Entry
-                const isPartialDay = timeOffHours && timeOffHours.includes('4 Hours');
+                const timeOffHours = String(row[0] || ''); // Time Off Entry
+                const isPartialDay = timeOffHours.includes('4 Hours');
                 
                 const employee = {
-                    name: row[2], // Worker
-                    manager: row[1], // Supervisory Organization
+                    name: String(row[2]).trim(), // Worker
+                    manager: String(row[1] || '').trim(), // Supervisory Organization
                     status: isPartialDay ? 'Partial Day (4 Hours)' : 'Full Day Off',
                     type: isPartialDay ? 'partial' : 'scheduled',
                     timeAdded: 'Scheduled'
                 };
                 
-                offEmployees.push(employee);
-                allManagers.add(row[1]);
-                
-                // Remove from working list if they exist there
-                workingEmployees = workingEmployees.filter(emp => emp.name !== employee.name);
+                if (employee.name) {
+                    offEmployees.push(employee);
+                    if (employee.manager) {
+                        allManagers.add(employee.manager);
+                    }
+                    
+                    // Remove from working list if they exist there
+                    workingEmployees = workingEmployees.filter(emp => emp.name !== employee.name);
+                }
             }
+            console.log('Processed off employees:', offEmployees.length);
+            console.log('Remaining working employees:', workingEmployees.length);
         }
 
         function switchTab(tabName) {
