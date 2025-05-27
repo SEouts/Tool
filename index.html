@@ -15,12 +15,18 @@
             const checkbox = document.getElementById(uniqueId);
             const row = document.getElementById('row_' + uniqueId);
             
+            console.log('Checkbox:', checkbox, 'Row:', row, 'Checked:', checkbox?.checked);
+            
             if (checkbox && row) {
                 if (checkbox.checked) {
                     row.classList.add('completed');
+                    console.log('Added completed class to row');
                 } else {
                     row.classList.remove('completed');
+                    console.log('Removed completed class from row');
                 }
+            } else {
+                console.log('Could not find checkbox or row elements');
             }
         }
 
@@ -313,14 +319,18 @@
 
         tr.completed {
             background-color: #e8f5e8 !important;
-            opacity: 0.8;
         }
 
         tr.completed td {
-            color: #4a5d4a;
+            background-color: #e8f5e8 !important;
+            color: #4a5d4a !important;
         }
 
         tr.completed:hover {
+            background-color: #d4edda !important;
+        }
+
+        tr.completed:hover td {
             background-color: #d4edda !important;
         }
 
