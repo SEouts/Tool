@@ -51,13 +51,6 @@
             border-bottom: 1px solid #e9ecef;
         }
 
-        .file-upload-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
         .upload-box {
             border: 2px dashed #4facfe;
             border-radius: 10px;
@@ -78,34 +71,6 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             width: 100%;
-        }
-
-        .quick-actions {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .search-box {
-            flex: 1;
-            min-width: 250px;
-            position: relative;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e9ecef;
-            border-radius: 25px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-
-        .search-box input:focus {
-            outline: none;
-            border-color: #4facfe;
-            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
         }
 
         .btn {
@@ -291,30 +256,6 @@
             font-size: 18px;
         }
 
-        .action-btn {
-            padding: 5px 12px;
-            border: none;
-            border-radius: 15px;
-            font-size: 12px;
-            cursor: pointer;
-            margin: 0 2px;
-            transition: all 0.2s ease;
-        }
-
-        .action-btn.remove {
-            background: #ff4757;
-            color: white;
-        }
-
-        .action-btn.restore {
-            background: #2ed573;
-            color: white;
-        }
-
-        .action-btn:hover {
-            transform: scale(1.05);
-        }
-
         .timestamp {
             font-size: 12px;
             color: #6c757d;
@@ -487,9 +428,8 @@
         </div>
     </div>
 
-    <!-- Load XLSX library with fallback -->
     <script>
-        // Try to load XLSX library from multiple sources
+        // Try to load XLSX library
         function loadXLSX() {
             return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
@@ -523,7 +463,7 @@
                 showMessage('Application ready! You can now upload your Excel files.', 'success');
             } catch (error) {
                 showMessage('Warning: Excel file processing may not work. Try refreshing the page.', 'error');
-                setupEventListeners(); // Still allow basic functionality
+                setupEventListeners();
             }
         }
 
@@ -540,7 +480,6 @@
             document.getElementById('scheduleFile').addEventListener('change', handleScheduleFile);
             document.getElementById('timeOffFile').addEventListener('change', handleTimeOffFile);
             
-            // Enable manual input on Enter key
             document.getElementById('manualEmployeeName').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     markEmployeeWithStatus('Off Today');
@@ -548,7 +487,6 @@
             });
         }
 
-        // File processing functions
         function handleScheduleFile(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -657,50 +595,12 @@
             }
         }
 
-        // UI Functions
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
             
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             document.getElementById(tabName + 'Tab').classList.add('active');
-        }
-
-        function markEmployeeOff() {
-            const searchInput = document.getElementById('employeeSearch');
-            const employeeName = searchInput.value.trim();
-            
-            if (!employeeName) {
-                showMessage('Please enter an employee name', 'error');
-                return;
-            }
-            
-            const employeeIndex = workingEmployees.findIndex(emp => 
-                emp.name.toLowerCase().includes(employeeName.toLowerCase())
-            );
-            
-            if (employeeIndex === -1) {
-                showMessage('Employee not found in working list', 'error');
-                return;
-            }
-            
-            const employee = workingEmployees[employeeIndex];
-            
-            const offEmployee = {
-                name: employee.name,
-                manager: employee.manager,
-                status: 'Off Today',
-                type: 'manual',
-                timeAdded: new Date().toLocaleString()
-            };
-            
-            offEmployees.push(offEmployee);
-            workingEmployees.splice(employeeIndex, 1);
-            manuallyAdded.set(employee.name, new Date());
-            
-            searchInput.value = '';
-            updateDisplay();
-            showMessage(`${employee.name} marked as off`, 'success');
         }
 
         function markEmployeeWithStatus(status) {
@@ -751,7 +651,6 @@
                 return;
             }
             
-            // Find employee in off list
             const employeeIndex = offEmployees.findIndex(emp => 
                 emp.name.toLowerCase().includes(employeeName.toLowerCase())
             );
@@ -763,7 +662,6 @@
             
             const employee = offEmployees[employeeIndex];
             
-            // Move back to working list
             const workingEmployee = {
                 name: employee.name,
                 manager: employee.manager,
@@ -780,20 +678,6 @@
             
             showMessage(`${employee.name} has returned to work and moved to Working Today tab`, 'success');
             switchTab('working');
-        }
-
-        function removeFromOff(employeeName) {
-            // This function is no longer needed since we removed the action buttons
-            // All actions should go through Quick Actions tab
-            showMessage('Please use the Quick Actions tab to manage employee status.', 'error');
-        }
-
-        function markSpecificEmployeeOff(employeeName) {
-            // This function is no longer needed since we removed the action buttons
-            // Keeping it in case it's called from somewhere else
-            document.getElementById('manualEmployeeName').value = employeeName;
-            switchTab('manual');
-            showMessage('Employee name filled in Quick Actions tab. Choose "Off Today" or "Left Early".', 'success');
         }
 
         function filterByManager(tabType) {
@@ -853,4 +737,99 @@
                     html += `
                         <tr id="row_${uniqueId}">
                             <td style="text-align: center;">
-                                <input type="checkbox" id="${uniqueId}" style="transform: scale(1.2); cursor
+                                <input type="checkbox" id="${uniqueId}" style="transform: scale(1.2); cursor: pointer;" 
+                                       onchange="toggleRowShading('${uniqueId}')" />
+                            </td>
+                            <td><strong>${employee.name}</strong></td>
+                            <td>${employee.manager || 'N/A'}</td>
+                            <td>${employee.schedule || 'N/A'}</td>
+                        </tr>
+                    `;
+                } else {
+                    const statusClass = employee.type === 'partial' ? 'status-partial' : 
+                                       employee.type === 'manual' ? 'status-manual' : 'status-scheduled';
+                    
+                    html += `
+                        <tr id="row_${uniqueId}">
+                            <td style="text-align: center;">
+                                <input type="checkbox" id="${uniqueId}" style="transform: scale(1.2); cursor: pointer;" 
+                                       onchange="toggleRowShading('${uniqueId}')" />
+                            </td>
+                            <td><strong>${employee.name}</strong></td>
+                            <td>${employee.manager || 'N/A'}</td>
+                            <td>
+                                <span class="status-badge ${statusClass}">${employee.status}</span>
+                            </td>
+                            <td>
+                                <span class="timestamp">${employee.timeAdded}</span>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            tableBody.innerHTML = html;
+        }
+
+        function toggleRowShading(uniqueId) {
+            const checkbox = document.getElementById(uniqueId);
+            const row = document.getElementById('row_' + uniqueId);
+            
+            console.log('Checkbox:', checkbox, 'Row:', row, 'Checked:', checkbox?.checked);
+            
+            if (checkbox && row) {
+                if (checkbox.checked) {
+                    row.classList.add('completed');
+                    console.log('Added completed class to row');
+                } else {
+                    row.classList.remove('completed');
+                    console.log('Removed completed class from row');
+                }
+            } else {
+                console.log('Could not find checkbox or row elements');
+            }
+        }
+
+        function updateSummaries() {
+            const workingByManager = {};
+            workingEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                workingByManager[manager] = (workingByManager[manager] || 0) + 1;
+            });
+            
+            let workingSummaryHtml = '';
+            Object.entries(workingByManager).forEach(([manager, count]) => {
+                workingSummaryHtml += `
+                    <div class="summary-card">
+                        <h3>${count}</h3>
+                        <p>${manager}</p>
+                    </div>
+                `;
+            });
+            document.getElementById('workingSummary').innerHTML = workingSummaryHtml;
+            
+            const offByManager = {};
+            offEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                offByManager[manager] = (offByManager[manager] || 0) + 1;
+            });
+            
+            let offSummaryHtml = '';
+            Object.entries(offByManager).forEach(([manager, count]) => {
+                offSummaryHtml += `
+                    <div class="summary-card">
+                        <h3>${count}</h3>
+                        <p>${manager}</p>
+                    </div>
+                `;
+            });
+            document.getElementById('offSummary').innerHTML = offSummaryHtml;
+        }
+
+        function exportData() {
+            if (!xlsxLoaded) {
+                showMessage('Excel export not available. Please refresh the page.', 'error');
+                return;
+            }
+
+            try {
