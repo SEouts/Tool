@@ -346,11 +346,7 @@
                 </div>
             </div>
 
-            <div class="quick-actions">
-                <div class="search-box">
-                    <input type="text" id="employeeSearch" placeholder="Search employee name to mark as off..." />
-                </div>
-                <button class="btn btn-danger" onclick="markEmployeeOff()">Mark as Off</button>
+            <div class="quick-actions" style="justify-content: flex-end;">
                 <button class="btn btn-success" onclick="exportData()">Export Report</button>
             </div>
         </div>
@@ -510,13 +506,6 @@
             document.getElementById('scheduleFile').addEventListener('change', handleScheduleFile);
             document.getElementById('timeOffFile').addEventListener('change', handleTimeOffFile);
             
-            // Enable search on Enter key
-            document.getElementById('employeeSearch').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    markEmployeeOff();
-                }
-            });
-
             // Enable manual input on Enter key
             document.getElementById('manualEmployeeName').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
@@ -841,8 +830,10 @@
         }
 
         function markSpecificEmployeeOff(employeeName) {
-            document.getElementById('employeeSearch').value = employeeName;
-            markEmployeeOff();
+            // Switch to Quick Actions tab and pre-fill the name
+            document.getElementById('manualEmployeeName').value = employeeName;
+            switchTab('manual');
+            showMessage('Employee name filled in Quick Actions tab. Choose "Off Today" or "Left Early".', 'success');
         }
 
         function updateSummaries() {
