@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Availability Management</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .file-upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .upload-box {
+            border: 2px dashed #4facfe;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .upload-box:hover {
+            border-color: #00f2fe;
+            background: #f0f9ff;
+        }
+
+        .upload-box input[type="file"] {
+            margin: 10px 0;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tabs {
+            display: flex;
+            background: #e9ecef;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            background: #e9ecef;
+            border: none;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab.active {
+            background: white;
+            color: #4facfe;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .summary-card h3 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-scheduled {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status-manual {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .status-partial {
+            background: #fce4ec;
+            color: #c2185b;
+        }
+
+        .manager-filter {
+            margin: 20px 0;
+        }
+
+        .manager-filter select {
+            padding: 10px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 16px;
+            background: white;
+            min-width: 200px;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+            font-size: 18px;
+        }
+
+        .action-btn {
+            padding: 5px 12px;
+            border: none;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            margin: 0 2px;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn.remove {
+            background: #ff4757;
+            color: white;
+        }
+
+        .action-btn.restore {
+            background: #2ed573;
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: #6c757d;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Employee Availability Management</h1>
+            <p>Track who's working and who's off - update in real-time</p>
+        </div>
+
+        <div class="controls">
+            <div class="file-upload-section">
+                <div class="upload-box">
+                    <h3>📅 Upload Schedule File</h3>
+                    <p>Excel file with employee schedules</p>
+                    <input type="file" id="scheduleFile" accept=".xlsx,.xls" />
+                </div>
+                <div class="upload-box">
+                    <h3>🏖️ Upload Time Off File</h3>
+                    <p>Excel file with scheduled time off</p>
+                    <input type="file" id="timeOffFile" accept=".xlsx,.xls" />
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <div class="search-box">
+                    <input type="text" id="employeeSearch" placeholder="Search employee name to mark as off..." />
+                </div>
+                <button class="btn btn-danger" onclick="markEmployeeOff()">Mark as Off</button>
+                <button class="btn btn-success" onclick="exportData()">Export Report</button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('working')">
+                👥 Working Today (<span id="workingCount">0</span>)
+            </button>
+            <button class="tab" onclick="switchTab('off')">
+                🏖️ Off Today (<span id="offCount">0</span>)
+            </button>
+            <button class="tab" onclick="switchTab('manual')">
+                ⚡ Quick Actions
+            </button>
+        </div>
+
+        <div id="workingTab" class="tab-content active">
+            <div class="summary" id="workingSummary"></div>
+            <div class="manager-filter">
+                <label>Filter by Manager: </label>
+                <select id="workingManagerFilter" onchange="filterByManager('working')">
+                    <option value="">All Managers</option>
+                </select>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Manager</th>
+                            <th>Schedule</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="workingTableBody">
+                        <tr><td colspan="4" class="no-data">Upload files to see working employees</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="offTab" class="tab-content">
+            <div class="summary" id="offSummary"></div>
+            <div class="manager-filter">
+                <label>Filter by Manager: </label>
+                <select id="offManagerFilter" onchange="filterByManager('off')">
+                    <option value="">All Managers</option>
+                </select>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Manager</th>
+                            <th>Status</th>
+                            <th>Time Added</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="offTableBody">
+                        <tr><td colspan="5" class="no-data">Upload files to see employees off today</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        <div id="manualTab" class="tab-content">
+            <div style="max-width: 600px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 30px;">
+                    <h2 style="margin-bottom: 10px;">🚀 Quick Employee Actions</h2>
+                    <p>Mark employees as off or left early with one click</p>
+                </div>
+
+                <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                    <div style="margin-bottom: 30px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 10px; font-size: 16px;">Employee Name:</label>
+                        <input type="text" id="manualEmployeeName" placeholder="Enter employee name..." 
+                               style="width: 100%; padding: 15px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 16px; transition: all 0.3s ease;"
+                               onfocus="this.style.borderColor='#4facfe'; this.style.boxShadow='0 0 0 3px rgba(79, 172, 254, 0.1)'"
+                               onblur="this.style.borderColor='#e9ecef'; this.style.boxShadow='none'" />
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <button class="btn btn-danger" onclick="markEmployeeWithStatus('Off Today')" 
+                                style="padding: 20px; font-size: 18px; border-radius: 15px;">
+                            🏖️ Off Today
+                        </button>
+                        <button class="btn" onclick="markEmployeeWithStatus('Left Early')" 
+                                style="padding: 20px; font-size: 18px; border-radius: 15px; background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%); color: white;">
+                            ⏰ Left Early
+                        </button>
+                    </div>
+
+                    <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #4facfe;">
+                        <h4 style="margin-bottom: 10px; color: #4facfe;">💡 How it works:</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #6c757d;">
+                            <li><strong>Off Today:</strong> For employees who called out sick or took unscheduled time off</li>
+                            <li><strong>Left Early:</strong> For employees who left before their scheduled end time</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        let workingEmployees = [];
+        let offEmployees = [];
+        let allManagers = new Set();
+        let manuallyAdded = new Map(); // Track manually added employees
+
+        // File upload handlers
+        document.getElementById('scheduleFile').addEventListener('change', handleScheduleFile);
+        document.getElementById('timeOffFile').addEventListener('change', handleTimeOffFile);
+
+        function handleScheduleFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    // Process schedule data
+                    processScheduleData(data);
+                    updateDisplay();
+                } catch (error) {
+                    alert('Error reading schedule file: ' + error.message);
+                }
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        function handleTimeOffFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    // Process time off data
+                    processTimeOffData(data);
+                    updateDisplay();
+                } catch (error) {
+                    alert('Error reading time off file: ' + error.message);
+                }
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        function processScheduleData(data) {
+            workingEmployees = [];
+            
+            // Skip header row
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row[0]) continue; // Skip empty rows
+                
+                const employee = {
+                    name: row[0], // Worker
+                    manager: row[1], // Supervisory Organization
+                    schedule: row[2], // Published Schedule
+                    type: 'scheduled'
+                };
+                
+                workingEmployees.push(employee);
+                allManagers.add(row[1]);
+            }
+        }
+
+        function processTimeOffData(data) {
+            // Skip header row
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row[2]) continue; // Skip empty rows (Worker column)
+                
+                const timeOffHours = row[0]; // Time Off Entry
+                const isPartialDay = timeOffHours && timeOffHours.includes('4 Hours');
+                
+                const employee = {
+                    name: row[2], // Worker
+                    manager: row[1], // Supervisory Organization
+                    status: isPartialDay ? 'Partial Day (4 Hours)' : 'Full Day Off',
+                    type: isPartialDay ? 'partial' : 'scheduled',
+                    timeAdded: 'Scheduled'
+                };
+                
+                offEmployees.push(employee);
+                allManagers.add(row[1]);
+                
+                // Remove from working list if they exist there
+                workingEmployees = workingEmployees.filter(emp => emp.name !== employee.name);
+            }
+        }
+
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        function markEmployeeWithStatus(status) {
+            const nameInput = document.getElementById('manualEmployeeName');
+            const employeeName = nameInput.value.trim();
+            
+            if (!employeeName) {
+                alert('Please enter an employee name');
+                return;
+            }
+            
+            // Find employee in working list
+            const employeeIndex = workingEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                alert('Employee not found in working list. Please check the spelling or ensure they are scheduled to work today.');
+                return;
+            }
+            
+            const employee = workingEmployees[employeeIndex];
+            
+            // Move to off list with specific status
+            const offEmployee = {
+                name: employee.name,
+                manager: employee.manager,
+                status: status,
+                type: 'manual',
+                timeAdded: new Date().toLocaleString()
+            };
+            
+            offEmployees.push(offEmployee);
+            workingEmployees.splice(employeeIndex, 1);
+            manuallyAdded.set(employee.name, new Date());
+            
+            nameInput.value = '';
+            updateDisplay();
+            
+            // Show success message and switch to off tab
+            alert(`${employee.name} has been marked as "${status}" and moved to the Off Today tab.`);
+            switchTab('off');
+        }
+            const searchInput = document.getElementById('employeeSearch');
+            const employeeName = searchInput.value.trim();
+            
+            if (!employeeName) {
+                alert('Please enter an employee name');
+                return;
+            }
+            
+            // Find employee in working list
+            const employeeIndex = workingEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                alert('Employee not found in working list');
+                return;
+            }
+            
+            const employee = workingEmployees[employeeIndex];
+            
+        function markEmployeeOff() {
+            const searchInput = document.getElementById('employeeSearch');
+            const employeeName = searchInput.value.trim();
+            
+            if (!employeeName) {
+                alert('Please enter an employee name');
+                return;
+            }
+            
+            // Find employee in working list
+            const employeeIndex = workingEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                alert('Employee not found in working list');
+                return;
+            }
+            
+            const employee = workingEmployees[employeeIndex];
+            
+            // Move to off list with generic status
+            const offEmployee = {
+                name: employee.name,
+                manager: employee.manager,
+                status: 'Off Today',
+                type: 'manual',
+                timeAdded: new Date().toLocaleString()
+            };
+            
+            offEmployees.push(offEmployee);
+            workingEmployees.splice(employeeIndex, 1);
+            manuallyAdded.set(employee.name, new Date());
+            
+            searchInput.value = '';
+            updateDisplay();
+        }
+
+        function removeFromOff(employeeName) {
+            offEmployees = offEmployees.filter(emp => emp.name !== employeeName);
+            manuallyAdded.delete(employeeName);
+            updateDisplay();
+        }
+
+        function restoreToWorking(employeeName) {
+            const offEmployeeIndex = offEmployees.findIndex(emp => emp.name === employeeName);
+            if (offEmployeeIndex === -1) return;
+            
+            const employee = offEmployees[offEmployeeIndex];
+            
+            // Add back to working (you might want to get original schedule info)
+            const workingEmployee = {
+                name: employee.name,
+                manager: employee.manager,
+                schedule: 'Restored - Check original schedule',
+                type: 'restored'
+            };
+            
+            workingEmployees.push(workingEmployee);
+            offEmployees.splice(offEmployeeIndex, 1);
+            manuallyAdded.delete(employeeName);
+            
+            updateDisplay();
+        }
+
+        function filterByManager(tabType) {
+            const selectedManager = document.getElementById(tabType + 'ManagerFilter').value;
+            updateTable(tabType, selectedManager);
+        }
+
+        function updateDisplay() {
+            updateCounts();
+            updateManagerFilters();
+            updateTable('working');
+            updateTable('off');
+            updateSummaries();
+        }
+
+        function updateCounts() {
+            document.getElementById('workingCount').textContent = workingEmployees.length;
+            document.getElementById('offCount').textContent = offEmployees.length;
+        }
+
+        function updateManagerFilters() {
+            const workingFilter = document.getElementById('workingManagerFilter');
+            const offFilter = document.getElementById('offManagerFilter');
+            
+            // Clear existing options except "All Managers"
+            workingFilter.innerHTML = '<option value="">All Managers</option>';
+            offFilter.innerHTML = '<option value="">All Managers</option>';
+            
+            // Add manager options
+            Array.from(allManagers).sort().forEach(manager => {
+                if (manager) {
+                    workingFilter.innerHTML += `<option value="${manager}">${manager}</option>`;
+                    offFilter.innerHTML += `<option value="${manager}">${manager}</option>`;
+                }
+            });
+        }
+
+        function updateTable(tabType, managerFilter = '') {
+            const tableBody = document.getElementById(tabType + 'TableBody');
+            const employees = tabType === 'working' ? workingEmployees : offEmployees;
+            
+            let filteredEmployees = employees;
+            if (managerFilter) {
+                filteredEmployees = employees.filter(emp => emp.manager === managerFilter);
+            }
+            
+            if (filteredEmployees.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="${tabType === 'working' ? 4 : 5}" class="no-data">No employees found</td></tr>`;
+                return;
+            }
+            
+            // Sort by manager name
+            filteredEmployees.sort((a, b) => (a.manager || '').localeCompare(b.manager || ''));
+            
+            let html = '';
+            filteredEmployees.forEach(employee => {
+                if (tabType === 'working') {
+                    html += `
+                        <tr>
+                            <td><strong>${employee.name}</strong></td>
+                            <td>${employee.manager || 'N/A'}</td>
+                            <td>${employee.schedule || 'N/A'}</td>
+                            <td>
+                                <button class="action-btn remove" onclick="markSpecificEmployeeOff('${employee.name}')">
+                                    Mark as Off
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    const statusClass = employee.type === 'partial' ? 'status-partial' : 
+                                       employee.type === 'manual' ? 'status-manual' : 'status-scheduled';
+                    
+                    html += `
+                        <tr>
+                            <td><strong>${employee.name}</strong></td>
+                            <td>${employee.manager || 'N/A'}</td>
+                            <td>
+                                <span class="status-badge ${statusClass}">${employee.status}</span>
+                            </td>
+                            <td>
+                                <span class="timestamp">${employee.timeAdded}</span>
+                            </td>
+                            <td>
+                                ${employee.type === 'manual' ? 
+                                    `<button class="action-btn restore" onclick="restoreToWorking('${employee.name}')">Restore</button>` : 
+                                    ''
+                                }
+                                <button class="action-btn remove" onclick="removeFromOff('${employee.name}')">Remove</button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            tableBody.innerHTML = html;
+        }
+
+        function markSpecificEmployeeOff(employeeName) {
+            document.getElementById('employeeSearch').value = employeeName;
+            markEmployeeOff();
+        }
+
+        function updateSummaries() {
+            // Working summary
+            const workingByManager = {};
+            workingEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                workingByManager[manager] = (workingByManager[manager] || 0) + 1;
+            });
+            
+            let workingSummaryHtml = '';
+            Object.entries(workingByManager).forEach(([manager, count]) => {
+                workingSummaryHtml += `
+                    <div class="summary-card">
+                        <h3>${count}</h3>
+                        <p>${manager}</p>
+                    </div>
+                `;
+            });
+            document.getElementById('workingSummary').innerHTML = workingSummaryHtml;
+            
+            // Off summary
+            const offByManager = {};
+            offEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                offByManager[manager] = (offByManager[manager] || 0) + 1;
+            });
+            
+            let offSummaryHtml = '';
+            Object.entries(offByManager).forEach(([manager, count]) => {
+                offSummaryHtml += `
+                    <div class="summary-card">
+                        <h3>${count}</h3>
+                        <p>${manager}</p>
+                    </div>
+                `;
+            });
+            document.getElementById('offSummary').innerHTML = offSummaryHtml;
+        }
+
+        function exportData() {
+            const wb = XLSX.utils.book_new();
+            
+            // Working employees sheet
+            const workingData = [['Employee', 'Manager', 'Schedule', 'Status']];
+            workingEmployees.forEach(emp => {
+                workingData.push([emp.name, emp.manager, emp.schedule, 'Working']);
+            });
+            const workingWs = XLSX.utils.aoa_to_sheet(workingData);
+            XLSX.utils.book_append_sheet(wb, workingWs, 'Working Today');
+            
+            // Off employees sheet
+            const offData = [['Employee', 'Manager', 'Status', 'Time Added', 'Type']];
+            offEmployees.forEach(emp => {
+                offData.push([emp.name, emp.manager, emp.status, emp.timeAdded, emp.type]);
+            });
+            const offWs = XLSX.utils.aoa_to_sheet(offData);
+            XLSX.utils.book_append_sheet(wb, offWs, 'Off Today');
+            
+            // Export file
+            const fileName = `Employee_Availability_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        }
+
+        // Enable search on Enter key
+        document.getElementById('employeeSearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                markEmployeeOff();
+            }
+        });
+
+        // Enable manual input on Enter key
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.target.id === 'manualEmployeeName') {
+                // Default to "Off Today" when pressing Enter
+                markEmployeeWithStatus('Off Today');
+            }
+        });
+    </script>
+</body>
+</html>
