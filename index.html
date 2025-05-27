@@ -358,13 +358,14 @@
                 <table>
                     <thead>
                         <tr>
+                            <th style="width: 50px;">✓</th>
                             <th>Employee</th>
                             <th>Manager</th>
                             <th>Schedule</th>
                         </tr>
                     </thead>
                     <tbody id="workingTableBody">
-                        <tr><td colspan="3" class="no-data">Upload files to see working employees</td></tr>
+                        <tr><td colspan="4" class="no-data">Upload files to see working employees</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -382,6 +383,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th style="width: 50px;">✓</th>
                             <th>Employee</th>
                             <th>Manager</th>
                             <th>Status</th>
@@ -389,7 +391,7 @@
                         </tr>
                     </thead>
                     <tbody id="offTableBody">
-                        <tr><td colspan="4" class="no-data">Upload files to see employees off today</td></tr>
+                        <tr><td colspan="5" class="no-data">Upload files to see employees off today</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -794,17 +796,22 @@
             }
             
             if (filteredEmployees.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="${tabType === 'working' ? 3 : 4}" class="no-data">No employees found</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="${tabType === 'working' ? 4 : 5}" class="no-data">No employees found</td></tr>`;
                 return;
             }
             
             filteredEmployees.sort((a, b) => (a.manager || '').localeCompare(b.manager || ''));
             
             let html = '';
-            filteredEmployees.forEach(employee => {
+            filteredEmployees.forEach((employee, index) => {
+                const uniqueId = `${tabType}_${employee.name.replace(/\s+/g, '_')}_${index}`;
+                
                 if (tabType === 'working') {
                     html += `
                         <tr>
+                            <td style="text-align: center;">
+                                <input type="checkbox" id="${uniqueId}" style="transform: scale(1.2); cursor: pointer;" />
+                            </td>
                             <td><strong>${employee.name}</strong></td>
                             <td>${employee.manager || 'N/A'}</td>
                             <td>${employee.schedule || 'N/A'}</td>
@@ -816,6 +823,9 @@
                     
                     html += `
                         <tr>
+                            <td style="text-align: center;">
+                                <input type="checkbox" id="${uniqueId}" style="transform: scale(1.2); cursor: pointer;" />
+                            </td>
                             <td><strong>${employee.name}</strong></td>
                             <td>${employee.manager || 'N/A'}</td>
                             <td>
