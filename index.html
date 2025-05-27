@@ -378,11 +378,10 @@
                             <th>Employee</th>
                             <th>Manager</th>
                             <th>Schedule</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="workingTableBody">
-                        <tr><td colspan="4" class="no-data">Upload files to see working employees</td></tr>
+                        <tr><td colspan="3" class="no-data">Upload files to see working employees</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -404,11 +403,10 @@
                             <th>Manager</th>
                             <th>Status</th>
                             <th>Time Added</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="offTableBody">
-                        <tr><td colspan="5" class="no-data">Upload files to see employees off today</td></tr>
+                        <tr><td colspan="4" class="no-data">Upload files to see employees off today</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -779,7 +777,7 @@
             }
             
             if (filteredEmployees.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="${tabType === 'working' ? 4 : 5}" class="no-data">No employees found</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="${tabType === 'working' ? 3 : 4}" class="no-data">No employees found</td></tr>`;
                 return;
             }
             
@@ -793,11 +791,6 @@
                             <td><strong>${employee.name}</strong></td>
                             <td>${employee.manager || 'N/A'}</td>
                             <td>${employee.schedule || 'N/A'}</td>
-                            <td>
-                                <button class="action-btn remove" onclick="markSpecificEmployeeOff('${employee.name}')">
-                                    Mark as Off
-                                </button>
-                            </td>
                         </tr>
                     `;
                 } else {
@@ -814,13 +807,6 @@
                             <td>
                                 <span class="timestamp">${employee.timeAdded}</span>
                             </td>
-                            <td>
-                                ${employee.type === 'manual' ? 
-                                    `<button class="action-btn restore" onclick="restoreToWorking('${employee.name}')">Restore</button>` : 
-                                    ''
-                                }
-                                <button class="action-btn remove" onclick="removeFromOff('${employee.name}')">Remove</button>
-                            </td>
                         </tr>
                     `;
                 }
@@ -830,10 +816,23 @@
         }
 
         function markSpecificEmployeeOff(employeeName) {
-            // Switch to Quick Actions tab and pre-fill the name
+            // This function is no longer needed since we removed the action buttons
+            // Keeping it in case it's called from somewhere else
             document.getElementById('manualEmployeeName').value = employeeName;
             switchTab('manual');
             showMessage('Employee name filled in Quick Actions tab. Choose "Off Today" or "Left Early".', 'success');
+        }
+
+        function removeFromOff(employeeName) {
+            // This function is no longer needed since we removed the action buttons
+            // All actions should go through Quick Actions tab
+            showMessage('Please use the Quick Actions tab to manage employee status.', 'error');
+        }
+
+        function restoreToWorking(employeeName) {
+            // This function is no longer needed since we removed the action buttons  
+            // All actions should go through Quick Actions tab
+            showMessage('Please use the Quick Actions tab to manage employee status.', 'error');
         }
 
         function updateSummaries() {
