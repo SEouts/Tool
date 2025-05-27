@@ -433,14 +433,18 @@
                                onblur="this.style.borderColor='#e9ecef'; this.style.boxShadow='none'" />
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                         <button class="btn btn-danger" onclick="markEmployeeWithStatus('Off Today')" 
-                                style="padding: 20px; font-size: 18px; border-radius: 15px;">
+                                style="padding: 20px; font-size: 16px; border-radius: 15px;">
                             🏖️ Off Today
                         </button>
                         <button class="btn" onclick="markEmployeeWithStatus('Left Early')" 
-                                style="padding: 20px; font-size: 18px; border-radius: 15px; background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%); color: white;">
+                                style="padding: 20px; font-size: 16px; border-radius: 15px; background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%); color: white;">
                             ⏰ Left Early
+                        </button>
+                        <button class="btn btn-primary" onclick="returnToWork()" 
+                                style="padding: 20px; font-size: 16px; border-radius: 15px;">
+                            ✅ Returned To Work
                         </button>
                     </div>
 
@@ -456,6 +460,7 @@
                         <ul style="margin: 0; padding-left: 20px; color: #6c757d;">
                             <li><strong>Off Today:</strong> For employees who called out sick or took unscheduled time off</li>
                             <li><strong>Left Early:</strong> For employees who left before their scheduled end time</li>
+                            <li><strong>Returned To Work:</strong> For employees who came back after being marked as off</li>
                         </ul>
                     </div>
                 </div>
@@ -841,10 +846,44 @@
             showMessage('Please use the Quick Actions tab to manage employee status.', 'error');
         }
 
-        function restoreToWorking(employeeName) {
-            // This function is no longer needed since we removed the action buttons  
-            // All actions should go through Quick Actions tab
-            showMessage('Please use the Quick Actions tab to manage employee status.', 'error');
+        function returnToWork() {
+            const nameInput = document.getElementById('manualEmployeeName');
+            const employeeName = nameInput.value.trim();
+            
+            if (!employeeName) {
+                showMessage('Please enter an employee name', 'error');
+                return;
+            }
+            
+            // Find employee in off list
+            const employeeIndex = offEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                showMessage('Employee not found in off list. Please check the spelling.', 'error');
+                return;
+            }
+            
+            const employee = offEmployees[employeeIndex];
+            
+            // Move back to working list
+            const workingEmployee = {
+                name: employee.name,
+                manager: employee.manager,
+                schedule: 'Returned - Check original schedule',
+                type: 'returned'
+            };
+            
+            workingEmployees.push(workingEmployee);
+            offEmployees.splice(employeeIndex, 1);
+            manuallyAdded.delete(employee.name);
+            
+            nameInput.value = '';
+            updateDisplay();
+            
+            showMessage(`${employee.name} has returned to work and moved to Working Today tab`, 'success');
+            switchTab('working');
         }
 
         function updateSummaries() {
