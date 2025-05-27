@@ -11,6 +11,19 @@
             box-sizing: border-box;
         }
 
+        function toggleRowShading(uniqueId) {
+            const checkbox = document.getElementById(uniqueId);
+            const row = document.getElementById('row_' + uniqueId);
+            
+            if (checkbox && row) {
+                if (checkbox.checked) {
+                    row.classList.add('completed');
+                } else {
+                    row.classList.remove('completed');
+                }
+            }
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -298,13 +311,24 @@
             transform: scale(1.05);
         }
 
+        tr.completed {
+            background-color: #e8f5e8 !important;
+            opacity: 0.8;
+        }
+
+        tr.completed td {
+            color: #4a5d4a;
+        }
+
+        tr.completed:hover {
+            background-color: #d4edda !important;
+        }
+
         .timestamp {
             font-size: 12px;
             color: #6c757d;
             font-style: italic;
         }
-
-        .error-msg {
             background: #ffe6e6;
             border: 1px solid #ff9999;
             color: #cc0000;
@@ -808,9 +832,10 @@
                 
                 if (tabType === 'working') {
                     html += `
-                        <tr>
+                        <tr id="row_${uniqueId}">
                             <td style="text-align: center;">
-                                <input type="checkbox" id="${uniqueId}" style="transform: scale(1.2); cursor: pointer;" />
+                                <input type="checkbox" id="${uniqueId}" style="transform: scale(1.2); cursor: pointer;" 
+                                       onchange="toggleRowShading('${uniqueId}')" />
                             </td>
                             <td><strong>${employee.name}</strong></td>
                             <td>${employee.manager || 'N/A'}</td>
@@ -822,9 +847,10 @@
                                        employee.type === 'manual' ? 'status-manual' : 'status-scheduled';
                     
                     html += `
-                        <tr>
+                        <tr id="row_${uniqueId}">
                             <td style="text-align: center;">
-                                <input type="checkbox" id="${uniqueId}" style="transform: scale(1.2); cursor: pointer;" />
+                                <input type="checkbox" id="${uniqueId}" style="transform: scale(1.2); cursor: pointer;" 
+                                       onchange="toggleRowShading('${uniqueId}')" />
                             </td>
                             <td><strong>${employee.name}</strong></td>
                             <td>${employee.manager || 'N/A'}</td>
