@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Availability Management</title>
-    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -304,6 +303,24 @@
             color: #6c757d;
             font-style: italic;
         }
+
+        .error-msg {
+            background: #ffe6e6;
+            border: 1px solid #ff9999;
+            color: #cc0000;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .success-msg {
+            background: #e6ffe6;
+            border: 1px solid #99ff99;
+            color: #006600;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
@@ -314,16 +331,18 @@
         </div>
 
         <div class="controls">
+            <div id="messageArea"></div>
+            
             <div class="file-upload-section">
                 <div class="upload-box">
                     <h3>📅 Upload Schedule File</h3>
                     <p>Excel file with employee schedules</p>
-                    <input type="file" id="scheduleFile" accept=".xlsx,.xls" />
+                    <input type="file" id="scheduleFile" accept=".xlsx,.xls,.csv" />
                 </div>
                 <div class="upload-box">
                     <h3>🏖️ Upload Time Off File</h3>
                     <p>Excel file with scheduled time off</p>
-                    <input type="file" id="timeOffFile" accept=".xlsx,.xls" />
+                    <input type="file" id="timeOffFile" accept=".xlsx,.xls,.csv" />
                 </div>
             </div>
 
@@ -397,6 +416,8 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+
         <div id="manualTab" class="tab-content">
             <div style="max-width: 600px; margin: 0 auto;">
                 <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 30px;">
@@ -434,59 +455,101 @@
                 </div>
             </div>
         </div>
-        // Check if page loaded properly
-        window.addEventListener('DOMContentLoaded', function() {
-            console.log('Page loaded');
-            console.log('XLSX library available:', typeof XLSX !== 'undefined');
-            
-            if (typeof XLSX === 'undefined') {
-                console.error('XLSX library not loaded');
-                alert('Excel processing library failed to load. Please refresh the page.');
-            } else {
-                console.log('XLSX library loaded successfully');
-            }
-        });
+    </div>
 
+    <!-- Load XLSX library with fallback -->
+    <script>
+        // Try to load XLSX library from multiple sources
+        function loadXLSX() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.onload = () => {
+                    if (typeof XLSX !== 'undefined') {
+                        showMessage('Excel processing library loaded successfully!', 'success');
+                        resolve();
+                    } else {
+                        reject('XLSX not available');
+                    }
+                };
+                script.onerror = () => reject('Failed to load XLSX');
+                script.src = 'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js';
+                document.head.appendChild(script);
+            });
+        }
+
+        // Global variables
         let workingEmployees = [];
         let offEmployees = [];
         let allManagers = new Set();
-        let manuallyAdded = new Map(); // Track manually added employees
+        let manuallyAdded = new Map();
+        let xlsxLoaded = false;
 
-        // File upload handlers
-        document.getElementById('scheduleFile').addEventListener('change', handleScheduleFile);
-        document.getElementById('timeOffFile').addEventListener('change', handleTimeOffFile);
+        // Initialize the application
+        async function init() {
+            try {
+                await loadXLSX();
+                xlsxLoaded = true;
+                setupEventListeners();
+                showMessage('Application ready! You can now upload your Excel files.', 'success');
+            } catch (error) {
+                showMessage('Warning: Excel file processing may not work. Try refreshing the page.', 'error');
+                setupEventListeners(); // Still allow basic functionality
+            }
+        }
 
+        function showMessage(text, type) {
+            const messageArea = document.getElementById('messageArea');
+            const className = type === 'success' ? 'success-msg' : 'error-msg';
+            messageArea.innerHTML = `<div class="${className}">${text}</div>`;
+            setTimeout(() => {
+                messageArea.innerHTML = '';
+            }, 5000);
+        }
+
+        function setupEventListeners() {
+            document.getElementById('scheduleFile').addEventListener('change', handleScheduleFile);
+            document.getElementById('timeOffFile').addEventListener('change', handleTimeOffFile);
+            
+            // Enable search on Enter key
+            document.getElementById('employeeSearch').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    markEmployeeOff();
+                }
+            });
+
+            // Enable manual input on Enter key
+            document.getElementById('manualEmployeeName').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    markEmployeeWithStatus('Off Today');
+                }
+            });
+        }
+
+        // File processing functions
         function handleScheduleFile(event) {
             const file = event.target.files[0];
             if (!file) return;
 
-            console.log('Processing schedule file:', file.name);
-            
-            // Check if XLSX is loaded
-            if (typeof XLSX === 'undefined') {
-                alert('Excel processing library not loaded. Please refresh the page and try again.');
+            if (!xlsxLoaded) {
+                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
                 return;
             }
 
+            showMessage('Processing schedule file...', 'success');
+            
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    console.log('Reading schedule file data...');
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    console.log('Schedule workbook sheets:', workbook.SheetNames);
-                    
                     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    console.log('Schedule data rows:', jsonData.length);
                     
-                    // Process schedule data
                     processScheduleData(jsonData);
                     updateDisplay();
-                    console.log('Schedule processing complete');
+                    showMessage(`Schedule processed! Found ${workingEmployees.length} working employees.`, 'success');
                 } catch (error) {
-                    console.error('Schedule file error:', error);
-                    alert('Error reading schedule file: ' + error.message);
+                    showMessage('Error reading schedule file: ' + error.message, 'error');
                 }
             };
             reader.readAsArrayBuffer(file);
@@ -496,51 +559,42 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            console.log('Processing time off file:', file.name);
-            
-            // Check if XLSX is loaded
-            if (typeof XLSX === 'undefined') {
-                alert('Excel processing library not loaded. Please refresh the page and try again.');
+            if (!xlsxLoaded) {
+                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
                 return;
             }
 
+            showMessage('Processing time off file...', 'success');
+            
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    console.log('Reading time off file data...');
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    console.log('Time off workbook sheets:', workbook.SheetNames);
-                    
                     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    console.log('Time off data rows:', jsonData.length);
                     
-                    // Process time off data
                     processTimeOffData(jsonData);
                     updateDisplay();
-                    console.log('Time off processing complete');
+                    showMessage(`Time off processed! Found ${offEmployees.length} employees off today.`, 'success');
                 } catch (error) {
-                    console.error('Time off file error:', error);
-                    alert('Error reading time off file: ' + error.message);
+                    showMessage('Error reading time off file: ' + error.message, 'error');
                 }
             };
             reader.readAsArrayBuffer(file);
         }
 
         function processScheduleData(data) {
-            console.log('Processing schedule data, rows:', data.length);
             workingEmployees = [];
             
-            // Skip header row, process data rows
             for (let i = 1; i < data.length; i++) {
                 const row = data[i];
-                if (!row || !row[0]) continue; // Skip empty rows
+                if (!row || !row[0]) continue;
                 
                 const employee = {
-                    name: String(row[0]).trim(), // Worker
-                    manager: String(row[1] || '').trim(), // Supervisory Organization
-                    schedule: String(row[2] || '').trim(), // Published Schedule
+                    name: String(row[0]).trim(),
+                    manager: String(row[1] || '').trim(),
+                    schedule: String(row[2] || '').trim(),
                     type: 'scheduled'
                 };
                 
@@ -551,23 +605,19 @@
                     }
                 }
             }
-            console.log('Processed working employees:', workingEmployees.length);
         }
 
         function processTimeOffData(data) {
-            console.log('Processing time off data, rows:', data.length);
-            
-            // Skip header row, process data rows
             for (let i = 1; i < data.length; i++) {
                 const row = data[i];
-                if (!row || !row[2]) continue; // Skip empty rows (Worker column)
+                if (!row || !row[2]) continue;
                 
-                const timeOffHours = String(row[0] || ''); // Time Off Entry
+                const timeOffHours = String(row[0] || '');
                 const isPartialDay = timeOffHours.includes('4 Hours');
                 
                 const employee = {
-                    name: String(row[2]).trim(), // Worker
-                    manager: String(row[1] || '').trim(), // Supervisory Organization
+                    name: String(row[2]).trim(),
+                    manager: String(row[1] || '').trim(),
                     status: isPartialDay ? 'Partial Day (4 Hours)' : 'Full Day Off',
                     type: isPartialDay ? 'partial' : 'scheduled',
                     timeAdded: 'Scheduled'
@@ -579,22 +629,55 @@
                         allManagers.add(employee.manager);
                     }
                     
-                    // Remove from working list if they exist there
                     workingEmployees = workingEmployees.filter(emp => emp.name !== employee.name);
                 }
             }
-            console.log('Processed off employees:', offEmployees.length);
-            console.log('Remaining working employees:', workingEmployees.length);
         }
 
+        // UI Functions
         function switchTab(tabName) {
-            // Update tab buttons
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
             
-            // Update tab content
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        function markEmployeeOff() {
+            const searchInput = document.getElementById('employeeSearch');
+            const employeeName = searchInput.value.trim();
+            
+            if (!employeeName) {
+                showMessage('Please enter an employee name', 'error');
+                return;
+            }
+            
+            const employeeIndex = workingEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                showMessage('Employee not found in working list', 'error');
+                return;
+            }
+            
+            const employee = workingEmployees[employeeIndex];
+            
+            const offEmployee = {
+                name: employee.name,
+                manager: employee.manager,
+                status: 'Off Today',
+                type: 'manual',
+                timeAdded: new Date().toLocaleString()
+            };
+            
+            offEmployees.push(offEmployee);
+            workingEmployees.splice(employeeIndex, 1);
+            manuallyAdded.set(employee.name, new Date());
+            
+            searchInput.value = '';
+            updateDisplay();
+            showMessage(`${employee.name} marked as off`, 'success');
         }
 
         function markEmployeeWithStatus(status) {
@@ -602,23 +685,21 @@
             const employeeName = nameInput.value.trim();
             
             if (!employeeName) {
-                alert('Please enter an employee name');
+                showMessage('Please enter an employee name', 'error');
                 return;
             }
             
-            // Find employee in working list
             const employeeIndex = workingEmployees.findIndex(emp => 
                 emp.name.toLowerCase().includes(employeeName.toLowerCase())
             );
             
             if (employeeIndex === -1) {
-                alert('Employee not found in working list. Please check the spelling or ensure they are scheduled to work today.');
+                showMessage('Employee not found in working list. Please check the spelling.', 'error');
                 return;
             }
             
             const employee = workingEmployees[employeeIndex];
             
-            // Move to off list with specific status
             const offEmployee = {
                 name: employee.name,
                 manager: employee.manager,
@@ -634,72 +715,15 @@
             nameInput.value = '';
             updateDisplay();
             
-            // Show success message and switch to off tab
-            alert(`${employee.name} has been marked as "${status}" and moved to the Off Today tab.`);
+            showMessage(`${employee.name} has been marked as "${status}"`, 'success');
             switchTab('off');
-        }
-            const searchInput = document.getElementById('employeeSearch');
-            const employeeName = searchInput.value.trim();
-            
-            if (!employeeName) {
-                alert('Please enter an employee name');
-                return;
-            }
-            
-            // Find employee in working list
-            const employeeIndex = workingEmployees.findIndex(emp => 
-                emp.name.toLowerCase().includes(employeeName.toLowerCase())
-            );
-            
-            if (employeeIndex === -1) {
-                alert('Employee not found in working list');
-                return;
-            }
-            
-            const employee = workingEmployees[employeeIndex];
-            
-        function markEmployeeOff() {
-            const searchInput = document.getElementById('employeeSearch');
-            const employeeName = searchInput.value.trim();
-            
-            if (!employeeName) {
-                alert('Please enter an employee name');
-                return;
-            }
-            
-            // Find employee in working list
-            const employeeIndex = workingEmployees.findIndex(emp => 
-                emp.name.toLowerCase().includes(employeeName.toLowerCase())
-            );
-            
-            if (employeeIndex === -1) {
-                alert('Employee not found in working list');
-                return;
-            }
-            
-            const employee = workingEmployees[employeeIndex];
-            
-            // Move to off list with generic status
-            const offEmployee = {
-                name: employee.name,
-                manager: employee.manager,
-                status: 'Off Today',
-                type: 'manual',
-                timeAdded: new Date().toLocaleString()
-            };
-            
-            offEmployees.push(offEmployee);
-            workingEmployees.splice(employeeIndex, 1);
-            manuallyAdded.set(employee.name, new Date());
-            
-            searchInput.value = '';
-            updateDisplay();
         }
 
         function removeFromOff(employeeName) {
             offEmployees = offEmployees.filter(emp => emp.name !== employeeName);
             manuallyAdded.delete(employeeName);
             updateDisplay();
+            showMessage(`${employeeName} removed from off list`, 'success');
         }
 
         function restoreToWorking(employeeName) {
@@ -708,7 +732,6 @@
             
             const employee = offEmployees[offEmployeeIndex];
             
-            // Add back to working (you might want to get original schedule info)
             const workingEmployee = {
                 name: employee.name,
                 manager: employee.manager,
@@ -721,6 +744,7 @@
             manuallyAdded.delete(employeeName);
             
             updateDisplay();
+            showMessage(`${employeeName} restored to working list`, 'success');
         }
 
         function filterByManager(tabType) {
@@ -745,11 +769,9 @@
             const workingFilter = document.getElementById('workingManagerFilter');
             const offFilter = document.getElementById('offManagerFilter');
             
-            // Clear existing options except "All Managers"
             workingFilter.innerHTML = '<option value="">All Managers</option>';
             offFilter.innerHTML = '<option value="">All Managers</option>';
             
-            // Add manager options
             Array.from(allManagers).sort().forEach(manager => {
                 if (manager) {
                     workingFilter.innerHTML += `<option value="${manager}">${manager}</option>`;
@@ -772,7 +794,6 @@
                 return;
             }
             
-            // Sort by manager name
             filteredEmployees.sort((a, b) => (a.manager || '').localeCompare(b.manager || ''));
             
             let html = '';
@@ -863,43 +884,41 @@
         }
 
         function exportData() {
-            const wb = XLSX.utils.book_new();
-            
-            // Working employees sheet
-            const workingData = [['Employee', 'Manager', 'Schedule', 'Status']];
-            workingEmployees.forEach(emp => {
-                workingData.push([emp.name, emp.manager, emp.schedule, 'Working']);
-            });
-            const workingWs = XLSX.utils.aoa_to_sheet(workingData);
-            XLSX.utils.book_append_sheet(wb, workingWs, 'Working Today');
-            
-            // Off employees sheet
-            const offData = [['Employee', 'Manager', 'Status', 'Time Added', 'Type']];
-            offEmployees.forEach(emp => {
-                offData.push([emp.name, emp.manager, emp.status, emp.timeAdded, emp.type]);
-            });
-            const offWs = XLSX.utils.aoa_to_sheet(offData);
-            XLSX.utils.book_append_sheet(wb, offWs, 'Off Today');
-            
-            // Export file
-            const fileName = `Employee_Availability_${new Date().toISOString().split('T')[0]}.xlsx`;
-            XLSX.writeFile(wb, fileName);
+            if (!xlsxLoaded) {
+                showMessage('Excel export not available. Please refresh the page.', 'error');
+                return;
+            }
+
+            try {
+                const wb = XLSX.utils.book_new();
+                
+                // Working employees sheet
+                const workingData = [['Employee', 'Manager', 'Schedule', 'Status']];
+                workingEmployees.forEach(emp => {
+                    workingData.push([emp.name, emp.manager, emp.schedule, 'Working']);
+                });
+                const workingWs = XLSX.utils.aoa_to_sheet(workingData);
+                XLSX.utils.book_append_sheet(wb, workingWs, 'Working Today');
+                
+                // Off employees sheet
+                const offData = [['Employee', 'Manager', 'Status', 'Time Added', 'Type']];
+                offEmployees.forEach(emp => {
+                    offData.push([emp.name, emp.manager, emp.status, emp.timeAdded, emp.type]);
+                });
+                const offWs = XLSX.utils.aoa_to_sheet(offData);
+                XLSX.utils.book_append_sheet(wb, offWs, 'Off Today');
+                
+                // Export file
+                const fileName = `Employee_Availability_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                showMessage('Report exported successfully!', 'success');
+            } catch (error) {
+                showMessage('Error exporting report: ' + error.message, 'error');
+            }
         }
 
-        // Enable search on Enter key
-        document.getElementById('employeeSearch').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                markEmployeeOff();
-            }
-        });
-
-        // Enable manual input on Enter key
-        document.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && e.target.id === 'manualEmployeeName') {
-                // Default to "Off Today" when pressing Enter
-                markEmployeeWithStatus('Off Today');
-            }
-        });
+        // Initialize the application when page loads
+        window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
