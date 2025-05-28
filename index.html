@@ -376,7 +376,7 @@
                                onblur="this.style.borderColor='#e9ecef'; this.style.boxShadow='none'" />
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                         <button class="btn btn-danger" onclick="markEmployeeWithStatus('Off Today')" 
                                 style="padding: 20px; font-size: 16px; border-radius: 15px;">
                             🏖️ Off Today
@@ -385,10 +385,42 @@
                                 style="padding: 20px; font-size: 16px; border-radius: 15px; background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%); color: white;">
                             ⏰ Left Early
                         </button>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                         <button class="btn btn-primary" onclick="returnToWork()" 
                                 style="padding: 20px; font-size: 16px; border-radius: 15px;">
                             ✅ Returned To Work
                         </button>
+                        <button class="btn" onclick="toggleShiftChange()" 
+                                style="padding: 20px; font-size: 16px; border-radius: 15px; background: linear-gradient(135deg, #9c88ff 0%, #8c7ae6 100%); color: white;">
+                            🕐 Change Shift
+                        </button>
+                    </div>
+
+                    <!-- Shift Change Section (Initially Hidden) -->
+                    <div id="shiftChangeSection" style="display: none; margin-bottom: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px; border: 2px solid #9c88ff;">
+                        <h4 style="margin-bottom: 15px; color: #8c7ae6;">⏰ Update Shift Times</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 5px;">Start Time:</label>
+                                <input type="time" id="shiftStartTime" style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 16px;" />
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 5px;">End Time:</label>
+                                <input type="time" id="shiftEndTime" style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 16px;" />
+                            </div>
+                        </div>
+                        <div style="text-align: center;">
+                            <button class="btn" onclick="updateShift()" 
+                                    style="padding: 12px 25px; border-radius: 10px; background: linear-gradient(135deg, #9c88ff 0%, #8c7ae6 100%); color: white;">
+                                Update Schedule
+                            </button>
+                            <button class="btn" onclick="toggleShiftChange()" 
+                                    style="padding: 12px 25px; border-radius: 10px; background: #6c757d; color: white; margin-left: 10px;">
+                                Cancel
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Export Report Button -->
@@ -404,6 +436,7 @@
                             <li><strong>Off Today:</strong> For employees who called out sick or took unscheduled time off</li>
                             <li><strong>Left Early:</strong> For employees who left before their scheduled end time</li>
                             <li><strong>Returned To Work:</strong> For employees who came back after being marked as off</li>
+                            <li><strong>Change Shift:</strong> For employees who need to update their start and end times</li>
                         </ul>
                     </div>
                 </div>
@@ -657,6 +690,78 @@
             updateDisplay();
             
             showMessage(`${employee.name} has returned to work and moved to Working Today tab`, 'success');
+            switchTab('working');
+        }
+
+        function toggleShiftChange() {
+            const section = document.getElementById('shiftChangeSection');
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+            } else {
+                section.style.display = 'none';
+                // Clear the time inputs when hiding
+                document.getElementById('shiftStartTime').value = '';
+                document.getElementById('shiftEndTime').value = '';
+            }
+        }
+
+        function updateShift() {
+            const nameInput = document.getElementById('manualEmployeeName');
+            const employeeName = nameInput.value.trim();
+            const startTime = document.getElementById('shiftStartTime').value;
+            const endTime = document.getElementById('shiftEndTime').value;
+            
+            if (!employeeName) {
+                showMessage('Please enter an employee name', 'error');
+                return;
+            }
+            
+            if (!startTime || !endTime) {
+                showMessage('Please enter both start and end times', 'error');
+                return;
+            }
+            
+            // Find employee in working list
+            const employeeIndex = workingEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                showMessage('Employee not found in working list. Please check the spelling.', 'error');
+                return;
+            }
+            
+            const employee = workingEmployees[employeeIndex];
+            
+            // Convert 24-hour time to 12-hour format
+            function formatTime(time24) {
+                const [hours, minutes] = time24.split(':');
+                const hour = parseInt(hours);
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+                return `${hour12}:${minutes} ${ampm}`;
+            }
+            
+            // Get today's date in the same format as the original
+            const today = new Date();
+            const dateStr = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`;
+            
+            // Update the schedule format to match: "Name:MM/DD/YYYY, H:MM AM – MM/DD/YYYY, H:MM PM"
+            const newSchedule = `${employee.name}:${dateStr}, ${formatTime(startTime)} – ${dateStr}, ${formatTime(endTime)}`;
+            
+            // Update the employee's schedule
+            workingEmployees[employeeIndex].schedule = newSchedule;
+            workingEmployees[employeeIndex].type = 'updated';
+            
+            // Clear inputs and hide section
+            nameInput.value = '';
+            document.getElementById('shiftStartTime').value = '';
+            document.getElementById('shiftEndTime').value = '';
+            toggleShiftChange();
+            
+            updateDisplay();
+            
+            showMessage(`${employee.name}'s shift updated to ${formatTime(startTime)} - ${formatTime(endTime)}`, 'success');
             switchTab('working');
         }
 
