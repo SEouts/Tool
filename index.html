@@ -160,14 +160,27 @@
             padding: 20px;
             border-radius: 10px;
             text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        .summary-card.active {
+            border-color: white;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            transform: translateY(-2px);
         }
 
         .summary-card h3 {
             font-size: 2em;
             margin-bottom: 5px;
         }
-
-        .table-container {
             background: white;
             border-radius: 10px;
             overflow: hidden;
