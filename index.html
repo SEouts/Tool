@@ -246,31 +246,51 @@
 
         .manager-filter {
             margin: 20px 0;
-        }
-
-        .manager-filter select {
-            padding: 10px 15px;
-            border: 2px solid #e9ecef;
-            border-radius: 25px;
-            font-size: 16px;
-            background: white;
-            min-width: 200px;
-            min-height: 40px;
-        }
-
-        .manager-filter select[multiple] {
-            min-height: 120px;
+            padding: 20px;
+            background: #f8f9fa;
             border-radius: 10px;
+            border: 2px solid #e9ecef;
         }
 
-        .manager-filter select option {
+        .manager-filter h4 {
+            margin-bottom: 15px;
+            color: #4facfe;
+            font-size: 16px;
+        }
+
+        .manager-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .manager-checkbox {
+            display: flex;
+            align-items: center;
             padding: 8px 12px;
-            margin: 2px 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
-        .manager-filter select option:checked {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
+        .manager-checkbox:hover {
+            background: #f0f9ff;
+            border-color: #4facfe;
+        }
+
+        .manager-checkbox input[type="checkbox"] {
+            margin-right: 8px;
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+
+        .manager-checkbox.selected {
+            background: #e3f2fd;
+            border-color: #4facfe;
+            color: #1976d2;
         }
 
         .no-data {
