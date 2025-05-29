@@ -255,6 +255,22 @@
             font-size: 16px;
             background: white;
             min-width: 200px;
+            min-height: 40px;
+        }
+
+        .manager-filter select[multiple] {
+            min-height: 120px;
+            border-radius: 10px;
+        }
+
+        .manager-filter select option {
+            padding: 8px 12px;
+            margin: 2px 0;
+        }
+
+        .manager-filter select option:checked {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
         }
 
         .no-data {
@@ -315,10 +331,13 @@
         <div id="workingTab" class="tab-content active">
             <div class="summary" id="workingSummary"></div>
             <div class="manager-filter">
-                <label>Filter by Manager: </label>
-                <select id="workingManagerFilter" onchange="filterByManager('working')">
+                <label>Filter by Manager (Hold Ctrl/Cmd to select multiple): </label>
+                <select id="workingManagerFilter" multiple onchange="filterByManager('working')">
                     <option value="">All Managers</option>
                 </select>
+                <button class="btn btn-primary" onclick="clearFilter('working')" style="margin-left: 10px; padding: 8px 16px;">
+                    Clear Filter
+                </button>
             </div>
             <div class="table-container">
                 <table>
@@ -340,10 +359,13 @@
         <div id="offTab" class="tab-content">
             <div class="summary" id="offSummary"></div>
             <div class="manager-filter">
-                <label>Filter by Manager: </label>
-                <select id="offManagerFilter" onchange="filterByManager('off')">
+                <label>Filter by Manager (Hold Ctrl/Cmd to select multiple): </label>
+                <select id="offManagerFilter" multiple onchange="filterByManager('off')">
                     <option value="">All Managers</option>
                 </select>
+                <button class="btn btn-primary" onclick="clearFilter('off')" style="margin-left: 10px; padding: 8px 16px;">
+                    Clear Filter
+                </button>
             </div>
             <div class="table-container">
                 <table>
@@ -823,12 +845,21 @@
             });
         }
 
-        function updateTable(tabType, managerFilter = '') {
+        function updateTable(tabType, managerFilter = []) {
             const tableBody = document.getElementById(tabType + 'TableBody');
             const employees = tabType === 'working' ? workingEmployees : offEmployees;
             
             let filteredEmployees = employees;
-            if (managerFilter) {
+            
+            // Handle both string (single manager) and array (multiple managers) filtering
+            if (Array.isArray(managerFilter)) {
+                if (managerFilter.length > 0) {
+                    filteredEmployees = employees.filter(emp => 
+                        managerFilter.includes(emp.manager) || 
+                        (managerFilter.includes('') && (!emp.manager || emp.manager === 'No Manager'))
+                    );
+                }
+            } else if (managerFilter) {
                 filteredEmployees = employees.filter(emp => emp.manager === managerFilter);
             }
             
@@ -875,6 +906,11 @@
             });
             
             tableBody.innerHTML = html;
+            
+            // Show filter status message
+            if (Array.isArray(managerFilter) && managerFilter.length > 0) {
+                showMessage(`Showing ${managerFilter.length} selected manager(s): ${managerFilter.join(', ')}`, 'success');
+            }
         }
 
         function updateSummaries() {
