@@ -391,41 +391,52 @@
 
         <div id="manualTab" class="tab-content">
             <div style="max-width: 800px; margin: 0 auto;">
-                <!-- Manager Summary Cards -->
-                <div style="margin-bottom: 30px;">
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
-                        <h2 style="margin-bottom: 8px;">📊 Manager Summary</h2>
-                        <p>Employee count by manager</p>
-                    </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <h4 style="color: #4facfe; margin-bottom: 15px;">👥 Working Today:</h4>
-                        <div class="summary" id="workingSummary"></div>
-                    </div>
-                    
-                    <div style="margin-bottom: 30px;">
-                        <h4 style="color: #ff6b6b; margin-bottom: 15px;">🏖️ Off Today:</h4>
-                        <div class="summary" id="offSummary"></div>
-                    </div>
+                <!-- Toggle Button -->
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <button class="btn btn-primary" onclick="toggleTopSections()" id="toggleButton" 
+                            style="padding: 12px 25px; font-size: 16px; border-radius: 25px;">
+                        🔼 Hide Summary & Upload Sections
+                    </button>
                 </div>
 
-                <!-- File Upload Section -->
-                <div style="margin-bottom: 40px;">
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
-                        <h2 style="margin-bottom: 8px;">📁 Upload Daily Files</h2>
-                        <p>Start by uploading your schedule and time off files</p>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-                        <div class="upload-box">
-                            <h3>📅 Upload Schedule File</h3>
-                            <p>Excel file with employee schedules</p>
-                            <input type="file" id="scheduleFile" accept=".xlsx,.xls,.csv" />
+                <!-- Collapsible Top Sections -->
+                <div id="topSections" style="transition: all 0.3s ease;">
+                    <!-- Manager Summary Cards -->
+                    <div style="margin-bottom: 30px;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
+                            <h2 style="margin-bottom: 8px;">📊 Manager Summary</h2>
+                            <p>Employee count by manager</p>
                         </div>
-                        <div class="upload-box">
-                            <h3>🏖️ Upload Time Off File</h3>
-                            <p>Excel file with scheduled time off</p>
-                            <input type="file" id="timeOffFile" accept=".xlsx,.xls,.csv" />
+                        
+                        <div style="margin-bottom: 20px;">
+                            <h4 style="color: #4facfe; margin-bottom: 15px;">👥 Working Today:</h4>
+                            <div class="summary" id="workingSummary"></div>
+                        </div>
+                        
+                        <div style="margin-bottom: 30px;">
+                            <h4 style="color: #ff6b6b; margin-bottom: 15px;">🏖️ Off Today:</h4>
+                            <div class="summary" id="offSummary"></div>
+                        </div>
+                    </div>
+
+                    <!-- File Upload Section -->
+                    <div style="margin-bottom: 40px;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
+                            <h2 style="margin-bottom: 8px;">📁 Upload Daily Files</h2>
+                            <p>Start by uploading your schedule and time off files</p>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                            <div class="upload-box">
+                                <h3>📅 Upload Schedule File</h3>
+                                <p>Excel file with employee schedules</p>
+                                <input type="file" id="scheduleFile" accept=".xlsx,.xls,.csv" />
+                            </div>
+                            <div class="upload-box">
+                                <h3>🏖️ Upload Time Off File</h3>
+                                <p>Excel file with scheduled time off</p>
+                                <input type="file" id="timeOffFile" accept=".xlsx,.xls,.csv" />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -928,6 +939,23 @@
                 console.log('Testing Select All button...');
                 selectAllManagers('working');
             }, 1000);
+        }
+
+        function toggleTopSections() {
+            const topSections = document.getElementById('topSections');
+            const toggleButton = document.getElementById('toggleButton');
+            
+            if (topSections.style.display === 'none') {
+                // Show sections
+                topSections.style.display = 'block';
+                toggleButton.innerHTML = '🔼 Hide Summary & Upload Sections';
+                toggleButton.style.background = 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
+            } else {
+                // Hide sections
+                topSections.style.display = 'none';
+                toggleButton.innerHTML = '🔽 Show Summary & Upload Sections';
+                toggleButton.style.background = 'linear-gradient(135deg, #2ed573 0%, #7bed9f 100%)';
+            }
         }
 
         function switchTab(tabName) {
