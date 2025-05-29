@@ -854,6 +854,9 @@
             updateTable('working');
             updateTable('off');
             updateSummaries();
+            
+            // Debug: Show what managers we have
+            console.log('All managers:', Array.from(allManagers));
         }
 
         function updateCounts() {
