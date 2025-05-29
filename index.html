@@ -598,11 +598,21 @@
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                     
                     processScheduleData(jsonData);
-                    // Force immediate update
+                    
+                    // Multiple attempts to ensure update happens
+                    updateDisplay();
+                    forceTableUpdate();
+                    
                     setTimeout(() => {
-                        updateDisplay();
+                        console.log('Delayed update triggered');
                         forceTableUpdate();
                     }, 100);
+                    
+                    setTimeout(() => {
+                        console.log('Final update triggered');
+                        forceTableUpdate();
+                    }, 500);
+                    
                     showMessage(`Schedule processed! Found ${workingEmployees.length} working employees.`, 'success');
                 } catch (error) {
                     showMessage('Error reading schedule file: ' + error.message, 'error');
@@ -631,11 +641,21 @@
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                     
                     processTimeOffData(jsonData);
-                    // Force immediate update
+                    
+                    // Multiple attempts to ensure update happens
+                    updateDisplay();
+                    forceTableUpdate();
+                    
                     setTimeout(() => {
-                        updateDisplay();
+                        console.log('Delayed update triggered');
                         forceTableUpdate();
                     }, 100);
+                    
+                    setTimeout(() => {
+                        console.log('Final update triggered');
+                        forceTableUpdate();
+                    }, 500);
+                    
                     showMessage(`Time off processed! Found ${offEmployees.length} employees off today.`, 'success');
                 } catch (error) {
                     showMessage('Error reading time off file: ' + error.message, 'error');
@@ -650,12 +670,23 @@
             console.log('Off employees:', offEmployees.length);
             console.log('All managers:', Array.from(allManagers));
             
+            // Check if containers exist
+            const workingContainer = document.getElementById('workingManagerCheckboxes');
+            const offContainer = document.getElementById('offManagerCheckboxes');
+            
+            console.log('Working container found:', !!workingContainer);
+            console.log('Off container found:', !!offContainer);
+            
             // Force update tables with all data
             updateTableDirect('working', workingEmployees);
             updateTableDirect('off', offEmployees);
             
-            // Force update manager checkboxes
-            updateManagerCheckboxes();
+            // Force update manager checkboxes only if containers exist
+            if (workingContainer && offContainer) {
+                updateManagerCheckboxes();
+            } else {
+                console.error('Manager checkbox containers not found - skipping checkbox update');
+            }
         }
 
         function updateTableDirect(tabType, employees) {
