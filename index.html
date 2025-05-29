@@ -329,7 +329,6 @@
         </div>
 
         <div id="workingTab" class="tab-content active">
-            <div class="summary" id="workingSummary"></div>
             <div class="manager-filter">
                 <h4>📋 Filter by Manager:</h4>
                 <div id="workingManagerCheckboxes" class="manager-checkboxes"></div>
@@ -360,7 +359,6 @@
         </div>
 
         <div id="offTab" class="tab-content">
-            <div class="summary" id="offSummary"></div>
             <div class="manager-filter">
                 <h4>📋 Filter by Manager:</h4>
                 <div id="offManagerCheckboxes" class="manager-checkboxes"></div>
@@ -393,6 +391,24 @@
 
         <div id="manualTab" class="tab-content">
             <div style="max-width: 800px; margin: 0 auto;">
+                <!-- Manager Summary Cards -->
+                <div style="margin-bottom: 30px;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
+                        <h2 style="margin-bottom: 8px;">📊 Manager Summary</h2>
+                        <p>Employee count by manager</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: #4facfe; margin-bottom: 15px;">👥 Working Today:</h4>
+                        <div class="summary" id="workingSummary"></div>
+                    </div>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <h4 style="color: #ff6b6b; margin-bottom: 15px;">🏖️ Off Today:</h4>
+                        <div class="summary" id="offSummary"></div>
+                    </div>
+                </div>
+
                 <!-- File Upload Section -->
                 <div style="margin-bottom: 40px;">
                     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
