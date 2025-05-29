@@ -598,7 +598,11 @@
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                     
                     processScheduleData(jsonData);
-                    updateDisplay();
+                    // Force immediate update
+                    setTimeout(() => {
+                        updateDisplay();
+                        forceTableUpdate();
+                    }, 100);
                     showMessage(`Schedule processed! Found ${workingEmployees.length} working employees.`, 'success');
                 } catch (error) {
                     showMessage('Error reading schedule file: ' + error.message, 'error');
@@ -627,13 +631,158 @@
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                     
                     processTimeOffData(jsonData);
-                    updateDisplay();
+                    // Force immediate update
+                    setTimeout(() => {
+                        updateDisplay();
+                        forceTableUpdate();
+                    }, 100);
                     showMessage(`Time off processed! Found ${offEmployees.length} employees off today.`, 'success');
                 } catch (error) {
                     showMessage('Error reading time off file: ' + error.message, 'error');
                 }
             };
             reader.readAsArrayBuffer(file);
+        }
+
+        function forceTableUpdate() {
+            console.log('forceTableUpdate called');
+            console.log('Working employees:', workingEmployees.length);
+            console.log('Off employees:', offEmployees.length);
+            console.log('All managers:', Array.from(allManagers));
+            
+            // Force update tables with all data
+            updateTableDirect('working', workingEmployees);
+            updateTableDirect('off', offEmployees);
+            
+            // Force update manager checkboxes
+            updateManagerCheckboxes();
+        }
+
+        function updateTableDirect(tabType, employees) {
+            const tableBody = document.getElementById(tabType + 'TableBody');
+            
+            if (!employees || employees.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="${tabType === 'working' ? 4 : 5}" class="no-data">No employees found</td></tr>`;
+                return;
+            }
+            
+            employees.sort((a, b) => (a.manager || '').localeCompare(b.manager || ''));
+            
+            let html = '';
+            employees.forEach(employee => {
+                if (tabType === 'working') {
+                    html += `
+                        <tr>
+                            <td style="text-align: center;">
+                                <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
+                            </td>
+                            <td><strong>${employee.name}</strong></td>
+                            <td>${employee.manager || 'N/A'}</td>
+                            <td>${employee.schedule || 'N/A'}</td>
+                        </tr>
+                    `;
+                } else {
+                    const statusClass = employee.type === 'partial' ? 'status-partial' : 
+                                       employee.type === 'manual' ? 'status-manual' : 'status-scheduled';
+                    
+                    html += `
+                        <tr>
+                            <td style="text-align: center;">
+                                <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
+                            </td>
+                            <td><strong>${employee.name}</strong></td>
+                            <td>${employee.manager || 'N/A'}</td>
+                            <td>
+                                <span class="status-badge ${statusClass}">${employee.status}</span>
+                            </td>
+                            <td>
+                                <span class="timestamp">${employee.timeAdded}</span>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            tableBody.innerHTML = html;
+        }
+
+        function updateManagerCheckboxes() {
+            const workingContainer = document.getElementById('workingManagerCheckboxes');
+            const offContainer = document.getElementById('offManagerCheckboxes');
+            
+            if (!workingContainer || !offContainer) {
+                console.error('Manager checkbox containers not found');
+                return;
+            }
+            
+            const managers = Array.from(allManagers).sort();
+            console.log('Creating checkboxes for managers:', managers);
+            
+            // Clear and populate working checkboxes
+            workingContainer.innerHTML = '';
+            managers.forEach((manager, index) => {
+                if (manager) {
+                    const checkboxId = 'working-manager-' + index;
+                    workingContainer.innerHTML += `
+                        <label class="manager-checkbox" for="${checkboxId}">
+                            <input type="checkbox" id="${checkboxId}" 
+                                   value="${manager}" 
+                                   onchange="handleManagerCheckboxChange('working')">
+                            <span>${manager}</span>
+                        </label>
+                    `;
+                }
+            });
+            
+            // Clear and populate off checkboxes
+            offContainer.innerHTML = '';
+            managers.forEach((manager, index) => {
+                if (manager) {
+                    const checkboxId = 'off-manager-' + index;
+                    offContainer.innerHTML += `
+                        <label class="manager-checkbox" for="${checkboxId}">
+                            <input type="checkbox" id="${checkboxId}" 
+                                   value="${manager}" 
+                                   onchange="handleManagerCheckboxChange('off')">
+                            <span>${manager}</span>
+                        </label>
+                    `;
+                }
+            });
+            
+            console.log('Manager checkboxes created');
+        }
+
+        function handleManagerCheckboxChange(tabType) {
+            const container = document.getElementById(tabType + 'ManagerCheckboxes');
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            const selectedManagers = [];
+            
+            checkboxes.forEach(checkbox => {
+                const label = checkbox.parentElement;
+                if (checkbox.checked) {
+                    selectedManagers.push(checkbox.value);
+                    label.classList.add('selected');
+                } else {
+                    label.classList.remove('selected');
+                }
+            });
+            
+            console.log('Selected managers:', selectedManagers);
+            
+            // Filter employees based on selected managers
+            const allEmployees = tabType === 'working' ? workingEmployees : offEmployees;
+            let filteredEmployees = allEmployees;
+            
+            if (selectedManagers.length > 0) {
+                filteredEmployees = allEmployees.filter(emp => selectedManagers.includes(emp.manager));
+            }
+            
+            updateTableDirect(tabType, filteredEmployees);
+            
+            if (selectedManagers.length > 0) {
+                showMessage(`Showing ${selectedManagers.length} selected manager(s)`, 'success');
+            }
         }
 
         function processScheduleData(data) {
