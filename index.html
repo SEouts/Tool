@@ -637,6 +637,7 @@
         }
 
         function processScheduleData(data) {
+            console.log('processScheduleData called with', data.length, 'rows');
             workingEmployees = [];
             
             for (let i = 1; i < data.length; i++) {
@@ -654,12 +655,17 @@
                     workingEmployees.push(employee);
                     if (employee.manager) {
                         allManagers.add(employee.manager);
+                        console.log('Added manager:', employee.manager);
                     }
                 }
             }
+            console.log('Final working employees:', workingEmployees.length);
+            console.log('Final managers set:', Array.from(allManagers));
         }
 
         function processTimeOffData(data) {
+            console.log('processTimeOffData called with', data.length, 'rows');
+            
             for (let i = 1; i < data.length; i++) {
                 const row = data[i];
                 if (!row || !row[2]) continue;
@@ -679,11 +685,14 @@
                     offEmployees.push(employee);
                     if (employee.manager) {
                         allManagers.add(employee.manager);
+                        console.log('Added manager from time off:', employee.manager);
                     }
                     
                     workingEmployees = workingEmployees.filter(emp => emp.name !== employee.name);
                 }
             }
+            console.log('Final off employees:', offEmployees.length);
+            console.log('Remaining working employees:', workingEmployees.length);
         }
 
         function switchTab(tabName) {
@@ -880,8 +889,12 @@
         }
 
         function updateTable(tabType, managerFilter = []) {
+            console.log('updateTable called:', tabType, 'filter:', managerFilter);
+            
             const tableBody = document.getElementById(tabType + 'TableBody');
             const employees = tabType === 'working' ? workingEmployees : offEmployees;
+            
+            console.log('Total employees for', tabType, ':', employees.length);
             
             let filteredEmployees = employees;
             
@@ -896,6 +909,8 @@
             } else if (managerFilter) {
                 filteredEmployees = employees.filter(emp => emp.manager === managerFilter);
             }
+            
+            console.log('Filtered employees:', filteredEmployees.length);
             
             if (filteredEmployees.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="${tabType === 'working' ? 4 : 5}" class="no-data">No employees found</td></tr>`;
