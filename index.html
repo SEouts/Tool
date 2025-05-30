@@ -585,6 +585,60 @@
             }
         }
 
+        // Helper function to clean manager names
+        function cleanManagerName(managerName) {
+            if (!managerName) return '';
+            
+            // Remove "Sales" and parentheses, keeping just the name
+            // Handles formats like: "Sales (Chris Home)" -> "Chris Home"
+            let cleaned = managerName.trim();
+            
+            // Remove "Sales" at the beginning (case insensitive)
+            cleaned = cleaned.replace(/^sales\s*/i, '');
+            
+            // Remove parentheses and their contents become the main name
+            if (cleaned.includes('(') && cleaned.includes(')')) {
+                const match = cleaned.match(/\(([^)]+)\)/);
+                if (match) {
+                    cleaned = match[1].trim(); // Get content inside parentheses
+                }
+            }
+            
+            return cleaned;
+        }
+
+        // Helper function to clean schedule information
+        function cleanSchedule(schedule) {
+            if (!schedule) return '';
+            
+            // Extract just the time portions from formats like:
+            // "Skyler Giordano:05/22/2025, 9:00 AM – 05/22/2025, 6:00 PM"
+            // Should return: "9:00 AM – 6:00 PM"
+            
+            let cleaned = schedule.trim();
+            
+            // Remove employee name and colon (everything before the first date)
+            cleaned = cleaned.replace(/^[^:]*:\s*/, '');
+            
+            // Extract time patterns (like "9:00 AM" and "6:00 PM")
+            const timePattern = /(\d{1,2}:\d{2}\s*(?:AM|PM))/gi;
+            const times = cleaned.match(timePattern);
+            
+            if (times && times.length >= 2) {
+                // Join the times with a dash
+                return `${times[0]} – ${times[times.length - 1]}`;
+            }
+            
+            // Fallback: if we can't parse it properly, try a simpler approach
+            // Look for time patterns and dates, remove dates
+            cleaned = cleaned.replace(/\d{2}\/\d{2}\/\d{4},?\s*/g, '');
+            
+            // Clean up extra spaces and dashes
+            cleaned = cleaned.replace(/\s+/g, ' ').trim();
+            
+            return cleaned || schedule; // Return original if cleaning fails
+        }
+
         // XLSX loading function
         function loadXLSX() {
             return new Promise((resolve, reject) => {
@@ -661,35 +715,6 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    
-                    processScheduleData(jsonData);
-                    updateDisplay();
-                    forceTableUpdate();
-                    
-                    showMessage(`Schedule processed! Found ${workingEmployees.length} working employees.`, 'success');
-                } catch (error) {
-                    showMessage('Error reading schedule file: ' + error.message, 'error');
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function handleTimeOffFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            if (!xlsxLoaded) {
-                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
-                return;
-            }
-
-            showMessage('Processing time off file...', 'success');
-            
-            const reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
@@ -709,60 +734,6 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // Helper function to clean manager names
-        function cleanManagerName(managerName) {
-            if (!managerName) return '';
-            
-            // Remove "Sales" and parentheses, keeping just the name
-            // Handles formats like: "Sales (Chris Home)" -> "Chris Home"
-            let cleaned = managerName.trim();
-            
-            // Remove "Sales" at the beginning (case insensitive)
-            cleaned = cleaned.replace(/^sales\s*/i, '');
-            
-            // Remove parentheses and their contents become the main name
-            if (cleaned.includes('(') && cleaned.includes(')')) {
-                const match = cleaned.match(/\(([^)]+)\)/);
-                if (match) {
-                    cleaned = match[1].trim(); // Get content inside parentheses
-                }
-            }
-            
-            return cleaned;
-        }
-
-        // Helper function to clean schedule information
-        function cleanSchedule(schedule) {
-            if (!schedule) return '';
-            
-            // Extract just the time portions from formats like:
-            // "Skyler Giordano:05/22/2025, 9:00 AM – 05/22/2025, 6:00 PM"
-            // Should return: "9:00 AM – 6:00 PM"
-            
-            let cleaned = schedule.trim();
-            
-            // Remove employee name and colon (everything before the first date)
-            cleaned = cleaned.replace(/^[^:]*:\s*/, '');
-            
-            // Extract time patterns (like "9:00 AM" and "6:00 PM")
-            const timePattern = /(\d{1,2}:\d{2}\s*(?:AM|PM))/gi;
-            const times = cleaned.match(timePattern);
-            
-            if (times && times.length >= 2) {
-                // Join the times with a dash
-                return `${times[0]} – ${times[times.length - 1]}`;
-            }
-            
-            // Fallback: if we can't parse it properly, try a simpler approach
-            // Look for time patterns and dates, remove dates
-            cleaned = cleaned.replace(/\d{2}\/\d{2}\/\d{4},?\s*/g, '');
-            
-            // Clean up extra spaces and dashes
-            cleaned = cleaned.replace(/\s+/g, ' ').trim();
-            
-            return cleaned || schedule; // Return original if cleaning fails
-        }
-
         // Data processing functions
         function processScheduleData(data) {
             workingEmployees = [];
@@ -774,7 +745,7 @@
                 const employee = {
                     name: String(row[0]).trim(),
                     manager: cleanManagerName(String(row[1] || '')),
-                    schedule: String(row[2] || '').trim(),
+                    schedule: cleanSchedule(String(row[2] || '')),
                     type: 'scheduled'
                 };
                 
@@ -1009,6 +980,53 @@
             }
         }
 
+        // Find manager with least employees function
+        function findManagerWithLeastEmployees() {
+            // Count total employees per manager (working + off employees assigned to them)
+            const managerCounts = {};
+            
+            // First, count working employees
+            workingEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                managerCounts[manager] = (managerCounts[manager] || 0) + 1;
+            });
+            
+            // Then, add off employees that have been reassigned to managers
+            offEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                managerCounts[manager] = (managerCounts[manager] || 0) + 1;
+            });
+            
+            // If no managers have any employees, return first manager from allManagers
+            if (Object.keys(managerCounts).length === 0) {
+                const managersArray = Array.from(allManagers);
+                return managersArray.length > 0 ? managersArray[0] : 'No Manager';
+            }
+            
+            // Ensure all managers from allManagers are represented (even with 0 count)
+            Array.from(allManagers).forEach(manager => {
+                if (!(manager in managerCounts)) {
+                    managerCounts[manager] = 0;
+                }
+            });
+            
+            // Find manager with minimum total count
+            let minCount = Infinity;
+            let managerWithLeast = 'No Manager';
+            
+            Object.entries(managerCounts).forEach(([manager, count]) => {
+                if (count < minCount) {
+                    minCount = count;
+                    managerWithLeast = manager;
+                }
+            });
+            
+            console.log('Total manager counts (working + off):', managerCounts);
+            console.log('Manager with least total employees:', managerWithLeast, 'with', minCount, 'total employees');
+            
+            return managerWithLeast;
+        }
+
         // Employee action functions
         function markEmployeeWithStatus(status) {
             const nameInput = document.getElementById('manualEmployeeName');
@@ -1060,53 +1078,6 @@
             
             showMessage(message, 'success');
             switchTab('off');
-        }
-
-        // Find manager with least employees function
-        function findManagerWithLeastEmployees() {
-            // Count total employees per manager (working + off employees assigned to them)
-            const managerCounts = {};
-            
-            // First, count working employees
-            workingEmployees.forEach(emp => {
-                const manager = emp.manager || 'No Manager';
-                managerCounts[manager] = (managerCounts[manager] || 0) + 1;
-            });
-            
-            // Then, add off employees that have been reassigned to managers
-            offEmployees.forEach(emp => {
-                const manager = emp.manager || 'No Manager';
-                managerCounts[manager] = (managerCounts[manager] || 0) + 1;
-            });
-            
-            // If no managers have any employees, return first manager from allManagers
-            if (Object.keys(managerCounts).length === 0) {
-                const managersArray = Array.from(allManagers);
-                return managersArray.length > 0 ? managersArray[0] : 'No Manager';
-            }
-            
-            // Ensure all managers from allManagers are represented (even with 0 count)
-            Array.from(allManagers).forEach(manager => {
-                if (!(manager in managerCounts)) {
-                    managerCounts[manager] = 0;
-                }
-            });
-            
-            // Find manager with minimum total count
-            let minCount = Infinity;
-            let managerWithLeast = 'No Manager';
-            
-            Object.entries(managerCounts).forEach(([manager, count]) => {
-                if (count < minCount) {
-                    minCount = count;
-                    managerWithLeast = manager;
-                }
-            });
-            
-            console.log('Total manager counts (working + off):', managerCounts);
-            console.log('Manager with least total employees:', managerWithLeast, 'with', minCount, 'total employees');
-            
-            return managerWithLeast;
         }
 
         function returnToWork() {
@@ -1196,10 +1167,8 @@
                 return `${hour12}:${minutes} ${ampm}`;
             }
             
-            const today = new Date();
-            const dateStr = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`;
-            
-            const newSchedule = `${employee.name}:${dateStr}, ${formatTime(startTime)} – ${dateStr}, ${formatTime(endTime)}`;
+            // Create clean schedule format (just the times)
+            const newSchedule = `${formatTime(startTime)} – ${formatTime(endTime)}`;
             
             workingEmployees[employeeIndex].schedule = newSchedule;
             workingEmployees[employeeIndex].type = 'updated';
@@ -1211,7 +1180,7 @@
             
             forceTableUpdate();
             
-            showMessage(`${employee.name}'s shift updated to ${formatTime(startTime)} - ${formatTime(endTime)}`, 'success');
+            showMessage(`${employee.name}'s shift updated to ${newSchedule}`, 'success');
             switchTab('working');
         }
 
@@ -1333,4 +1302,35 @@
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
-</html>
+</html>Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    processScheduleData(jsonData);
+                    updateDisplay();
+                    forceTableUpdate();
+                    
+                    showMessage(`Schedule processed! Found ${workingEmployees.length} working employees.`, 'success');
+                } catch (error) {
+                    showMessage('Error reading schedule file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function handleTimeOffFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!xlsxLoaded) {
+                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
+                return;
+            }
+
+            showMessage('Processing time off file...', 'success');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8
