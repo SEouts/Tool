@@ -243,6 +243,35 @@ function showMessage(text, type) {
     setTimeout(function() { messageArea.innerHTML = ''; }, 5000);
 }
 
+function switchTab(tabName) {
+    if (tabName === 'manual' && !quickActionsUnlocked) {
+        var password = prompt('Enter password to access Quick Actions:');
+        if (password !== '789') {
+            showMessage('Incorrect password. Access denied to Quick Actions.', 'error');
+            return;
+        }
+        quickActionsUnlocked = true;
+        showMessage('Quick Actions unlocked!', 'success');
+        document.getElementById('quickActionsTab').innerHTML = '⚡ Quick Actions';
+    }
+    
+    var tabs = document.querySelectorAll('.tab');
+    for (var i = 0; i < tabs.length; i++) {
+        tabs[i].classList.remove('active');
+    }
+    
+    var activeTab = document.querySelector("[onclick*=\"switchTab('" + tabName + "')\"]");
+    if (activeTab) activeTab.classList.add('active');
+    
+    var contents = document.querySelectorAll('.tab-content');
+    for (var i = 0; i < contents.length; i++) {
+        contents[i].classList.remove('active');
+    }
+    
+    var targetTab = document.getElementById(tabName + 'Tab');
+    if (targetTab) targetTab.classList.add('active');
+}
+
 function processExcelFile(file, callback) {
     var reader = new FileReader();
     reader.onload = function(e) {
@@ -353,9 +382,9 @@ function processTimeOffFile(data) {
         var manager = managerIndex !== -1 && row[managerIndex] ? row[managerIndex].toString().trim() : 'Unknown';
         
         // Find and remove from working employees
-        var workingIndex = workingEmployees.findIndex(emp => 
-            emp.name.toLowerCase() === employeeName.toLowerCase()
-        );
+        var workingIndex = workingEmployees.findIndex(function(emp) {
+            return emp.name.toLowerCase() === employeeName.toLowerCase();
+        });
         
         if (workingIndex !== -1) {
             var employee = workingEmployees.splice(workingIndex, 1)[0];
@@ -467,4 +496,305 @@ function updateCounts() {
     if (offCountElement) offCountElement.textContent = offEmployees.length;
 }
 
-function update
+function updateManagerSummary() {
+    var workingByManager = {};
+    var offByManager = {};
+    
+    workingEmployees.forEach(function(emp) {
+        workingByManager[emp.manager] = (workingByManager[emp.manager] || 0) + 1;
+    });
+    
+    offEmployees.forEach(function(emp) {
+        offByManager[emp.manager] = (offByManager[emp.manager] || 0) + 1;
+    });
+    
+    // Update working summary
+    var workingSummaryElement = document.getElementById('workingSummary');
+    if (workingSummaryElement) {
+        var html = '';
+        Object.keys(workingByManager).forEach(function(manager) {
+            html += '<div class="summary-card"><h3>' + workingByManager[manager] + '</h3><p>' + manager + '</p></div>';
+        });
+        workingSummaryElement.innerHTML = html || '<div class="no-data">No working employees</div>';
+    }
+    
+    // Update off summary
+    var offSummaryElement = document.getElementById('offSummary');
+    if (offSummaryElement) {
+        var html = '';
+        Object.keys(offByManager).forEach(function(manager) {
+            html += '<div class="summary-card"><h3>' + offByManager[manager] + '</h3><p>' + manager + '</p></div>';
+        });
+        offSummaryElement.innerHTML = html || '<div class="no-data">No employees off today</div>';
+    }
+}
+
+function sortBySchedule() {
+    if (scheduleSortOrder === 'none' || scheduleSortOrder === 'desc') {
+        scheduleSortOrder = 'asc';
+    } else {
+        scheduleSortOrder = 'desc';
+    }
+    
+    var indicator = document.getElementById('sortIndicator');
+    if (indicator) {
+        indicator.textContent = scheduleSortOrder === 'asc' ? '▲' : '▼';
+    }
+    
+    workingEmployees.sort(function(a, b) {
+        if (scheduleSortOrder === 'asc') {
+            return a.schedule.localeCompare(b.schedule);
+        } else {
+            return b.schedule.localeCompare(a.schedule);
+        }
+    });
+    
+    updateWorkingTable();
+    showMessage('Table sorted by schedule', 'success');
+}
+
+function clearAllCheckboxes(tabType) {
+    var tableBody = document.getElementById(tabType + 'TableBody');
+    if (tableBody) {
+        var checkboxes = tableBody.querySelectorAll('input[type="checkbox"]');
+        for (var i = 0; i < checkboxes.length; i++) {
+            checkboxes[i].checked = false;
+        }
+        showMessage('All checkboxes cleared', 'success');
+    }
+}
+
+function clearManagerFilter(tabType) {
+    var container = document.getElementById(tabType + 'ManagerCheckboxes');
+    if (container) {
+        var checkboxes = container.querySelectorAll('input[type="checkbox"]');
+        for (var i = 0; i < checkboxes.length; i++) {
+            checkboxes[i].checked = false;
+        }
+        showMessage('Manager filter cleared', 'success');
+    }
+}
+
+function selectAllManagers(tabType) {
+    var container = document.getElementById(tabType + 'ManagerCheckboxes');
+    if (container) {
+        var checkboxes = container.querySelectorAll('input[type="checkbox"]');
+        for (var i = 0; i < checkboxes.length; i++) {
+            checkboxes[i].checked = true;
+        }
+        showMessage('All managers selected', 'success');
+    }
+}
+
+function toggleSummarySection() {
+    var section = document.getElementById('managerSummarySection');
+    var button = document.getElementById('summaryToggleButton');
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+        button.innerHTML = '📊 Hide Manager Summary';
+        updateManagerSummary();
+    } else {
+        section.style.display = 'none';
+        button.innerHTML = '📊 Show Manager Summary';
+    }
+}
+
+function markEmployeeWithStatus(status) {
+    var nameInput = document.getElementById('manualEmployeeName');
+    var employeeName = nameInput.value.trim();
+    
+    if (!employeeName) {
+        showMessage('Please enter an employee name', 'error');
+        return;
+    }
+    
+    if (workingEmployees.length === 0) {
+        showMessage('Please upload schedule file first', 'error');
+        return;
+    }
+    
+    // Find employee in working list
+    var workingIndex = workingEmployees.findIndex(function(emp) {
+        return emp.name.toLowerCase() === employeeName.toLowerCase();
+    });
+    
+    if (workingIndex !== -1) {
+        var employee = workingEmployees.splice(workingIndex, 1)[0];
+        employee.status = status;
+        employee.timeAdded = new Date().toLocaleTimeString();
+        offEmployees.push(employee);
+        
+        updateWorkingTable();
+        updateOffTable();
+        updateCounts();
+        updateManagerSummary();
+        
+        showMessage(employeeName + ' marked as ' + status, 'success');
+        nameInput.value = '';
+    } else {
+        showMessage('Employee "' + employeeName + '" not found in working list', 'error');
+    }
+}
+
+function returnToWork() {
+    var nameInput = document.getElementById('manualEmployeeName');
+    var employeeName = nameInput.value.trim();
+    
+    if (!employeeName) {
+        showMessage('Please enter an employee name', 'error');
+        return;
+    }
+    
+    // Find employee in off list
+    var offIndex = offEmployees.findIndex(function(emp) {
+        return emp.name.toLowerCase() === employeeName.toLowerCase();
+    });
+    
+    if (offIndex !== -1) {
+        var employee = offEmployees.splice(offIndex, 1)[0];
+        employee.status = 'Scheduled';
+        delete employee.timeAdded;
+        workingEmployees.push(employee);
+        
+        updateWorkingTable();
+        updateOffTable();
+        updateCounts();
+        updateManagerSummary();
+        
+        showMessage(employeeName + ' returned to work', 'success');
+        nameInput.value = '';
+    } else {
+        showMessage('Employee "' + employeeName + '" not found in off list', 'error');
+    }
+}
+
+function toggleShiftChange() {
+    var section = document.getElementById('shiftChangeSection');
+    section.style.display = section.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateShift() {
+    var nameInput = document.getElementById('manualEmployeeName');
+    var startTimeInput = document.getElementById('shiftStartTime');
+    var endTimeInput = document.getElementById('shiftEndTime');
+    
+    var employeeName = nameInput.value.trim();
+    var startTime = startTimeInput.value;
+    var endTime = endTimeInput.value;
+    
+    if (!employeeName) {
+        showMessage('Please enter an employee name', 'error');
+        return;
+    }
+    
+    if (!startTime && !endTime) {
+        showMessage('Please enter at least one time', 'error');
+        return;
+    }
+    
+    // Find employee in working list
+    var workingIndex = workingEmployees.findIndex(function(emp) {
+        return emp.name.toLowerCase() === employeeName.toLowerCase();
+    });
+    
+    if (workingIndex !== -1) {
+        var employee = workingEmployees[workingIndex];
+        
+        if (startTime) employee.startTime = startTime;
+        if (endTime) employee.endTime = endTime;
+        
+        if (employee.startTime && employee.endTime) {
+            employee.schedule = employee.startTime + ' - ' + employee.endTime;
+        } else if (employee.startTime) {
+            employee.schedule = 'Starts: ' + employee.startTime;
+        } else if (employee.endTime) {
+            employee.schedule = 'Ends: ' + employee.endTime;
+        }
+        
+        updateWorkingTable();
+        showMessage('Schedule updated for ' + employeeName, 'success');
+        
+        nameInput.value = '';
+        startTimeInput.value = '';
+        endTimeInput.value = '';
+        toggleShiftChange();
+    } else {
+        showMessage('Employee "' + employeeName + '" not found in working list', 'error');
+    }
+}
+
+function exportData() {
+    if (workingEmployees.length === 0 && offEmployees.length === 0) {
+        showMessage('No data to export. Please upload files first.', 'error');
+        return;
+    }
+    
+    var workbook = XLSX.utils.book_new();
+    
+    // Create working employees sheet
+    var workingData = [['Employee', 'Manager', 'Schedule', 'Status']];
+    workingEmployees.forEach(function(emp) {
+        workingData.push([emp.name, emp.manager, emp.schedule, emp.status]);
+    });
+    var workingSheet = XLSX.utils.aoa_to_sheet(workingData);
+    XLSX.utils.book_append_sheet(workbook, workingSheet, 'Working Today');
+    
+    // Create off employees sheet
+    var offData = [['Employee', 'Manager', 'Status', 'Time Added']];
+    offEmployees.forEach(function(emp) {
+        offData.push([emp.name, emp.manager, emp.status, emp.timeAdded || 'Unknown']);
+    });
+    var offSheet = XLSX.utils.aoa_to_sheet(offData);
+    XLSX.utils.book_append_sheet(workbook, offSheet, 'Off Today');
+    
+    // Export file
+    var today = new Date().toISOString().split('T')[0];
+    var filename = 'Employee_Availability_Report_' + today + '.xlsx';
+    XLSX.writeFile(workbook, filename);
+    
+    showMessage('Report exported successfully!', 'success');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    showMessage('Application ready! Upload Excel files to get started.', 'success');
+    
+    var scheduleFile = document.getElementById('scheduleFile');
+    var timeOffFile = document.getElementById('timeOffFile');
+    
+    if (scheduleFile) {
+        scheduleFile.addEventListener('change', function(event) {
+            var file = event.target.files[0];
+            if (file) {
+                showMessage('Processing schedule file...', 'success');
+                processExcelFile(file, function(error, data) {
+                    if (error) {
+                        showMessage('Error reading schedule file: ' + error.message, 'error');
+                    } else {
+                        scheduleData = data;
+                        processScheduleFile(data);
+                    }
+                });
+            }
+        });
+    }
+    
+    if (timeOffFile) {
+        timeOffFile.addEventListener('change', function(event) {
+            var file = event.target.files[0];
+            if (file) {
+                showMessage('Processing time off file...', 'success');
+                processExcelFile(file, function(error, data) {
+                    if (error) {
+                        showMessage('Error reading time off file: ' + error.message, 'error');
+                    } else {
+                        timeOffData = data;
+                        processTimeOffFile(data);
+                    }
+                });
+            }
+        });
+    }
+});
+</script>
+</body>
+</html>
