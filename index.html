@@ -5,322 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Availability Management</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-
-        .controls {
-            padding: 30px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .upload-box {
-            border: 2px dashed #4facfe;
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            background: white;
-            transition: all 0.3s ease;
-        }
-
-        .upload-box:hover {
-            border-color: #00f2fe;
-            background: #f0f9ff;
-        }
-
-        .upload-box input[type="file"] {
-            margin: 10px 0;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            width: 100%;
-        }
-
-        .btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 25px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%);
-            color: white;
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%);
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .tabs {
-            display: flex;
-            background: #e9ecef;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 20px;
-            text-align: center;
-            background: #e9ecef;
-            border: none;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .tab.active {
-            background: white;
-            color: #4facfe;
-        }
-
-        .tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        }
-
-        .tab-content {
-            display: none;
-            padding: 30px;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .summary {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .summary-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        .summary-card h3 {
-            font-size: 2em;
-            margin-bottom: 5px;
-        }
-
-        .table-container {
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-        }
-
-        td {
-            padding: 15px;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        tr:hover {
-            background: #f8f9fa;
-        }
-
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .status-scheduled {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .status-manual {
-            background: #fff3e0;
-            color: #f57c00;
-        }
-
-        .status-partial {
-            background: #fce4ec;
-            color: #c2185b;
-        }
-
-        .manager-filter {
-            margin: 20px 0;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border: 2px solid #e9ecef;
-        }
-
-        .manager-filter h4 {
-            margin-bottom: 15px;
-            color: #4facfe;
-            font-size: 16px;
-        }
-
-        .manager-checkboxes {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-
-        .manager-checkbox {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
-            background: white;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .manager-checkbox:hover {
-            background: #f0f9ff;
-            border-color: #4facfe;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(79, 172, 254, 0.2);
-        }
-
-        .manager-checkbox input[type="checkbox"] {
-            margin-right: 12px;
-            transform: scale(1.3);
-            cursor: pointer;
-            accent-color: #4facfe;
-        }
-
-        .manager-checkbox.selected {
-            background: linear-gradient(135deg, #e3f2fd 0%, #f0f9ff 100%);
-            border-color: #4facfe;
-            color: #1976d2;
-            font-weight: 600;
-        }
-
-        .no-data {
-            text-align: center;
-            padding: 40px;
-            color: #6c757d;
-            font-size: 18px;
-        }
-
-        .timestamp {
-            font-size: 12px;
-            color: #6c757d;
-            font-style: italic;
-        }
-
-        .error-msg {
-            background: #ffe6e6;
-            border: 1px solid #ff9999;
-            color: #cc0000;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-
-        .success-msg {
-            background: #e6ffe6;
-            border: 1px solid #99ff99;
-            color: #006600;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-
-        .sortable-header {
-            cursor: pointer;
-            position: relative;
-            user-select: none;
-        }
-
-        .sortable-header:hover {
-            background: linear-gradient(135deg, #3a8bfe 0%, #00d4fe 100%);
-        }
-
-        .sort-indicator {
-            position: absolute;
-            right: 5px;
-            font-size: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .header p { font-size: 1.1em; opacity: 0.9; }
+        .controls { padding: 30px; background: #f8f9fa; border-bottom: 1px solid #e9ecef; }
+        .upload-box { border: 2px dashed #4facfe; border-radius: 10px; padding: 20px; text-align: center; background: white; transition: all 0.3s ease; }
+        .upload-box:hover { border-color: #00f2fe; background: #f0f9ff; }
+        .upload-box input[type="file"] { margin: 10px 0; padding: 8px; border: 1px solid #ddd; border-radius: 5px; width: 100%; }
+        .btn { padding: 12px 25px; border: none; border-radius: 25px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn-primary { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+        .btn-danger { background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%); color: white; }
+        .btn-success { background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%); color: white; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .tabs { display: flex; background: #e9ecef; }
+        .tab { flex: 1; padding: 20px; text-align: center; background: #e9ecef; border: none; font-size: 18px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; position: relative; }
+        .tab.active { background: white; color: #4facfe; }
+        .tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .tab-content { display: none; padding: 30px; }
+        .tab-content.active { display: block; }
+        .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .summary-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; }
+        .summary-card h3 { font-size: 2em; margin-bottom: 5px; }
+        .table-container { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 15px; text-align: left; font-weight: 600; }
+        td { padding: 15px; border-bottom: 1px solid #e9ecef; }
+        tr:hover { background: #f8f9fa; }
+        .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        .status-scheduled { background: #e3f2fd; color: #1976d2; }
+        .status-manual { background: #fff3e0; color: #f57c00; }
+        .status-partial { background: #fce4ec; color: #c2185b; }
+        .manager-filter { margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 10px; border: 2px solid #e9ecef; }
+        .manager-filter h4 { margin-bottom: 15px; color: #4facfe; font-size: 16px; }
+        .manager-checkboxes { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin-bottom: 15px; }
+        .manager-checkbox { display: flex; align-items: center; padding: 12px 15px; background: white; border: 2px solid #e9ecef; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; font-weight: 500; }
+        .manager-checkbox:hover { background: #f0f9ff; border-color: #4facfe; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(79, 172, 254, 0.2); }
+        .manager-checkbox input[type="checkbox"] { margin-right: 12px; transform: scale(1.3); cursor: pointer; accent-color: #4facfe; }
+        .manager-checkbox.selected { background: linear-gradient(135deg, #e3f2fd 0%, #f0f9ff 100%); border-color: #4facfe; color: #1976d2; font-weight: 600; }
+        .no-data { text-align: center; padding: 40px; color: #6c757d; font-size: 18px; }
+        .timestamp { font-size: 12px; color: #6c757d; font-style: italic; }
+        .error-msg { background: #ffe6e6; border: 1px solid #ff9999; color: #cc0000; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .success-msg { background: #e6ffe6; border: 1px solid #99ff99; color: #006600; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .sortable-header { cursor: pointer; position: relative; user-select: none; }
+        .sortable-header:hover { background: linear-gradient(135deg, #3a8bfe 0%, #00d4fe 100%); }
+        .sort-indicator { position: absolute; right: 5px; font-size: 12px; top: 50%; transform: translateY(-50%); }
     </style>
 </head>
 <body>
@@ -335,15 +66,9 @@
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('working')">
-                👥 Working Today (<span id="workingCount">0</span>)
-            </button>
-            <button class="tab" onclick="switchTab('off')">
-                🏖️ Off Today (<span id="offCount">0</span>)
-            </button>
-            <button class="tab" onclick="switchTab('manual')" id="quickActionsTab">
-                🔒 Quick Actions
-            </button>
+            <button class="tab active" onclick="switchTab('working')">👥 Working Today (<span id="workingCount">0</span>)</button>
+            <button class="tab" onclick="switchTab('off')">🏖️ Off Today (<span id="offCount">0</span>)</button>
+            <button class="tab" onclick="switchTab('manual')" id="quickActionsTab">🔒 Quick Actions</button>
         </div>
 
         <div id="workingTab" class="tab-content active">
@@ -351,21 +76,13 @@
                 <h4>📋 Filter by Manager:</h4>
                 <div id="workingManagerCheckboxes" class="manager-checkboxes"></div>
                 <div style="text-align: center;">
-                    <button class="btn btn-primary" onclick="clearManagerFilter('working')" style="padding: 8px 16px;">
-                        Clear All
-                    </button>
-                    <button class="btn btn-success" onclick="selectAllManagers('working')" style="padding: 8px 16px; margin-left: 10px;">
-                        Select All
-                    </button>
+                    <button class="btn btn-primary" onclick="clearManagerFilter('working')" style="padding: 8px 16px;">Clear All</button>
+                    <button class="btn btn-success" onclick="selectAllManagers('working')" style="padding: 8px 16px; margin-left: 10px;">Select All</button>
                 </div>
             </div>
             <div class="table-container">
                 <div style="padding: 10px 15px; background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
-                    <button onclick="clearAllCheckboxes('working')" 
-                            style="background: #333; color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 11px; cursor: pointer; font-weight: 600;"
-                            title="Clear all checkboxes">
-                        Clear
-                    </button>
+                    <button onclick="clearAllCheckboxes('working')" style="background: #333; color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 11px; cursor: pointer; font-weight: 600;" title="Clear all checkboxes">Clear</button>
                 </div>
                 <table>
                     <thead>
@@ -373,10 +90,7 @@
                             <th style="width: 50px;">✓</th>
                             <th>Employee</th>
                             <th>Manager</th>
-                            <th onclick="sortBySchedule()" class="sortable-header">
-                                Schedule 
-                                <span id="sortIndicator" class="sort-indicator">⏹</span>
-                            </th>
+                            <th onclick="sortBySchedule()" class="sortable-header">Schedule <span id="sortIndicator" class="sort-indicator">⏹</span></th>
                         </tr>
                     </thead>
                     <tbody id="workingTableBody">
@@ -391,21 +105,13 @@
                 <h4>📋 Filter by Manager:</h4>
                 <div id="offManagerCheckboxes" class="manager-checkboxes"></div>
                 <div style="text-align: center;">
-                    <button class="btn btn-primary" onclick="clearManagerFilter('off')" style="padding: 8px 16px;">
-                        Clear All
-                    </button>
-                    <button class="btn btn-success" onclick="selectAllManagers('off')" style="padding: 8px 16px; margin-left: 10px;">
-                        Select All
-                    </button>
+                    <button class="btn btn-primary" onclick="clearManagerFilter('off')" style="padding: 8px 16px;">Clear All</button>
+                    <button class="btn btn-success" onclick="selectAllManagers('off')" style="padding: 8px 16px; margin-left: 10px;">Select All</button>
                 </div>
             </div>
             <div class="table-container">
                 <div style="padding: 10px 15px; background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
-                    <button onclick="clearAllCheckboxes('off')" 
-                            style="background: #333; color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 11px; cursor: pointer; font-weight: 600;"
-                            title="Clear all checkboxes">
-                        Clear
-                    </button>
+                    <button onclick="clearAllCheckboxes('off')" style="background: #333; color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 11px; cursor: pointer; font-weight: 600;" title="Clear all checkboxes">Clear</button>
                 </div>
                 <table>
                     <thead>
@@ -427,10 +133,7 @@
         <div id="manualTab" class="tab-content">
             <div style="max-width: 800px; margin: 0 auto;">
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <button class="btn btn-success" onclick="toggleSummarySection()" id="summaryToggleButton" 
-                            style="padding: 12px 25px; font-size: 16px; border-radius: 25px;">
-                        📊 Show Manager Summary
-                    </button>
+                    <button class="btn btn-success" onclick="toggleSummarySection()" id="summaryToggleButton" style="padding: 12px 25px; font-size: 16px; border-radius: 25px;">📊 Show Manager Summary</button>
                 </div>
 
                 <div id="managerSummarySection" style="display: none; transition: all 0.3s ease; margin-bottom: 30px;">
@@ -438,12 +141,10 @@
                         <h2 style="margin-bottom: 8px;">📊 Manager Summary</h2>
                         <p>Employee count by manager</p>
                     </div>
-                    
                     <div style="margin-bottom: 20px;">
                         <h4 style="color: #4facfe; margin-bottom: 15px;">👥 Working Today:</h4>
                         <div class="summary" id="workingSummary"></div>
                     </div>
-                    
                     <div style="margin-bottom: 30px;">
                         <h4 style="color: #ff6b6b; margin-bottom: 15px;">🏖️ Off Today:</h4>
                         <div class="summary" id="offSummary"></div>
@@ -455,7 +156,6 @@
                         <h2 style="margin-bottom: 8px;">📁 Upload Daily Files</h2>
                         <p>Start by uploading your schedule and time off files</p>
                     </div>
-                    
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
                         <div class="upload-box">
                             <h3>📅 Upload Schedule File</h3>
@@ -478,32 +178,17 @@
                 <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
                     <div style="margin-bottom: 30px;">
                         <label style="display: block; font-weight: 600; margin-bottom: 10px; font-size: 16px;">Employee Name:</label>
-                        <input type="text" id="manualEmployeeName" placeholder="Enter employee name..." 
-                               style="width: 100%; padding: 15px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 16px; transition: all 0.3s ease;"
-                               onfocus="this.style.borderColor='#4facfe'; this.style.boxShadow='0 0 0 3px rgba(79, 172, 254, 0.1)'"
-                               onblur="this.style.borderColor='#e9ecef'; this.style.boxShadow='none'" />
+                        <input type="text" id="manualEmployeeName" placeholder="Enter employee name..." style="width: 100%; padding: 15px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 16px; transition: all 0.3s ease;" onfocus="this.style.borderColor='#4facfe'; this.style.boxShadow='0 0 0 3px rgba(79, 172, 254, 0.1)'" onblur="this.style.borderColor='#e9ecef'; this.style.boxShadow='none'" />
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                        <button class="btn btn-danger" onclick="markEmployeeWithStatus('Off Today')" 
-                                style="padding: 20px; font-size: 16px; border-radius: 15px;">
-                            🏖️ Off Today
-                        </button>
-                        <button class="btn" onclick="markEmployeeWithStatus('Left Early')" 
-                                style="padding: 20px; font-size: 16px; border-radius: 15px; background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%); color: white;">
-                            ⏰ Left Early
-                        </button>
+                        <button class="btn btn-danger" onclick="markEmployeeWithStatus('Off Today')" style="padding: 20px; font-size: 16px; border-radius: 15px;">🏖️ Off Today</button>
+                        <button class="btn" onclick="markEmployeeWithStatus('Left Early')" style="padding: 20px; font-size: 16px; border-radius: 15px; background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%); color: white;">⏰ Left Early</button>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                        <button class="btn btn-primary" onclick="returnToWork()" 
-                                style="padding: 20px; font-size: 16px; border-radius: 15px;">
-                            ✅ Returned To Work
-                        </button>
-                        <button class="btn" onclick="toggleShiftChange()" 
-                                style="padding: 20px; font-size: 16px; border-radius: 15px; background: linear-gradient(135deg, #9c88ff 0%, #8c7ae6 100%); color: white;">
-                            🕐 Change Shift
-                        </button>
+                        <button class="btn btn-primary" onclick="returnToWork()" style="padding: 20px; font-size: 16px; border-radius: 15px;">✅ Returned To Work</button>
+                        <button class="btn" onclick="toggleShiftChange()" style="padding: 20px; font-size: 16px; border-radius: 15px; background: linear-gradient(135deg, #9c88ff 0%, #8c7ae6 100%); color: white;">🕐 Change Shift</button>
                     </div>
 
                     <div id="shiftChangeSection" style="display: none; margin-bottom: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px; border: 2px solid #9c88ff;">
@@ -519,21 +204,13 @@
                             </div>
                         </div>
                         <div style="text-align: center;">
-                            <button class="btn" onclick="updateShift()" 
-                                    style="padding: 12px 25px; border-radius: 10px; background: linear-gradient(135deg, #9c88ff 0%, #8c7ae6 100%); color: white;">
-                                Update Schedule
-                            </button>
-                            <button class="btn" onclick="toggleShiftChange()" 
-                                    style="padding: 12px 25px; border-radius: 10px; background: #6c757d; color: white; margin-left: 10px;">
-                                Cancel
-                            </button>
+                            <button class="btn" onclick="updateShift()" style="padding: 12px 25px; border-radius: 10px; background: linear-gradient(135deg, #9c88ff 0%, #8c7ae6 100%); color: white;">Update Schedule</button>
+                            <button class="btn" onclick="toggleShiftChange()" style="padding: 12px 25px; border-radius: 10px; background: #6c757d; color: white; margin-left: 10px;">Cancel</button>
                         </div>
                     </div>
 
                     <div style="text-align: center; margin-bottom: 20px;">
-                        <button class="btn btn-success" onclick="exportData()" style="font-size: 18px; padding: 15px 30px; border-radius: 15px;">
-                            📊 Export Daily Report
-                        </button>
+                        <button class="btn btn-success" onclick="exportData()" style="font-size: 18px; padding: 15px 30px; border-radius: 15px;">📊 Export Daily Report</button>
                     </div>
 
                     <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #4facfe;">
@@ -550,740 +227,127 @@
         </div>
     </div>
 
-<script type="text/javascript">
-var workingEmployees = [];
-var offEmployees = [];
-var allManagers = new Set();
-var manuallyAdded = new Map();
-var xlsxLoaded = false;
-var quickActionsUnlocked = false;
-var scheduleSortOrder = 'none';
-var QUICK_ACTIONS_PASSWORD = "789";
-
-function switchTab(tabName) {
-    if (tabName === 'manual' && !quickActionsUnlocked) {
-        var password = prompt('Enter password to access Quick Actions:');
-        if (password !== QUICK_ACTIONS_PASSWORD) {
-            showMessage('Incorrect password. Access denied to Quick Actions.', 'error');
+<script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+<script defer>
+window.addEventListener('load', function() {
+    window.workingEmployees = [];
+    window.offEmployees = [];
+    window.allManagers = new Set();
+    window.scheduleSortOrder = 'none';
+    
+    window.switchTab = function(tabName) {
+        if (tabName === 'manual' && !window.quickActionsUnlocked) {
+            var password = prompt('Enter password to access Quick Actions:');
+            if (password !== '789') {
+                showMessage('Incorrect password. Access denied to Quick Actions.', 'error');
+                return;
+            }
+            window.quickActionsUnlocked = true;
+            showMessage('Quick Actions unlocked!', 'success');
+            document.getElementById('quickActionsTab').innerHTML = '⚡ Quick Actions';
+        }
+        
+        document.querySelectorAll('.tab').forEach(function(tab) { tab.classList.remove('active'); });
+        var activeTab = document.querySelector("[onclick=\"switchTab('" + tabName + "')\"]");
+        if (activeTab) activeTab.classList.add('active');
+        
+        document.querySelectorAll('.tab-content').forEach(function(content) { content.classList.remove('active'); });
+        var targetTab = document.getElementById(tabName + 'Tab');
+        if (targetTab) targetTab.classList.add('active');
+    };
+    
+    window.showMessage = function(text, type) {
+        var messageArea = document.getElementById('messageArea');
+        messageArea.innerHTML = '<div class="' + (type === 'success' ? 'success-msg' : 'error-msg') + '">' + text + '</div>';
+        setTimeout(function() { messageArea.innerHTML = ''; }, 5000);
+    };
+    
+    window.sortBySchedule = function() {
+        if (window.scheduleSortOrder === 'none' || window.scheduleSortOrder === 'desc') {
+            window.scheduleSortOrder = 'asc';
+        } else {
+            window.scheduleSortOrder = 'desc';
+        }
+        
+        var indicator = document.getElementById('sortIndicator');
+        if (indicator) {
+            indicator.textContent = window.scheduleSortOrder === 'asc' ? '▲' : '▼';
+        }
+        
+        var sorted = window.workingEmployees.slice().sort(function(a, b) {
+            var timeA = extractStartTime(a.schedule || '');
+            var timeB = extractStartTime(b.schedule || '');
+            return window.scheduleSortOrder === 'asc' ? timeA - timeB : timeB - timeA;
+        });
+        
+        updateTableDirect('working', sorted);
+        showMessage('Schedule sorted ' + window.scheduleSortOrder, 'success');
+    };
+    
+    function extractStartTime(schedule) {
+        if (!schedule) return 0;
+        var match = schedule.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+        if (!match) return 0;
+        var hours = parseInt(match[1]);
+        var minutes = parseInt(match[2]);
+        var ampm = match[3].toUpperCase();
+        if (ampm === 'PM' && hours !== 12) hours += 12;
+        else if (ampm === 'AM' && hours === 12) hours = 0;
+        return hours * 60 + minutes;
+    }
+    
+    function updateTableDirect(tabType, employees) {
+        var tableBody = document.getElementById(tabType + 'TableBody');
+        if (!tableBody || !employees || employees.length === 0) {
+            if (tableBody) tableBody.innerHTML = '<tr><td colspan="' + (tabType === 'working' ? 4 : 5) + '" class="no-data">No employees found</td></tr>';
             return;
         }
-        quickActionsUnlocked = true;
-        showMessage('Quick Actions unlocked!', 'success');
-        document.getElementById('quickActionsTab').innerHTML = '⚡ Quick Actions';
-    }
-    
-    var tabs = document.querySelectorAll('.tab');
-    for (var i = 0; i < tabs.length; i++) {
-        tabs[i].classList.remove('active');
-    }
-    
-    var activeTab = document.querySelector("[onclick=\"switchTab('" + tabName + "')\"]");
-    if (activeTab) {
-        activeTab.classList.add('active');
-    }
-    
-    var contents = document.querySelectorAll('.tab-content');
-    for (var i = 0; i < contents.length; i++) {
-        contents[i].classList.remove('active');
-    }
-    
-    var targetTab = document.getElementById(tabName + 'Tab');
-    if (targetTab) {
-        targetTab.classList.add('active');
-    }
-}
-
-function showMessage(text, type) {
-    var messageArea = document.getElementById('messageArea');
-    var className = type === 'success' ? 'success-msg' : 'error-msg';
-    messageArea.innerHTML = '<div class="' + className + '">' + text + '</div>';
-    setTimeout(function() {
-        messageArea.innerHTML = '';
-    }, 5000);
-}
-
-function sortBySchedule() {
-    var workingContainer = document.getElementById('workingManagerCheckboxes');
-    var checkboxes = workingContainer.querySelectorAll('input[type="checkbox"]:checked');
-    var selectedManagers = [];
-    for (var i = 0; i < checkboxes.length; i++) {
-        selectedManagers.push(checkboxes[i].value);
-    }
-    
-    var employeesToSort = workingEmployees;
-    if (selectedManagers.length > 0) {
-        employeesToSort = workingEmployees.filter(function(emp) {
-            return selectedManagers.indexOf(emp.manager) !== -1;
-        });
-    }
-    
-    if (scheduleSortOrder === 'none' || scheduleSortOrder === 'desc') {
-        scheduleSortOrder = 'asc';
-    } else {
-        scheduleSortOrder = 'desc';
-    }
-    
-    var sortedEmployees = employeesToSort.slice().sort(function(a, b) {
-        var timeA = extractStartTime(a.schedule || '');
-        var timeB = extractStartTime(b.schedule || '');
         
-        if (scheduleSortOrder === 'asc') {
-            return timeA - timeB;
-        } else {
-            return timeB - timeA;
-        }
-    });
-    
-    var indicator = document.getElementById('sortIndicator');
-    if (indicator) {
-        if (scheduleSortOrder === 'asc') {
-            indicator.textContent = '▲';
-            indicator.title = 'Sorted ascending - click to sort descending';
-        } else {
-            indicator.textContent = '▼';
-            indicator.title = 'Sorted descending - click to sort ascending';
-        }
-    }
-    
-    updateTableDirect('working', sortedEmployees);
-    showMessage('Schedule sorted ' + (scheduleSortOrder === 'asc' ? 'ascending' : 'descending') + ' by start time', 'success');
-}
-
-function extractStartTime(schedule) {
-    if (!schedule) return 0;
-    
-    var timeMatch = schedule.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-    if (!timeMatch) return 0;
-    
-    var hours = parseInt(timeMatch[1]);
-    var minutes = parseInt(timeMatch[2]);
-    var ampm = timeMatch[3].toUpperCase();
-    
-    if (ampm === 'PM' && hours !== 12) {
-        hours += 12;
-    } else if (ampm === 'AM' && hours === 12) {
-        hours = 0;
-    }
-    
-    return hours * 60 + minutes;
-}
-
-function loadXLSX() {
-    return new Promise(function(resolve, reject) {
-        var script = document.createElement('script');
-        script.onload = function() {
-            if (typeof XLSX !== 'undefined') {
-                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
-        return;
-    }
-
-    showMessage('Processing time off file...', 'success');
-    
-    var reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            var data = new Uint8Array(e.target.result);
-            var workbook = XLSX.read(data, { type: 'array' });
-            var worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-            
-            processTimeOffData(jsonData);
-            updateDisplay();
-            forceTableUpdate();
-            
-            showMessage('Time off processed! Found ' + offEmployees.length + ' employees off today.', 'success');
-        } catch (error) {
-            showMessage('Error reading time off file: ' + error.message, 'error');
-        }
-    };
-    reader.readAsArrayBuffer(file);
-}
-
-function processScheduleData(data) {
-    workingEmployees = [];
-    
-    for (var i = 1; i < data.length; i++) {
-        var row = data[i];
-        if (!row || !row[0]) continue;
-        
-        var employee = {
-            name: String(row[0]).trim(),
-            manager: cleanManagerName(String(row[1] || '')),
-            schedule: cleanSchedule(String(row[2] || '')),
-            type: 'scheduled'
-        };
-        
-        if (employee.name) {
-            workingEmployees.push(employee);
-            if (employee.manager) {
-                allManagers.add(employee.manager);
-            }
-        }
-    }
-}
-
-function processTimeOffData(data) {
-    for (var i = 1; i < data.length; i++) {
-        var row = data[i];
-        if (!row || !row[2]) continue;
-        
-        var timeOffHours = String(row[0] || '');
-        var isPartialDay = timeOffHours.indexOf('4 Hours') !== -1;
-        
-        var employee = {
-            name: String(row[2]).trim(),
-            manager: cleanManagerName(String(row[1] || '')),
-            status: isPartialDay ? 'Partial Day (4 Hours)' : 'Full Day Off',
-            type: isPartialDay ? 'partial' : 'scheduled',
-            timeAdded: 'Scheduled'
-        };
-        
-        if (employee.name) {
-            offEmployees.push(employee);
-            if (employee.manager) {
-                allManagers.add(employee.manager);
-            }
-            workingEmployees = workingEmployees.filter(function(emp) {
-                return emp.name !== employee.name;
-            });
-        }
-    }
-}
-
-function updateDisplay() {
-    updateCounts();
-    updateSummaries();
-}
-
-function updateCounts() {
-    var workingCount = document.getElementById('workingCount');
-    var offCount = document.getElementById('offCount');
-    if (workingCount) workingCount.textContent = workingEmployees.length;
-    if (offCount) offCount.textContent = offEmployees.length;
-}
-
-function updateSummaries() {
-    var workingByManager = {};
-    for (var i = 0; i < workingEmployees.length; i++) {
-        var manager = workingEmployees[i].manager || 'No Manager';
-        workingByManager[manager] = (workingByManager[manager] || 0) + 1;
-    }
-    
-    var workingSummary = document.getElementById('workingSummary');
-    if (workingSummary) {
-        var workingSummaryHtml = '';
-        for (var manager in workingByManager) {
-            workingSummaryHtml += '<div class="summary-card"><h3>' + workingByManager[manager] + '</h3><p>' + manager + '</p></div>';
-        }
-        workingSummary.innerHTML = workingSummaryHtml;
-    }
-    
-    var offByManager = {};
-    for (var i = 0; i < offEmployees.length; i++) {
-        var manager = offEmployees[i].manager || 'No Manager';
-        offByManager[manager] = (offByManager[manager] || 0) + 1;
-    }
-    
-    var offSummary = document.getElementById('offSummary');
-    if (offSummary) {
-        var offSummaryHtml = '';
-        var allManagersList = Array.from(allManagers);
-        for (var i = 0; i < allManagersList.length; i++) {
-            var manager = allManagersList[i];
-            var count = offByManager[manager] || 0;
-            if (count > 0) {
-                offSummaryHtml += '<div class="summary-card"><h3>' + count + '</h3><p>' + manager + '</p></div>';
-            }
-        }
-        
-        for (var manager in offByManager) {
-            if (allManagersList.indexOf(manager) === -1 && offByManager[manager] > 0) {
-                offSummaryHtml += '<div class="summary-card"><h3>' + offByManager[manager] + '</h3><p>' + manager + '</p></div>';
-            }
-        }
-        
-        offSummary.innerHTML = offSummaryHtml;
-    }
-}
-
-function forceTableUpdate() {
-    updateTableDirect('working', workingEmployees);
-    updateTableDirect('off', offEmployees);
-    
-    var workingContainer = document.getElementById('workingManagerCheckboxes');
-    var offContainer = document.getElementById('offManagerCheckboxes');
-    
-    if (workingContainer && offContainer) {
-        updateManagerCheckboxes();
-    }
-    updateDisplay();
-}
-
-function updateManagerCheckboxes() {
-    var workingContainer = document.getElementById('workingManagerCheckboxes');
-    var offContainer = document.getElementById('offManagerCheckboxes');
-    
-    if (!workingContainer || !offContainer) return;
-    
-    var managers = Array.from(allManagers).sort();
-    
-    workingContainer.innerHTML = '';
-    for (var i = 0; i < managers.length; i++) {
-        if (managers[i]) {
-            var checkboxId = 'working-manager-' + i;
-            workingContainer.innerHTML += '<label class="manager-checkbox" for="' + checkboxId + '"><input type="checkbox" id="' + checkboxId + '" value="' + managers[i] + '" onchange="handleManagerCheckboxChange(\'working\')"><span>' + managers[i] + '</span></label>';
-        }
-    }
-    
-    offContainer.innerHTML = '';
-    for (var i = 0; i < managers.length; i++) {
-        if (managers[i]) {
-            var checkboxId = 'off-manager-' + i;
-            offContainer.innerHTML += '<label class="manager-checkbox" for="' + checkboxId + '"><input type="checkbox" id="' + checkboxId + '" value="' + managers[i] + '" onchange="handleManagerCheckboxChange(\'off\')"><span>' + managers[i] + '</span></label>';
-        }
-    }
-}
-
-function handleManagerCheckboxChange(tabType) {
-    var container = document.getElementById(tabType + 'ManagerCheckboxes');
-    var checkboxes = container.querySelectorAll('input[type="checkbox"]');
-    var selectedManagers = [];
-    
-    for (var i = 0; i < checkboxes.length; i++) {
-        var checkbox = checkboxes[i];
-        var label = checkbox.parentElement;
-        if (checkbox.checked) {
-            selectedManagers.push(checkbox.value);
-            label.classList.add('selected');
-        } else {
-            label.classList.remove('selected');
-        }
-    }
-    
-    var allEmployees = tabType === 'working' ? workingEmployees : offEmployees;
-    var filteredEmployees = allEmployees;
-    
-    if (selectedManagers.length > 0) {
-        filteredEmployees = allEmployees.filter(function(emp) {
-            return selectedManagers.indexOf(emp.manager) !== -1;
-        });
-    }
-    
-    updateTableDirect(tabType, filteredEmployees);
-    
-    if (selectedManagers.length > 0) {
-        showMessage('Showing ' + selectedManagers.length + ' selected manager(s)', 'success');
-    }
-}
-
-function clearAllCheckboxes(tabType) {
-    var tableBody = document.getElementById(tabType + 'TableBody');
-    if (!tableBody) return;
-    var checkboxes = tableBody.querySelectorAll('input[type="checkbox"]');
-    for (var i = 0; i < checkboxes.length; i++) {
-        checkboxes[i].checked = false;
-    }
-    showMessage('All checkboxes cleared in ' + (tabType === 'working' ? 'Working Today' : 'Off Today') + ' tab', 'success');
-}
-
-function clearManagerFilter(tabType) {
-    var container = document.getElementById(tabType + 'ManagerCheckboxes');
-    if (!container) return;
-    var checkboxes = container.querySelectorAll('input[type="checkbox"]');
-    for (var i = 0; i < checkboxes.length; i++) {
-        checkboxes[i].checked = false;
-        checkboxes[i].parentElement.classList.remove('selected');
-    }
-    var allEmployees = tabType === 'working' ? workingEmployees : offEmployees;
-    updateTableDirect(tabType, allEmployees);
-    showMessage('Filter cleared - showing all employees', 'success');
-}
-
-function selectAllManagers(tabType) {
-    var container = document.getElementById(tabType + 'ManagerCheckboxes');
-    if (!container) return;
-    var checkboxes = container.querySelectorAll('input[type="checkbox"]');
-    for (var i = 0; i < checkboxes.length; i++) {
-        checkboxes[i].checked = true;
-        checkboxes[i].parentElement.classList.add('selected');
-    }
-    var allEmployees = tabType === 'working' ? workingEmployees : offEmployees;
-    updateTableDirect(tabType, allEmployees);
-    showMessage('All managers selected', 'success');
-}
-
-function toggleSummarySection() {
-    var summarySection = document.getElementById('managerSummarySection');
-    var toggleButton = document.getElementById('summaryToggleButton');
-    if (summarySection.style.display === 'none') {
-        summarySection.style.display = 'block';
-        toggleButton.innerHTML = '📊 Hide Manager Summary';
-        toggleButton.style.background = 'linear-gradient(135deg, #ff4757 0%, #ff3838 100%)';
-    } else {
-        summarySection.style.display = 'none';
-        toggleButton.innerHTML = '📊 Show Manager Summary';
-        toggleButton.style.background = 'linear-gradient(135deg, #2ed573 0%, #7bed9f 100%)';
-    }
-}
-
-function updateTableDirect(tabType, employees) {
-    var tableBody = document.getElementById(tabType + 'TableBody');
-    if (!tableBody) return;
-    
-    if (!employees || employees.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="' + (tabType === 'working' ? 4 : 5) + '" class="no-data">No employees found</td></tr>';
-        return;
-    }
-    
-    employees.sort(function(a, b) {
-        return (a.manager || '').localeCompare(b.manager || '');
-    });
-    
-    var html = '';
-    for (var i = 0; i < employees.length; i++) {
-        var employee = employees[i];
-        if (tabType === 'working') {
-            html += '<tr><td style="text-align: center;"><input type="checkbox" style="transform: scale(1.2); cursor: pointer;" /></td><td><strong>' + employee.name + '</strong></td><td>' + (employee.manager || 'N/A') + '</td><td>' + (employee.schedule || 'N/A') + '</td></tr>';
-        } else {
-            var statusClass = employee.type === 'partial' ? 'status-partial' : (employee.type === 'manual' ? 'status-manual' : 'status-scheduled');
-            html += '<tr><td style="text-align: center;"><input type="checkbox" style="transform: scale(1.2); cursor: pointer;" /></td><td><strong>' + employee.name + '</strong></td><td>' + (employee.manager || 'N/A') + '</td><td><span class="status-badge ' + statusClass + '">' + employee.status + '</span></td><td><span class="timestamp">' + employee.timeAdded + '</span></td></tr>';
-        }
-    }
-    
-    tableBody.innerHTML = html;
-}
-
-function findManagerWithLeastEmployees() {
-    var managerCounts = {};
-    
-    for (var i = 0; i < workingEmployees.length; i++) {
-        var manager = workingEmployees[i].manager || 'No Manager';
-        managerCounts[manager] = (managerCounts[manager] || 0) + 1;
-    }
-    
-    for (var i = 0; i < offEmployees.length; i++) {
-        var manager = offEmployees[i].manager || 'No Manager';
-        managerCounts[manager] = (managerCounts[manager] || 0) + 1;
-    }
-    
-    if (Object.keys(managerCounts).length === 0) {
-        var managersArray = Array.from(allManagers);
-        return managersArray.length > 0 ? managersArray[0] : 'No Manager';
-    }
-    
-    var allManagersArray = Array.from(allManagers);
-    for (var i = 0; i < allManagersArray.length; i++) {
-        if (!(allManagersArray[i] in managerCounts)) {
-            managerCounts[allManagersArray[i]] = 0;
-        }
-    }
-    
-    var minCount = Infinity;
-    var managerWithLeast = 'No Manager';
-    
-    for (var manager in managerCounts) {
-        if (managerCounts[manager] < minCount) {
-            minCount = managerCounts[manager];
-            managerWithLeast = manager;
-        }
-    }
-    
-    return managerWithLeast;
-}
-
-function markEmployeeWithStatus(status) {
-    var nameInput = document.getElementById('manualEmployeeName');
-    var employeeName = nameInput.value.trim();
-    
-    if (!employeeName) {
-        showMessage('Please enter an employee name', 'error');
-        return;
-    }
-    
-    var employeeIndex = -1;
-    for (var i = 0; i < workingEmployees.length; i++) {
-        if (workingEmployees[i].name.toLowerCase().indexOf(employeeName.toLowerCase()) !== -1) {
-            employeeIndex = i;
-            break;
-        }
-    }
-    
-    if (employeeIndex === -1) {
-        showMessage('Employee not found in working list. Please check the spelling.', 'error');
-        return;
-    }
-    
-    var employee = workingEmployees[employeeIndex];
-    var originalManager = employee.manager;
-    var newManager = findManagerWithLeastEmployees();
-    
-    var offEmployee = {
-        name: employee.name,
-        manager: newManager,
-        status: status,
-        type: 'manual',
-        timeAdded: new Date().toLocaleString(),
-        originalManager: originalManager
-    };
-    
-    offEmployees.push(offEmployee);
-    workingEmployees.splice(employeeIndex, 1);
-    manuallyAdded.set(employee.name, new Date());
-    
-    nameInput.value = '';
-    updateDisplay();
-    forceTableUpdate();
-    
-    var message = employee.name + ' has been marked as "' + status + '"';
-    if (newManager !== originalManager) {
-        message += ' and reassigned from ' + originalManager + ' to ' + newManager + ' (manager with least employees)';
-    }
-    
-    showMessage(message, 'success');
-    switchTab('off');
-}
-
-function returnToWork() {
-    var nameInput = document.getElementById('manualEmployeeName');
-    var employeeName = nameInput.value.trim();
-    
-    if (!employeeName) {
-        showMessage('Please enter an employee name', 'error');
-        return;
-    }
-    
-    var employeeIndex = -1;
-    for (var i = 0; i < offEmployees.length; i++) {
-        if (offEmployees[i].name.toLowerCase().indexOf(employeeName.toLowerCase()) !== -1) {
-            employeeIndex = i;
-            break;
-        }
-    }
-    
-    if (employeeIndex === -1) {
-        showMessage('Employee not found in off list. Please check the spelling.', 'error');
-        return;
-    }
-    
-    var employee = offEmployees[employeeIndex];
-    
-    var workingEmployee = {
-        name: employee.name,
-        manager: employee.originalManager || employee.manager,
-        schedule: 'Returned - Check original schedule',
-        type: 'returned'
-    };
-    
-    workingEmployees.push(workingEmployee);
-    offEmployees.splice(employeeIndex, 1);
-    manuallyAdded.delete(employee.name);
-    
-    nameInput.value = '';
-    updateDisplay();
-    forceTableUpdate();
-    
-    showMessage(employee.name + ' has returned to work and moved to Working Today tab', 'success');
-    switchTab('working');
-}
-
-function toggleShiftChange() {
-    var section = document.getElementById('shiftChangeSection');
-    section.style.display = section.style.display === 'none' ? 'block' : 'none';
-}
-
-function updateShift() {
-    var nameInput = document.getElementById('manualEmployeeName');
-    var employeeName = nameInput.value.trim();
-    var startTime = document.getElementById('shiftStartTime').value;
-    var endTime = document.getElementById('shiftEndTime').value;
-    
-    if (!employeeName) {
-        showMessage('Please enter an employee name', 'error');
-        return;
-    }
-    
-    if (!startTime || !endTime) {
-        showMessage('Please enter both start and end times', 'error');
-        return;
-    }
-    
-    var employeeIndex = -1;
-    for (var i = 0; i < workingEmployees.length; i++) {
-        if (workingEmployees[i].name.toLowerCase().indexOf(employeeName.toLowerCase()) !== -1) {
-            employeeIndex = i;
-            break;
-        }
-    }
-    
-    if (employeeIndex === -1) {
-        showMessage('Employee not found in working list. Please check the spelling.', 'error');
-        return;
-    }
-    
-    var employee = workingEmployees[employeeIndex];
-    
-    function formatTime(time24) {
-        var parts = time24.split(':');
-        var hours = parseInt(parts[0]);
-        var minutes = parts[1];
-        var ampm = hours >= 12 ? 'PM' : 'AM';
-        var hour12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-        return hour12 + ':' + minutes + ' ' + ampm;
-    }
-    
-    var newSchedule = formatTime(startTime) + ' – ' + formatTime(endTime);
-    
-    workingEmployees[employeeIndex].schedule = newSchedule;
-    workingEmployees[employeeIndex].type = 'updated';
-    
-    nameInput.value = '';
-    document.getElementById('shiftStartTime').value = '';
-    document.getElementById('shiftEndTime').value = '';
-    toggleShiftChange();
-    
-    forceTableUpdate();
-    
-    showMessage(employee.name + '\'s shift updated to ' + newSchedule, 'success');
-    switchTab('working');
-}
-
-function exportData() {
-    if (!xlsxLoaded) {
-        showMessage('Excel export not available. Please refresh the page.', 'error');
-        return;
-    }
-
-    try {
-        var wb = XLSX.utils.book_new();
-        
-        var workingData = [['Employee', 'Manager', 'Schedule', 'Status']];
-        for (var i = 0; i < workingEmployees.length; i++) {
-            var emp = workingEmployees[i];
-            workingData.push([emp.name, emp.manager, emp.schedule, 'Working']);
-        }
-        var workingWs = XLSX.utils.aoa_to_sheet(workingData);
-        XLSX.utils.book_append_sheet(wb, workingWs, 'Working Today');
-        
-        var offData = [['Employee', 'Manager', 'Status', 'Time Added', 'Type']];
-        for (var i = 0; i < offEmployees.length; i++) {
-            var emp = offEmployees[i];
-            offData.push([emp.name, emp.manager, emp.status, emp.timeAdded, emp.type]);
-        }
-        var offWs = XLSX.utils.aoa_to_sheet(offData);
-        XLSX.utils.book_append_sheet(wb, offWs, 'Off Today');
-        
-        var fileName = 'Employee_Availability_' + new Date().toISOString().split('T')[0] + '.xlsx';
-        XLSX.writeFile(wb, fileName);
-        showMessage('Report exported successfully!', 'success');
-    } catch (error) {
-        showMessage('Error exporting report: ' + error.message, 'error');
-    }
-}
-
-function init() {
-    loadXLSX().then(function() {
-        xlsxLoaded = true;
-        setupEventListeners();
-        showMessage('Application ready! You can now upload your Excel files.', 'success');
-    }).catch(function(error) {
-        showMessage('Warning: Excel file processing may not work. Try refreshing the page.', 'error');
-        setupEventListeners();
-    });
-}
-
-function setupEventListeners() {
-    var scheduleFile = document.getElementById('scheduleFile');
-    var timeOffFile = document.getElementById('timeOffFile');
-    var employeeName = document.getElementById('manualEmployeeName');
-    
-    if (scheduleFile) scheduleFile.addEventListener('change', handleScheduleFile);
-    if (timeOffFile) timeOffFile.addEventListener('change', handleTimeOffFile);
-    
-    if (employeeName) {
-        employeeName.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                markEmployeeWithStatus('Off Today');
+        var html = '';
+        employees.forEach(function(employee) {
+            if (tabType === 'working') {
+                html += '<tr><td style="text-align: center;"><input type="checkbox" style="transform: scale(1.2); cursor: pointer;" /></td><td><strong>' + employee.name + '</strong></td><td>' + (employee.manager || 'N/A') + '</td><td>' + (employee.schedule || 'N/A') + '</td></tr>';
+            } else {
+                var statusClass = employee.type === 'partial' ? 'status-partial' : (employee.type === 'manual' ? 'status-manual' : 'status-scheduled');
+                html += '<tr><td style="text-align: center;"><input type="checkbox" style="transform: scale(1.2); cursor: pointer;" /></td><td><strong>' + employee.name + '</strong></td><td>' + (employee.manager || 'N/A') + '</td><td><span class="status-badge ' + statusClass + '">' + employee.status + '</span></td><td><span class="timestamp">' + employee.timeAdded + '</span></td></tr>';
             }
         });
+        tableBody.innerHTML = html;
     }
-}
-
-document.addEventListener('DOMContentLoaded', init);
+    
+    window.clearAllCheckboxes = function(tabType) {
+        var tableBody = document.getElementById(tabType + 'TableBody');
+        if (tableBody) {
+            tableBody.querySelectorAll('input[type="checkbox"]').forEach(function(cb) { cb.checked = false; });
+            showMessage('All checkboxes cleared', 'success');
+        }
+    };
+    
+    window.clearManagerFilter = function(tabType) { showMessage('Manager filters cleared', 'success'); };
+    window.selectAllManagers = function(tabType) { showMessage('All managers selected', 'success'); };
+    window.toggleSummarySection = function() {
+        var section = document.getElementById('managerSummarySection');
+        var button = document.getElementById('summaryToggleButton');
+        if (section.style.display === 'none') {
+            section.style.display = 'block';
+            button.innerHTML = '📊 Hide Manager Summary';
+        } else {
+            section.style.display = 'none';
+            button.innerHTML = '📊 Show Manager Summary';
+        }
+    };
+    
+    window.markEmployeeWithStatus = function(status) { showMessage('Upload Excel files first to enable this feature', 'error'); };
+    window.returnToWork = function() { showMessage('Upload Excel files first to enable this feature', 'error'); };
+    window.toggleShiftChange = function() {
+        var section = document.getElementById('shiftChangeSection');
+        section.style.display = section.style.display === 'none' ? 'block' : 'none';
+    };
+    window.updateShift = function() { showMessage('Upload Excel files first to enable this feature', 'error'); };
+    window.exportData = function() { showMessage('Upload Excel files first to enable this feature', 'error'); };
+    
+    showMessage('Application ready! Upload Excel files to enable full functionality.', 'success');
+});
 </script>
 </body>
-</html> library loaded successfully!', 'success');
-                resolve();
-            } else {
-                reject('XLSX not available');
-            }
-        };
-        script.onerror = function() { reject('Failed to load XLSX'); };
-        script.src = 'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js';
-        document.head.appendChild(script);
-    });
-}
-
-function cleanManagerName(managerName) {
-    if (!managerName) return '';
-    var cleaned = managerName.trim();
-    cleaned = cleaned.replace(/^sales\s*/i, '');
-    if (cleaned.indexOf('(') !== -1 && cleaned.indexOf(')') !== -1) {
-        var match = cleaned.match(/\(([^)]+)\)/);
-        if (match) {
-            cleaned = match[1].trim();
-        }
-    }
-    return cleaned;
-}
-
-function cleanSchedule(schedule) {
-    if (!schedule) return '';
-    var cleaned = schedule.trim();
-    cleaned = cleaned.replace(/^[^:]*:\s*/, '');
-    var timePattern = /(\d{1,2}:\d{2}\s*(?:AM|PM))/gi;
-    var times = cleaned.match(timePattern);
-    if (times && times.length >= 2) {
-        return times[0] + ' – ' + times[times.length - 1];
-    }
-    cleaned = cleaned.replace(/\d{2}\/\d{2}\/\d{4},?\s*/g, '');
-    cleaned = cleaned.replace(/\s+/g, ' ').trim();
-    return cleaned || schedule;
-}
-
-function handleScheduleFile(event) {
-    var file = event.target.files[0];
-    if (!file) return;
-
-    if (!xlsxLoaded) {
-        showMessage('Excel processing library not ready. Please wait and try again.', 'error');
-        return;
-    }
-
-    showMessage('Processing schedule file...', 'success');
-    
-    var reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            var data = new Uint8Array(e.target.result);
-            var workbook = XLSX.read(data, { type: 'array' });
-            var worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-            
-            processScheduleData(jsonData);
-            updateDisplay();
-            forceTableUpdate();
-            
-            showMessage('Schedule processed! Found ' + workingEmployees.length + ' working employees.', 'success');
-        } catch (error) {
-            showMessage('Error reading schedule file: ' + error.message, 'error');
-        }
-    };
-    reader.readAsArrayBuffer(file);
-}
-
-function handleTimeOffFile(event) {
-    var file = event.target.files[0];
-    if (!file) return;
-
-    if (!xlsxLoaded) {
-        showMessage('Excel processing
+</html>
