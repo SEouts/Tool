@@ -655,20 +655,6 @@
             }
         }
 
-        function switchTab(tabName) {
-            // Remove active class from all tabs
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            
-            // Add active class to clicked tab
-            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
-            
-            // Hide all tab content
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            // Show selected tab content
-            document.getElementById(tabName + 'Tab').classList.add('active');
-        }
-
         function markEmployeeWithStatus(status) {
             const nameInput = document.getElementById('manualEmployeeName');
             const employeeName = nameInput.value.trim();
@@ -933,6 +919,21 @@
     </div>
 
     <script>
+        // Define switchTab function first to ensure it's available
+        function switchTab(tabName) {
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            
+            // Hide all tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
         function loadXLSX() {
             return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
