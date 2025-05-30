@@ -543,9 +543,9 @@
         let manuallyAdded = new Map();
         let xlsxLoaded = false;
         let quickActionsUnlocked = false;
-        const QUICK_ACTIONS_PASSWORD = "789"; // Change this to your desired password
+        const QUICK_ACTIONS_PASSWORD = "789";
 
-        // Tab switching function - defined first
+        // Tab switching function - MUST be defined first
         function switchTab(tabName) {
             console.log('Switching to tab:', tabName);
             
@@ -554,7 +554,7 @@
                 const password = prompt('Enter password to access Quick Actions:');
                 if (password !== QUICK_ACTIONS_PASSWORD) {
                     showMessage('Incorrect password. Access denied to Quick Actions.', 'error');
-                    return; // Don't switch to the tab
+                    return;
                 }
                 quickActionsUnlocked = true;
                 showMessage('Quick Actions unlocked!', 'success');
