@@ -953,13 +953,18 @@
             }
             
             const employee = workingEmployees[employeeIndex];
+            const originalManager = employee.manager;
+            
+            // Find manager with least employees
+            const newManager = findManagerWithLeastEmployees();
             
             const offEmployee = {
                 name: employee.name,
-                manager: employee.manager,
+                manager: newManager,
                 status: status,
                 type: 'manual',
-                timeAdded: new Date().toLocaleString()
+                timeAdded: new Date().toLocaleString(),
+                originalManager: originalManager // Store original manager for reference
             };
             
             offEmployees.push(offEmployee);
@@ -969,8 +974,43 @@
             nameInput.value = '';
             forceTableUpdate();
             
-            showMessage(`${employee.name} has been marked as "${status}"`, 'success');
+            let message = `${employee.name} has been marked as "${status}"`;
+            if (newManager !== originalManager) {
+                message += ` and reassigned from ${originalManager} to ${newManager} (manager with least employees)`;
+            }
+            
+            showMessage(message, 'success');
             switchTab('off');
+        }
+
+        // Find manager with least employees function
+        function findManagerWithLeastEmployees() {
+            if (workingEmployees.length === 0) {
+                return 'No Manager';
+            }
+            
+            // Count employees per manager (only in working employees)
+            const managerCounts = {};
+            workingEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                managerCounts[manager] = (managerCounts[manager] || 0) + 1;
+            });
+            
+            // Find manager with minimum count
+            let minCount = Infinity;
+            let managerWithLeast = 'No Manager';
+            
+            Object.entries(managerCounts).forEach(([manager, count]) => {
+                if (count < minCount) {
+                    minCount = count;
+                    managerWithLeast = manager;
+                }
+            });
+            
+            console.log('Manager counts:', managerCounts);
+            console.log('Manager with least employees:', managerWithLeast, 'with', minCount, 'employees');
+            
+            return managerWithLeast;
         }
 
         function returnToWork() {
