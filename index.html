@@ -1151,9 +1151,10 @@
                 workingSummary.innerHTML = workingSummaryHtml;
             }
             
+            // Updated Off summary calculation - count by assigned manager after reassignments
             const offByManager = {};
             offEmployees.forEach(emp => {
-                const manager = emp.manager || 'No Manager';
+                const manager = emp.manager || 'No Manager'; // This is now the reassigned manager
                 offByManager[manager] = (offByManager[manager] || 0) + 1;
             });
             
