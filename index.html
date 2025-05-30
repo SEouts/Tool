@@ -273,23 +273,47 @@ function switchTab(tabName) {
 }
 
 function processExcelFile(file, callback) {
+    console.log('Processing file:', file.name);
+    showMessage('Reading file: ' + file.name, 'success');
+    
     var reader = new FileReader();
     reader.onload = function(e) {
         try {
+            console.log('File loaded, parsing...');
             var data = new Uint8Array(e.target.result);
             var workbook = XLSX.read(data, {type: 'array'});
+            
+            console.log('Workbook sheets:', workbook.SheetNames);
+            
+            if (workbook.SheetNames.length === 0) {
+                throw new Error('No sheets found in the file');
+            }
+            
             var firstSheetName = workbook.SheetNames[0];
             var worksheet = workbook.Sheets[firstSheetName];
             var jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+            
+            console.log('Parsed data rows:', jsonData.length);
+            console.log('First few rows:', jsonData.slice(0, 3));
+            
             callback(null, jsonData);
         } catch (error) {
+            console.error('Error processing file:', error);
             callback(error, null);
         }
     };
+    
+    reader.onerror = function(error) {
+        console.error('FileReader error:', error);
+        callback(new Error('Failed to read file'), null);
+    };
+    
     reader.readAsArrayBuffer(file);
 }
 
 function processScheduleFile(data) {
+    console.log('Processing schedule file with', data.length, 'rows');
+    
     workingEmployees = [];
     allManagers.clear();
     
@@ -299,26 +323,46 @@ function processScheduleFile(data) {
     }
     
     var headers = data[0];
+    console.log('Headers found:', headers);
+    
     var nameIndex = -1, managerIndex = -1, startIndex = -1, endIndex = -1;
     
-    // Find column indices
+    // Find column indices - be more flexible with header matching
     for (var i = 0; i < headers.length; i++) {
         var header = (headers[i] || '').toString().toLowerCase().trim();
-        if (header.includes('name') || header.includes('employee')) nameIndex = i;
-        else if (header.includes('manager') || header.includes('supervisor')) managerIndex = i;
-        else if (header.includes('start') || header.includes('in')) startIndex = i;
-        else if (header.includes('end') || header.includes('out')) endIndex = i;
+        console.log('Checking header', i + ':', header);
+        
+        if (header.includes('name') || header.includes('employee') || header === 'name' || header === 'employee') {
+            nameIndex = i;
+            console.log('Found name column at index', i);
+        } else if (header.includes('manager') || header.includes('supervisor') || header === 'manager') {
+            managerIndex = i;
+            console.log('Found manager column at index', i);
+        } else if (header.includes('start') || header.includes('in') || header.includes('time in')) {
+            startIndex = i;
+            console.log('Found start time column at index', i);
+        } else if (header.includes('end') || header.includes('out') || header.includes('time out')) {
+            endIndex = i;
+            console.log('Found end time column at index', i);
+        }
     }
     
+    console.log('Column indices - Name:', nameIndex, 'Manager:', managerIndex, 'Start:', startIndex, 'End:', endIndex);
+    
     if (nameIndex === -1) {
-        showMessage('Could not find employee name column in schedule file', 'error');
+        showMessage('Could not find employee name column in schedule file. Looking for columns with "name" or "employee"', 'error');
+        console.log('Available headers:', headers);
         return;
     }
     
     // Process data rows
+    var processedCount = 0;
     for (var i = 1; i < data.length; i++) {
         var row = data[i];
-        if (!row || !row[nameIndex]) continue;
+        if (!row || !row[nameIndex]) {
+            console.log('Skipping empty row', i);
+            continue;
+        }
         
         var employee = {
             name: row[nameIndex].toString().trim(),
@@ -341,8 +385,12 @@ function processScheduleFile(data) {
         
         workingEmployees.push(employee);
         allManagers.add(employee.manager);
+        processedCount++;
+        
+        console.log('Added employee:', employee.name, 'Manager:', employee.manager, 'Schedule:', employee.schedule);
     }
     
+    console.log('Processed', processedCount, 'employees');
     showMessage('Loaded ' + workingEmployees.length + ' employees from schedule file', 'success');
     updateWorkingTable();
     updateManagerFilters();
@@ -765,11 +813,15 @@ document.addEventListener('DOMContentLoaded', function() {
         scheduleFile.addEventListener('change', function(event) {
             var file = event.target.files[0];
             if (file) {
-                showMessage('Processing schedule file...', 'success');
+                console.log('Schedule file selected:', file.name, 'Size:', file.size, 'Type:', file.type);
+                showMessage('Processing schedule file: ' + file.name, 'success');
+                
                 processExcelFile(file, function(error, data) {
                     if (error) {
+                        console.error('Schedule file error:', error);
                         showMessage('Error reading schedule file: ' + error.message, 'error');
                     } else {
+                        console.log('Schedule file processed successfully');
                         scheduleData = data;
                         processScheduleFile(data);
                     }
@@ -782,11 +834,15 @@ document.addEventListener('DOMContentLoaded', function() {
         timeOffFile.addEventListener('change', function(event) {
             var file = event.target.files[0];
             if (file) {
-                showMessage('Processing time off file...', 'success');
+                console.log('Time off file selected:', file.name, 'Size:', file.size, 'Type:', file.type);
+                showMessage('Processing time off file: ' + file.name, 'success');
+                
                 processExcelFile(file, function(error, data) {
                     if (error) {
+                        console.error('Time off file error:', error);
                         showMessage('Error reading time off file: ' + error.message, 'error');
                     } else {
+                        console.log('Time off file processed successfully');
                         timeOffData = data;
                         processTimeOffFile(data);
                     }
