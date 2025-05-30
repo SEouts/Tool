@@ -234,6 +234,8 @@ var offEmployees = [];
 var allManagers = new Set();
 var scheduleSortOrder = 'none';
 var quickActionsUnlocked = false;
+var scheduleData = null;
+var timeOffData = null;
 
 function showMessage(text, type) {
     var messageArea = document.getElementById('messageArea');
@@ -241,120 +243,228 @@ function showMessage(text, type) {
     setTimeout(function() { messageArea.innerHTML = ''; }, 5000);
 }
 
-function switchTab(tabName) {
-    if (tabName === 'manual' && !quickActionsUnlocked) {
-        var password = prompt('Enter password to access Quick Actions:');
-        if (password !== '789') {
-            showMessage('Incorrect password. Access denied to Quick Actions.', 'error');
-            return;
+function processExcelFile(file, callback) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            var data = new Uint8Array(e.target.result);
+            var workbook = XLSX.read(data, {type: 'array'});
+            var firstSheetName = workbook.SheetNames[0];
+            var worksheet = workbook.Sheets[firstSheetName];
+            var jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+            callback(null, jsonData);
+        } catch (error) {
+            callback(error, null);
         }
-        quickActionsUnlocked = true;
-        showMessage('Quick Actions unlocked!', 'success');
-        document.getElementById('quickActionsTab').innerHTML = '⚡ Quick Actions';
-    }
-    
-    var tabs = document.querySelectorAll('.tab');
-    for (var i = 0; i < tabs.length; i++) {
-        tabs[i].classList.remove('active');
-    }
-    
-    var activeTab = document.querySelector("[onclick*=\"switchTab('" + tabName + "')\"]");
-    if (activeTab) activeTab.classList.add('active');
-    
-    var contents = document.querySelectorAll('.tab-content');
-    for (var i = 0; i < contents.length; i++) {
-        contents[i].classList.remove('active');
-    }
-    
-    var targetTab = document.getElementById(tabName + 'Tab');
-    if (targetTab) targetTab.classList.add('active');
+    };
+    reader.readAsArrayBuffer(file);
 }
 
-function sortBySchedule() {
-    if (scheduleSortOrder === 'none' || scheduleSortOrder === 'desc') {
-        scheduleSortOrder = 'asc';
-    } else {
-        scheduleSortOrder = 'desc';
+function processScheduleFile(data) {
+    workingEmployees = [];
+    allManagers.clear();
+    
+    if (data.length < 2) {
+        showMessage('Schedule file appears to be empty or invalid', 'error');
+        return;
     }
     
-    var indicator = document.getElementById('sortIndicator');
-    if (indicator) {
-        indicator.textContent = scheduleSortOrder === 'asc' ? '▲' : '▼';
+    var headers = data[0];
+    var nameIndex = -1, managerIndex = -1, startIndex = -1, endIndex = -1;
+    
+    // Find column indices
+    for (var i = 0; i < headers.length; i++) {
+        var header = (headers[i] || '').toString().toLowerCase().trim();
+        if (header.includes('name') || header.includes('employee')) nameIndex = i;
+        else if (header.includes('manager') || header.includes('supervisor')) managerIndex = i;
+        else if (header.includes('start') || header.includes('in')) startIndex = i;
+        else if (header.includes('end') || header.includes('out')) endIndex = i;
     }
     
-    showMessage('Schedule sorting works! Upload files to see full functionality.', 'success');
-}
-
-function clearAllCheckboxes(tabType) {
-    var tableBody = document.getElementById(tabType + 'TableBody');
-    if (tableBody) {
-        var checkboxes = tableBody.querySelectorAll('input[type="checkbox"]');
-        for (var i = 0; i < checkboxes.length; i++) {
-            checkboxes[i].checked = false;
+    if (nameIndex === -1) {
+        showMessage('Could not find employee name column in schedule file', 'error');
+        return;
+    }
+    
+    // Process data rows
+    for (var i = 1; i < data.length; i++) {
+        var row = data[i];
+        if (!row || !row[nameIndex]) continue;
+        
+        var employee = {
+            name: row[nameIndex].toString().trim(),
+            manager: managerIndex !== -1 && row[managerIndex] ? row[managerIndex].toString().trim() : 'Unknown',
+            startTime: startIndex !== -1 && row[startIndex] ? row[startIndex].toString().trim() : '',
+            endTime: endIndex !== -1 && row[endIndex] ? row[endIndex].toString().trim() : '',
+            schedule: '',
+            status: 'Scheduled'
+        };
+        
+        if (employee.startTime && employee.endTime) {
+            employee.schedule = employee.startTime + ' - ' + employee.endTime;
+        } else if (employee.startTime) {
+            employee.schedule = 'Starts: ' + employee.startTime;
+        } else if (employee.endTime) {
+            employee.schedule = 'Ends: ' + employee.endTime;
+        } else {
+            employee.schedule = 'No schedule';
         }
-        showMessage('All checkboxes cleared', 'success');
+        
+        workingEmployees.push(employee);
+        allManagers.add(employee.manager);
     }
+    
+    showMessage('Loaded ' + workingEmployees.length + ' employees from schedule file', 'success');
+    updateWorkingTable();
+    updateManagerFilters();
+    updateCounts();
 }
 
-function clearManagerFilter(tabType) {
-    showMessage('Manager filter cleared', 'success');
-}
-
-function selectAllManagers(tabType) {
-    showMessage('All managers selected', 'success');
-}
-
-function toggleSummarySection() {
-    var section = document.getElementById('managerSummarySection');
-    var button = document.getElementById('summaryToggleButton');
-    if (section.style.display === 'none') {
-        section.style.display = 'block';
-        button.innerHTML = '📊 Hide Manager Summary';
-    } else {
-        section.style.display = 'none';
-        button.innerHTML = '📊 Show Manager Summary';
+function processTimeOffFile(data) {
+    if (!data || data.length < 2) {
+        showMessage('Time off file appears to be empty or invalid', 'error');
+        return;
     }
-}
-
-function markEmployeeWithStatus(status) {
-    showMessage('Upload Excel files to enable employee actions', 'error');
-}
-
-function returnToWork() {
-    showMessage('Upload Excel files to enable employee actions', 'error');
-}
-
-function toggleShiftChange() {
-    var section = document.getElementById('shiftChangeSection');
-    section.style.display = section.style.display === 'none' ? 'block' : 'none';
-}
-
-function updateShift() {
-    showMessage('Upload Excel files to enable shift updates', 'error');
-}
-
-function exportData() {
-    showMessage('Upload Excel files to enable export functionality', 'error');
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    showMessage('Application ready! Tabs are working. Upload Excel files to enable full functionality.', 'success');
     
-    var scheduleFile = document.getElementById('scheduleFile');
-    var timeOffFile = document.getElementById('timeOffFile');
+    var headers = data[0];
+    var nameIndex = -1, managerIndex = -1, statusIndex = -1;
     
-    if (scheduleFile) {
-        scheduleFile.addEventListener('change', function(event) {
-            showMessage('File upload feature will be restored in next update', 'error');
+    // Find column indices
+    for (var i = 0; i < headers.length; i++) {
+        var header = (headers[i] || '').toString().toLowerCase().trim();
+        if (header.includes('name') || header.includes('employee')) nameIndex = i;
+        else if (header.includes('manager') || header.includes('supervisor')) managerIndex = i;
+        else if (header.includes('status') || header.includes('reason') || header.includes('type')) statusIndex = i;
+    }
+    
+    if (nameIndex === -1) {
+        showMessage('Could not find employee name column in time off file', 'error');
+        return;
+    }
+    
+    // Process time off data and move employees from working to off
+    var processedCount = 0;
+    for (var i = 1; i < data.length; i++) {
+        var row = data[i];
+        if (!row || !row[nameIndex]) continue;
+        
+        var employeeName = row[nameIndex].toString().trim();
+        var status = statusIndex !== -1 && row[statusIndex] ? row[statusIndex].toString().trim() : 'Time Off';
+        var manager = managerIndex !== -1 && row[managerIndex] ? row[managerIndex].toString().trim() : 'Unknown';
+        
+        // Find and remove from working employees
+        var workingIndex = workingEmployees.findIndex(emp => 
+            emp.name.toLowerCase() === employeeName.toLowerCase()
+        );
+        
+        if (workingIndex !== -1) {
+            var employee = workingEmployees.splice(workingIndex, 1)[0];
+            employee.status = status;
+            employee.timeAdded = new Date().toLocaleTimeString();
+            offEmployees.push(employee);
+            processedCount++;
+        } else {
+            // Add as new off employee if not found in working list
+            offEmployees.push({
+                name: employeeName,
+                manager: manager,
+                status: status,
+                timeAdded: new Date().toLocaleTimeString()
+            });
+            processedCount++;
+        }
+        
+        allManagers.add(manager);
+    }
+    
+    showMessage('Processed ' + processedCount + ' employees from time off file', 'success');
+    updateWorkingTable();
+    updateOffTable();
+    updateManagerFilters();
+    updateCounts();
+}
+
+function updateWorkingTable() {
+    var tbody = document.getElementById('workingTableBody');
+    if (!tbody) return;
+    
+    if (workingEmployees.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="no-data">No employees working today</td></tr>';
+        return;
+    }
+    
+    var html = '';
+    workingEmployees.forEach(function(emp, index) {
+        html += '<tr>' +
+            '<td><input type="checkbox" id="working_' + index + '"></td>' +
+            '<td>' + emp.name + '</td>' +
+            '<td>' + emp.manager + '</td>' +
+            '<td><span class="status-badge status-scheduled">' + emp.schedule + '</span></td>' +
+            '</tr>';
+    });
+    
+    tbody.innerHTML = html;
+}
+
+function updateOffTable() {
+    var tbody = document.getElementById('offTableBody');
+    if (!tbody) return;
+    
+    if (offEmployees.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="no-data">No employees off today</td></tr>';
+        return;
+    }
+    
+    var html = '';
+    offEmployees.forEach(function(emp, index) {
+        html += '<tr>' +
+            '<td><input type="checkbox" id="off_' + index + '"></td>' +
+            '<td>' + emp.name + '</td>' +
+            '<td>' + emp.manager + '</td>' +
+            '<td><span class="status-badge status-manual">' + emp.status + '</span></td>' +
+            '<td class="timestamp">' + (emp.timeAdded || 'Unknown') + '</td>' +
+            '</tr>';
+    });
+    
+    tbody.innerHTML = html;
+}
+
+function updateManagerFilters() {
+    var managers = Array.from(allManagers).sort();
+    
+    // Update working tab filter
+    var workingContainer = document.getElementById('workingManagerCheckboxes');
+    if (workingContainer) {
+        var html = '';
+        managers.forEach(function(manager) {
+            html += '<div class="manager-checkbox">' +
+                '<input type="checkbox" id="working_manager_' + manager.replace(/\s+/g, '_') + '" checked>' +
+                '<label for="working_manager_' + manager.replace(/\s+/g, '_') + '">' + manager + '</label>' +
+                '</div>';
         });
+        workingContainer.innerHTML = html;
     }
     
-    if (timeOffFile) {
-        timeOffFile.addEventListener('change', function(event) {
-            showMessage('File upload feature will be restored in next update', 'error');
+    // Update off tab filter
+    var offContainer = document.getElementById('offManagerCheckboxes');
+    if (offContainer) {
+        var html = '';
+        managers.forEach(function(manager) {
+            html += '<div class="manager-checkbox">' +
+                '<input type="checkbox" id="off_manager_' + manager.replace(/\s+/g, '_') + '" checked>' +
+                '<label for="off_manager_' + manager.replace(/\s+/g, '_') + '">' + manager + '</label>' +
+                '</div>';
         });
+        offContainer.innerHTML = html;
     }
-});
-</script>
-</body>
-</html>
+}
+
+function updateCounts() {
+    var workingCountElement = document.getElementById('workingCount');
+    var offCountElement = document.getElementById('offCount');
+    
+    if (workingCountElement) workingCountElement.textContent = workingEmployees.length;
+    if (offCountElement) offCountElement.textContent = offEmployees.length;
+}
+
+function update
