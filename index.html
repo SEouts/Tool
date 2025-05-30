@@ -391,52 +391,49 @@
 
         <div id="manualTab" class="tab-content">
             <div style="max-width: 800px; margin: 0 auto;">
-                <!-- Toggle Button -->
+                <!-- Summary Toggle Button -->
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <button class="btn btn-primary" onclick="toggleTopSections()" id="toggleButton" 
+                    <button class="btn btn-success" onclick="toggleSummarySection()" id="summaryToggleButton" 
                             style="padding: 12px 25px; font-size: 16px; border-radius: 25px;">
-                        🔼 Hide Summary & Upload Sections
+                        📊 Show Manager Summary
                     </button>
                 </div>
 
-                <!-- Collapsible Top Sections -->
-                <div id="topSections" style="transition: all 0.3s ease;">
-                    <!-- Manager Summary Cards -->
-                    <div style="margin-bottom: 30px;">
-                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
-                            <h2 style="margin-bottom: 8px;">📊 Manager Summary</h2>
-                            <p>Employee count by manager</p>
-                        </div>
-                        
-                        <div style="margin-bottom: 20px;">
-                            <h4 style="color: #4facfe; margin-bottom: 15px;">👥 Working Today:</h4>
-                            <div class="summary" id="workingSummary"></div>
-                        </div>
-                        
-                        <div style="margin-bottom: 30px;">
-                            <h4 style="color: #ff6b6b; margin-bottom: 15px;">🏖️ Off Today:</h4>
-                            <div class="summary" id="offSummary"></div>
-                        </div>
+                <!-- Manager Summary Section (Hidden by Default) -->
+                <div id="managerSummarySection" style="display: none; transition: all 0.3s ease; margin-bottom: 30px;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
+                        <h2 style="margin-bottom: 8px;">📊 Manager Summary</h2>
+                        <p>Employee count by manager</p>
                     </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: #4facfe; margin-bottom: 15px;">👥 Working Today:</h4>
+                        <div class="summary" id="workingSummary"></div>
+                    </div>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <h4 style="color: #ff6b6b; margin-bottom: 15px;">🏖️ Off Today:</h4>
+                        <div class="summary" id="offSummary"></div>
+                    </div>
+                </div>
 
-                    <!-- File Upload Section -->
-                    <div style="margin-bottom: 40px;">
-                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
-                            <h2 style="margin-bottom: 8px;">📁 Upload Daily Files</h2>
-                            <p>Start by uploading your schedule and time off files</p>
+                <!-- File Upload Section (Always Visible) -->
+                <div style="margin-bottom: 40px;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
+                        <h2 style="margin-bottom: 8px;">📁 Upload Daily Files</h2>
+                        <p>Start by uploading your schedule and time off files</p>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                        <div class="upload-box">
+                            <h3>📅 Upload Schedule File</h3>
+                            <p>Excel file with employee schedules</p>
+                            <input type="file" id="scheduleFile" accept=".xlsx,.xls,.csv" />
                         </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-                            <div class="upload-box">
-                                <h3>📅 Upload Schedule File</h3>
-                                <p>Excel file with employee schedules</p>
-                                <input type="file" id="scheduleFile" accept=".xlsx,.xls,.csv" />
-                            </div>
-                            <div class="upload-box">
-                                <h3>🏖️ Upload Time Off File</h3>
-                                <p>Excel file with scheduled time off</p>
-                                <input type="file" id="timeOffFile" accept=".xlsx,.xls,.csv" />
-                            </div>
+                        <div class="upload-box">
+                            <h3>🏖️ Upload Time Off File</h3>
+                            <p>Excel file with scheduled time off</p>
+                            <input type="file" id="timeOffFile" accept=".xlsx,.xls,.csv" />
                         </div>
                     </div>
                 </div>
@@ -484,7 +481,412 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                             <div>
                                 <label style="display: block; font-weight: 600; margin-bottom: 5px;">Start Time:</label>
-                                <input type="time" id="shiftStartTime" style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 16px;" />
+                                <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
+                            </td>
+                            <td><strong>${employee.name}</strong></td>
+                            <td>${employee.manager || 'N/A'}</td>
+                            <td>${employee.schedule || 'N/A'}</td>
+                        </tr>
+                    `;
+                } else {
+                    const statusClass = employee.type === 'partial' ? 'status-partial' : 
+                                       employee.type === 'manual' ? 'status-manual' : 'status-scheduled';
+                    
+                    html += `
+                        <tr>
+                            <td style="text-align: center;">
+                                <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
+                            </td>
+                            <td><strong>${employee.name}</strong></td>
+                            <td>${employee.manager || 'N/A'}</td>
+                            <td>
+                                <span class="status-badge ${statusClass}">${employee.status}</span>
+                            </td>
+                            <td>
+                                <span class="timestamp">${employee.timeAdded}</span>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            tableBody.innerHTML = html;
+        }
+
+        function updateManagerCheckboxes() {
+            const workingContainer = document.getElementById('workingManagerCheckboxes');
+            const offContainer = document.getElementById('offManagerCheckboxes');
+            
+            if (!workingContainer || !offContainer) {
+                console.error('Manager checkbox containers not found');
+                return;
+            }
+            
+            const managers = Array.from(allManagers).sort();
+            console.log('Creating checkboxes for managers:', managers);
+            
+            // Clear and populate working checkboxes
+            workingContainer.innerHTML = '';
+            managers.forEach((manager, index) => {
+                if (manager) {
+                    const checkboxId = 'working-manager-' + index;
+                    workingContainer.innerHTML += `
+                        <label class="manager-checkbox" for="${checkboxId}">
+                            <input type="checkbox" id="${checkboxId}" 
+                                   value="${manager}" 
+                                   onchange="handleManagerCheckboxChange('working')">
+                            <span>${manager}</span>
+                        </label>
+                    `;
+                }
+            });
+            
+            // Clear and populate off checkboxes
+            offContainer.innerHTML = '';
+            managers.forEach((manager, index) => {
+                if (manager) {
+                    const checkboxId = 'off-manager-' + index;
+                    offContainer.innerHTML += `
+                        <label class="manager-checkbox" for="${checkboxId}">
+                            <input type="checkbox" id="${checkboxId}" 
+                                   value="${manager}" 
+                                   onchange="handleManagerCheckboxChange('off')">
+                            <span>${manager}</span>
+                        </label>
+                    `;
+                }
+            });
+            
+            console.log('Manager checkboxes created');
+        }
+
+        function handleManagerCheckboxChange(tabType) {
+            const container = document.getElementById(tabType + 'ManagerCheckboxes');
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            const selectedManagers = [];
+            
+            checkboxes.forEach(checkbox => {
+                const label = checkbox.parentElement;
+                if (checkbox.checked) {
+                    selectedManagers.push(checkbox.value);
+                    label.classList.add('selected');
+                } else {
+                    label.classList.remove('selected');
+                }
+            });
+            
+            console.log('Selected managers:', selectedManagers);
+            
+            // Filter employees based on selected managers
+            const allEmployees = tabType === 'working' ? workingEmployees : offEmployees;
+            let filteredEmployees = allEmployees;
+            
+            if (selectedManagers.length > 0) {
+                filteredEmployees = allEmployees.filter(emp => selectedManagers.includes(emp.manager));
+            }
+            
+            updateTableDirect(tabType, filteredEmployees);
+            
+            if (selectedManagers.length > 0) {
+                showMessage(`Showing ${selectedManagers.length} selected manager(s)`, 'success');
+            }
+        }
+
+        function clearManagerFilter(tabType) {
+            console.log('clearManagerFilter called for:', tabType);
+            const container = document.getElementById(tabType + 'ManagerCheckboxes');
+            if (!container) {
+                console.error('Container not found:', tabType + 'ManagerCheckboxes');
+                return;
+            }
+            
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            console.log('Found checkboxes to clear:', checkboxes.length);
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                checkbox.parentElement.classList.remove('selected');
+            });
+            
+            // Show all employees
+            const allEmployees = tabType === 'working' ? workingEmployees : offEmployees;
+            updateTableDirect(tabType, allEmployees);
+            showMessage('Filter cleared - showing all employees', 'success');
+        }
+
+        function selectAllManagers(tabType) {
+            console.log('selectAllManagers called for:', tabType);
+            const container = document.getElementById(tabType + 'ManagerCheckboxes');
+            if (!container) {
+                console.error('Container not found:', tabType + 'ManagerCheckboxes');
+                return;
+            }
+            
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            console.log('Found checkboxes to select:', checkboxes.length);
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+                checkbox.parentElement.classList.add('selected');
+            });
+            
+            // Show all employees (since all managers are selected)
+            const allEmployees = tabType === 'working' ? workingEmployees : offEmployees;
+            updateTableDirect(tabType, allEmployees);
+            showMessage('All managers selected', 'success');
+        }
+
+        function toggleSummarySection() {
+            const summarySection = document.getElementById('managerSummarySection');
+            const toggleButton = document.getElementById('summaryToggleButton');
+            
+            if (summarySection.style.display === 'none') {
+                // Show summary section
+                summarySection.style.display = 'block';
+                toggleButton.innerHTML = '📊 Hide Manager Summary';
+                toggleButton.className = 'btn btn-primary';
+                toggleButton.style.background = 'linear-gradient(135deg, #ff4757 0%, #ff3838 100%)';
+            } else {
+                // Hide summary section
+                summarySection.style.display = 'none';
+                toggleButton.innerHTML = '📊 Show Manager Summary';
+                toggleButton.className = 'btn btn-success';
+                toggleButton.style.background = 'linear-gradient(135deg, #2ed573 0%, #7bed9f 100%)';
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        function markEmployeeWithStatus(status) {
+            const nameInput = document.getElementById('manualEmployeeName');
+            const employeeName = nameInput.value.trim();
+            
+            if (!employeeName) {
+                showMessage('Please enter an employee name', 'error');
+                return;
+            }
+            
+            const employeeIndex = workingEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                showMessage('Employee not found in working list. Please check the spelling.', 'error');
+                return;
+            }
+            
+            const employee = workingEmployees[employeeIndex];
+            
+            const offEmployee = {
+                name: employee.name,
+                manager: employee.manager,
+                status: status,
+                type: 'manual',
+                timeAdded: new Date().toLocaleString()
+            };
+            
+            offEmployees.push(offEmployee);
+            workingEmployees.splice(employeeIndex, 1);
+            manuallyAdded.set(employee.name, new Date());
+            
+            nameInput.value = '';
+            forceTableUpdate();
+            
+            showMessage(`${employee.name} has been marked as "${status}"`, 'success');
+            switchTab('off');
+        }
+
+        function returnToWork() {
+            const nameInput = document.getElementById('manualEmployeeName');
+            const employeeName = nameInput.value.trim();
+            
+            if (!employeeName) {
+                showMessage('Please enter an employee name', 'error');
+                return;
+            }
+            
+            const employeeIndex = offEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                showMessage('Employee not found in off list. Please check the spelling.', 'error');
+                return;
+            }
+            
+            const employee = offEmployees[employeeIndex];
+            
+            const workingEmployee = {
+                name: employee.name,
+                manager: employee.manager,
+                schedule: 'Returned - Check original schedule',
+                type: 'returned'
+            };
+            
+            workingEmployees.push(workingEmployee);
+            offEmployees.splice(employeeIndex, 1);
+            manuallyAdded.delete(employee.name);
+            
+            nameInput.value = '';
+            forceTableUpdate();
+            
+            showMessage(`${employee.name} has returned to work and moved to Working Today tab`, 'success');
+            switchTab('working');
+        }
+
+        function toggleShiftChange() {
+            const section = document.getElementById('shiftChangeSection');
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+            } else {
+                section.style.display = 'none';
+                document.getElementById('shiftStartTime').value = '';
+                document.getElementById('shiftEndTime').value = '';
+            }
+        }
+
+        function updateShift() {
+            const nameInput = document.getElementById('manualEmployeeName');
+            const employeeName = nameInput.value.trim();
+            const startTime = document.getElementById('shiftStartTime').value;
+            const endTime = document.getElementById('shiftEndTime').value;
+            
+            if (!employeeName) {
+                showMessage('Please enter an employee name', 'error');
+                return;
+            }
+            
+            if (!startTime || !endTime) {
+                showMessage('Please enter both start and end times', 'error');
+                return;
+            }
+            
+            const employeeIndex = workingEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                showMessage('Employee not found in working list. Please check the spelling.', 'error');
+                return;
+            }
+            
+            const employee = workingEmployees[employeeIndex];
+            
+            function formatTime(time24) {
+                const [hours, minutes] = time24.split(':');
+                const hour = parseInt(hours);
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+                return `${hour12}:${minutes} ${ampm}`;
+            }
+            
+            const today = new Date();
+            const dateStr = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`;
+            
+            const newSchedule = `${employee.name}:${dateStr}, ${formatTime(startTime)} – ${dateStr}, ${formatTime(endTime)}`;
+            
+            workingEmployees[employeeIndex].schedule = newSchedule;
+            workingEmployees[employeeIndex].type = 'updated';
+            
+            nameInput.value = '';
+            document.getElementById('shiftStartTime').value = '';
+            document.getElementById('shiftEndTime').value = '';
+            toggleShiftChange();
+            
+            forceTableUpdate();
+            
+            showMessage(`${employee.name}'s shift updated to ${formatTime(startTime)} - ${formatTime(endTime)}`, 'success');
+            switchTab('working');
+        }
+
+        function updateDisplay() {
+            updateCounts();
+            updateSummaries();
+            console.log('All managers:', Array.from(allManagers));
+        }
+
+        function updateCounts() {
+            document.getElementById('workingCount').textContent = workingEmployees.length;
+            document.getElementById('offCount').textContent = offEmployees.length;
+        }
+
+        function updateSummaries() {
+            const workingByManager = {};
+            workingEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                workingByManager[manager] = (workingByManager[manager] || 0) + 1;
+            });
+            
+            let workingSummaryHtml = '';
+            Object.entries(workingByManager).forEach(([manager, count]) => {
+                workingSummaryHtml += `
+                    <div class="summary-card">
+                        <h3>${count}</h3>
+                        <p>${manager}</p>
+                    </div>
+                `;
+            });
+            document.getElementById('workingSummary').innerHTML = workingSummaryHtml;
+            
+            const offByManager = {};
+            offEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                offByManager[manager] = (offByManager[manager] || 0) + 1;
+            });
+            
+            let offSummaryHtml = '';
+            Object.entries(offByManager).forEach(([manager, count]) => {
+                offSummaryHtml += `
+                    <div class="summary-card">
+                        <h3>${count}</h3>
+                        <p>${manager}</p>
+                    </div>
+                `;
+            });
+            document.getElementById('offSummary').innerHTML = offSummaryHtml;
+        }
+
+        function exportData() {
+            if (!xlsxLoaded) {
+                showMessage('Excel export not available. Please refresh the page.', 'error');
+                return;
+            }
+
+            try {
+                const wb = XLSX.utils.book_new();
+                
+                const workingData = [['Employee', 'Manager', 'Schedule', 'Status']];
+                workingEmployees.forEach(emp => {
+                    workingData.push([emp.name, emp.manager, emp.schedule, 'Working']);
+                });
+                const workingWs = XLSX.utils.aoa_to_sheet(workingData);
+                XLSX.utils.book_append_sheet(wb, workingWs, 'Working Today');
+                
+                const offData = [['Employee', 'Manager', 'Status', 'Time Added', 'Type']];
+                offEmployees.forEach(emp => {
+                    offData.push([emp.name, emp.manager, emp.status, emp.timeAdded, emp.type]);
+                });
+                const offWs = XLSX.utils.aoa_to_sheet(offData);
+                XLSX.utils.book_append_sheet(wb, offWs, 'Off Today');
+                
+                const fileName = `Employee_Availability_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                showMessage('Report exported successfully!', 'success');
+            } catch (error) {
+                showMessage('Error exporting report: ' + error.message, 'error');
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html> type="time" id="shiftStartTime" style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 16px;" />
                             </div>
                             <div>
                                 <label style="display: block; font-weight: 600; margin-bottom: 5px;">End Time:</label>
@@ -766,427 +1168,4 @@
                     html += `
                         <tr>
                             <td style="text-align: center;">
-                                <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
-                            </td>
-                            <td><strong>${employee.name}</strong></td>
-                            <td>${employee.manager || 'N/A'}</td>
-                            <td>${employee.schedule || 'N/A'}</td>
-                        </tr>
-                    `;
-                } else {
-                    const statusClass = employee.type === 'partial' ? 'status-partial' : 
-                                       employee.type === 'manual' ? 'status-manual' : 'status-scheduled';
-                    
-                    html += `
-                        <tr>
-                            <td style="text-align: center;">
-                                <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
-                            </td>
-                            <td><strong>${employee.name}</strong></td>
-                            <td>${employee.manager || 'N/A'}</td>
-                            <td>
-                                <span class="status-badge ${statusClass}">${employee.status}</span>
-                            </td>
-                            <td>
-                                <span class="timestamp">${employee.timeAdded}</span>
-                            </td>
-                        </tr>
-                    `;
-                }
-            });
-            
-            tableBody.innerHTML = html;
-        }
-
-        function updateManagerCheckboxes() {
-            const workingContainer = document.getElementById('workingManagerCheckboxes');
-            const offContainer = document.getElementById('offManagerCheckboxes');
-            
-            if (!workingContainer || !offContainer) {
-                console.error('Manager checkbox containers not found');
-                return;
-            }
-            
-            const managers = Array.from(allManagers).sort();
-            console.log('Creating checkboxes for managers:', managers);
-            
-            // Clear and populate working checkboxes
-            workingContainer.innerHTML = '';
-            managers.forEach((manager, index) => {
-                if (manager) {
-                    const checkboxId = 'working-manager-' + index;
-                    workingContainer.innerHTML += `
-                        <label class="manager-checkbox" for="${checkboxId}">
-                            <input type="checkbox" id="${checkboxId}" 
-                                   value="${manager}" 
-                                   onchange="handleManagerCheckboxChange('working')">
-                            <span>${manager}</span>
-                        </label>
-                    `;
-                }
-            });
-            
-            // Clear and populate off checkboxes
-            offContainer.innerHTML = '';
-            managers.forEach((manager, index) => {
-                if (manager) {
-                    const checkboxId = 'off-manager-' + index;
-                    offContainer.innerHTML += `
-                        <label class="manager-checkbox" for="${checkboxId}">
-                            <input type="checkbox" id="${checkboxId}" 
-                                   value="${manager}" 
-                                   onchange="handleManagerCheckboxChange('off')">
-                            <span>${manager}</span>
-                        </label>
-                    `;
-                }
-            });
-            
-            console.log('Manager checkboxes created');
-        }
-
-        function handleManagerCheckboxChange(tabType) {
-            const container = document.getElementById(tabType + 'ManagerCheckboxes');
-            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
-            const selectedManagers = [];
-            
-            checkboxes.forEach(checkbox => {
-                const label = checkbox.parentElement;
-                if (checkbox.checked) {
-                    selectedManagers.push(checkbox.value);
-                    label.classList.add('selected');
-                } else {
-                    label.classList.remove('selected');
-                }
-            });
-            
-            console.log('Selected managers:', selectedManagers);
-            
-            // Filter employees based on selected managers
-            const allEmployees = tabType === 'working' ? workingEmployees : offEmployees;
-            let filteredEmployees = allEmployees;
-            
-            if (selectedManagers.length > 0) {
-                filteredEmployees = allEmployees.filter(emp => selectedManagers.includes(emp.manager));
-            }
-            
-            updateTableDirect(tabType, filteredEmployees);
-            
-            if (selectedManagers.length > 0) {
-                showMessage(`Showing ${selectedManagers.length} selected manager(s)`, 'success');
-            }
-        }
-
-        function clearManagerFilter(tabType) {
-            console.log('clearManagerFilter called for:', tabType);
-            const container = document.getElementById(tabType + 'ManagerCheckboxes');
-            if (!container) {
-                console.error('Container not found:', tabType + 'ManagerCheckboxes');
-                return;
-            }
-            
-            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
-            console.log('Found checkboxes to clear:', checkboxes.length);
-            
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = false;
-                checkbox.parentElement.classList.remove('selected');
-            });
-            
-            // Show all employees
-            const allEmployees = tabType === 'working' ? workingEmployees : offEmployees;
-            updateTableDirect(tabType, allEmployees);
-            showMessage('Filter cleared - showing all employees', 'success');
-        }
-
-        function selectAllManagers(tabType) {
-            console.log('selectAllManagers called for:', tabType);
-            const container = document.getElementById(tabType + 'ManagerCheckboxes');
-            if (!container) {
-                console.error('Container not found:', tabType + 'ManagerCheckboxes');
-                return;
-            }
-            
-            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
-            console.log('Found checkboxes to select:', checkboxes.length);
-            
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = true;
-                checkbox.parentElement.classList.add('selected');
-            });
-            
-            // Show all employees (since all managers are selected)
-            const allEmployees = tabType === 'working' ? workingEmployees : offEmployees;
-            updateTableDirect(tabType, allEmployees);
-            showMessage('All managers selected', 'success');
-        }
-
-        // Test function to manually trigger everything
-        function testEverything() {
-            console.log('=== TESTING EVERYTHING ===');
-            console.log('Working employees:', workingEmployees.length);
-            console.log('Off employees:', offEmployees.length);
-            console.log('All managers:', Array.from(allManagers));
-            
-            // Force update everything
-            forceTableUpdate();
-            
-            // Test the buttons
-            console.log('Testing Clear All button...');
-            clearManagerFilter('working');
-            
-            setTimeout(() => {
-                console.log('Testing Select All button...');
-                selectAllManagers('working');
-            }, 1000);
-        }
-
-        function toggleTopSections() {
-            const topSections = document.getElementById('topSections');
-            const toggleButton = document.getElementById('toggleButton');
-            
-            if (topSections.style.display === 'none') {
-                // Show sections
-                topSections.style.display = 'block';
-                toggleButton.innerHTML = '🔼 Hide Summary & Upload Sections';
-                toggleButton.style.background = 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
-            } else {
-                // Hide sections
-                topSections.style.display = 'none';
-                toggleButton.innerHTML = '🔽 Show Summary & Upload Sections';
-                toggleButton.style.background = 'linear-gradient(135deg, #2ed573 0%, #7bed9f 100%)';
-            }
-        }
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
-            
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.getElementById(tabName + 'Tab').classList.add('active');
-        }
-
-        function markEmployeeWithStatus(status) {
-            const nameInput = document.getElementById('manualEmployeeName');
-            const employeeName = nameInput.value.trim();
-            
-            if (!employeeName) {
-                showMessage('Please enter an employee name', 'error');
-                return;
-            }
-            
-            const employeeIndex = workingEmployees.findIndex(emp => 
-                emp.name.toLowerCase().includes(employeeName.toLowerCase())
-            );
-            
-            if (employeeIndex === -1) {
-                showMessage('Employee not found in working list. Please check the spelling.', 'error');
-                return;
-            }
-            
-            const employee = workingEmployees[employeeIndex];
-            
-            const offEmployee = {
-                name: employee.name,
-                manager: employee.manager,
-                status: status,
-                type: 'manual',
-                timeAdded: new Date().toLocaleString()
-            };
-            
-            offEmployees.push(offEmployee);
-            workingEmployees.splice(employeeIndex, 1);
-            manuallyAdded.set(employee.name, new Date());
-            
-            nameInput.value = '';
-            forceTableUpdate();
-            
-            showMessage(`${employee.name} has been marked as "${status}"`, 'success');
-            switchTab('off');
-        }
-
-        function returnToWork() {
-            const nameInput = document.getElementById('manualEmployeeName');
-            const employeeName = nameInput.value.trim();
-            
-            if (!employeeName) {
-                showMessage('Please enter an employee name', 'error');
-                return;
-            }
-            
-            const employeeIndex = offEmployees.findIndex(emp => 
-                emp.name.toLowerCase().includes(employeeName.toLowerCase())
-            );
-            
-            if (employeeIndex === -1) {
-                showMessage('Employee not found in off list. Please check the spelling.', 'error');
-                return;
-            }
-            
-            const employee = offEmployees[employeeIndex];
-            
-            const workingEmployee = {
-                name: employee.name,
-                manager: employee.manager,
-                schedule: 'Returned - Check original schedule',
-                type: 'returned'
-            };
-            
-            workingEmployees.push(workingEmployee);
-            offEmployees.splice(employeeIndex, 1);
-            manuallyAdded.delete(employee.name);
-            
-            nameInput.value = '';
-            forceTableUpdate();
-            
-            showMessage(`${employee.name} has returned to work and moved to Working Today tab`, 'success');
-            switchTab('working');
-        }
-
-        function toggleShiftChange() {
-            const section = document.getElementById('shiftChangeSection');
-            if (section.style.display === 'none') {
-                section.style.display = 'block';
-            } else {
-                section.style.display = 'none';
-                document.getElementById('shiftStartTime').value = '';
-                document.getElementById('shiftEndTime').value = '';
-            }
-        }
-
-        function updateShift() {
-            const nameInput = document.getElementById('manualEmployeeName');
-            const employeeName = nameInput.value.trim();
-            const startTime = document.getElementById('shiftStartTime').value;
-            const endTime = document.getElementById('shiftEndTime').value;
-            
-            if (!employeeName) {
-                showMessage('Please enter an employee name', 'error');
-                return;
-            }
-            
-            if (!startTime || !endTime) {
-                showMessage('Please enter both start and end times', 'error');
-                return;
-            }
-            
-            const employeeIndex = workingEmployees.findIndex(emp => 
-                emp.name.toLowerCase().includes(employeeName.toLowerCase())
-            );
-            
-            if (employeeIndex === -1) {
-                showMessage('Employee not found in working list. Please check the spelling.', 'error');
-                return;
-            }
-            
-            const employee = workingEmployees[employeeIndex];
-            
-            function formatTime(time24) {
-                const [hours, minutes] = time24.split(':');
-                const hour = parseInt(hours);
-                const ampm = hour >= 12 ? 'PM' : 'AM';
-                const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-                return `${hour12}:${minutes} ${ampm}`;
-            }
-            
-            const today = new Date();
-            const dateStr = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`;
-            
-            const newSchedule = `${employee.name}:${dateStr}, ${formatTime(startTime)} – ${dateStr}, ${formatTime(endTime)}`;
-            
-            workingEmployees[employeeIndex].schedule = newSchedule;
-            workingEmployees[employeeIndex].type = 'updated';
-            
-            nameInput.value = '';
-            document.getElementById('shiftStartTime').value = '';
-            document.getElementById('shiftEndTime').value = '';
-            toggleShiftChange();
-            
-            forceTableUpdate();
-            
-            showMessage(`${employee.name}'s shift updated to ${formatTime(startTime)} - ${formatTime(endTime)}`, 'success');
-            switchTab('working');
-        }
-
-        function updateDisplay() {
-            updateCounts();
-            updateSummaries();
-            console.log('All managers:', Array.from(allManagers));
-        }
-
-        function updateCounts() {
-            document.getElementById('workingCount').textContent = workingEmployees.length;
-            document.getElementById('offCount').textContent = offEmployees.length;
-        }
-
-        function updateSummaries() {
-            const workingByManager = {};
-            workingEmployees.forEach(emp => {
-                const manager = emp.manager || 'No Manager';
-                workingByManager[manager] = (workingByManager[manager] || 0) + 1;
-            });
-            
-            let workingSummaryHtml = '';
-            Object.entries(workingByManager).forEach(([manager, count]) => {
-                workingSummaryHtml += `
-                    <div class="summary-card">
-                        <h3>${count}</h3>
-                        <p>${manager}</p>
-                    </div>
-                `;
-            });
-            document.getElementById('workingSummary').innerHTML = workingSummaryHtml;
-            
-            const offByManager = {};
-            offEmployees.forEach(emp => {
-                const manager = emp.manager || 'No Manager';
-                offByManager[manager] = (offByManager[manager] || 0) + 1;
-            });
-            
-            let offSummaryHtml = '';
-            Object.entries(offByManager).forEach(([manager, count]) => {
-                offSummaryHtml += `
-                    <div class="summary-card">
-                        <h3>${count}</h3>
-                        <p>${manager}</p>
-                    </div>
-                `;
-            });
-            document.getElementById('offSummary').innerHTML = offSummaryHtml;
-        }
-
-        function exportData() {
-            if (!xlsxLoaded) {
-                showMessage('Excel export not available. Please refresh the page.', 'error');
-                return;
-            }
-
-            try {
-                const wb = XLSX.utils.book_new();
-                
-                const workingData = [['Employee', 'Manager', 'Schedule', 'Status']];
-                workingEmployees.forEach(emp => {
-                    workingData.push([emp.name, emp.manager, emp.schedule, 'Working']);
-                });
-                const workingWs = XLSX.utils.aoa_to_sheet(workingData);
-                XLSX.utils.book_append_sheet(wb, workingWs, 'Working Today');
-                
-                const offData = [['Employee', 'Manager', 'Status', 'Time Added', 'Type']];
-                offEmployees.forEach(emp => {
-                    offData.push([emp.name, emp.manager, emp.status, emp.timeAdded, emp.type]);
-                });
-                const offWs = XLSX.utils.aoa_to_sheet(offData);
-                XLSX.utils.book_append_sheet(wb, offWs, 'Off Today');
-                
-                const fileName = `Employee_Availability_${new Date().toISOString().split('T')[0]}.xlsx`;
-                XLSX.writeFile(wb, fileName);
-                showMessage('Report exported successfully!', 'success');
-            } catch (error) {
-                showMessage('Error exporting report: ' + error.message, 'error');
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', init);
-    </script>
-</body>
-</html>
+                                <input
