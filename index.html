@@ -996,6 +996,12 @@
                 managerCounts[manager] = (managerCounts[manager] || 0) + 1;
             });
             
+            // If no working employees, return first manager from allManagers
+            if (Object.keys(managerCounts).length === 0) {
+                const managersArray = Array.from(allManagers);
+                return managersArray.length > 0 ? managersArray[0] : 'No Manager';
+            }
+            
             // Find manager with minimum count
             let minCount = Infinity;
             let managerWithLeast = 'No Manager';
@@ -1151,24 +1157,49 @@
                 workingSummary.innerHTML = workingSummaryHtml;
             }
             
+            // Debug logging for off employees
+            console.log('Off employees for summary:', offEmployees);
+            
             // Updated Off summary calculation - count by assigned manager after reassignments
             const offByManager = {};
             offEmployees.forEach(emp => {
                 const manager = emp.manager || 'No Manager'; // This is now the reassigned manager
                 offByManager[manager] = (offByManager[manager] || 0) + 1;
+                console.log(`Adding ${emp.name} to manager ${manager}, status: ${emp.status}`);
             });
+            
+            console.log('Off by manager counts:', offByManager);
             
             const offSummary = document.getElementById('offSummary');
             if (offSummary) {
                 let offSummaryHtml = '';
-                Object.entries(offByManager).forEach(([manager, count]) => {
-                    offSummaryHtml += `
-                        <div class="summary-card">
-                            <h3>${count}</h3>
-                            <p>${manager}</p>
-                        </div>
-                    `;
+                
+                // Ensure we show all managers, even if they have 0 off employees
+                const allManagersList = Array.from(allManagers);
+                allManagersList.forEach(manager => {
+                    const count = offByManager[manager] || 0;
+                    if (count > 0) {  // Only show managers with off employees
+                        offSummaryHtml += `
+                            <div class="summary-card">
+                                <h3>${count}</h3>
+                                <p>${manager}</p>
+                            </div>
+                        `;
+                    }
                 });
+                
+                // Also include any managers not in allManagers but present in offEmployees
+                Object.entries(offByManager).forEach(([manager, count]) => {
+                    if (!allManagersList.includes(manager) && count > 0) {
+                        offSummaryHtml += `
+                            <div class="summary-card">
+                                <h3>${count}</h3>
+                                <p>${manager}</p>
+                            </div>
+                        `;
+                    }
+                });
+                
                 offSummary.innerHTML = offSummaryHtml;
             }
         }
