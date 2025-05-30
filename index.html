@@ -752,6 +752,9 @@
             if (workingContainer && offContainer) {
                 updateManagerCheckboxes();
             }
+            
+            // Also update the summaries
+            updateDisplay();
         }
 
         function updateTableDirect(tabType, employees) {
@@ -972,6 +975,9 @@
             manuallyAdded.set(employee.name, new Date());
             
             nameInput.value = '';
+            
+            // Force update everything including summaries
+            updateDisplay();
             forceTableUpdate();
             
             let message = `${employee.name} has been marked as "${status}"`;
@@ -1041,7 +1047,7 @@
             
             const workingEmployee = {
                 name: employee.name,
-                manager: employee.manager,
+                manager: employee.originalManager || employee.manager, // Use original manager if available
                 schedule: 'Returned - Check original schedule',
                 type: 'returned'
             };
@@ -1051,6 +1057,9 @@
             manuallyAdded.delete(employee.name);
             
             nameInput.value = '';
+            
+            // Force update everything including summaries
+            updateDisplay();
             forceTableUpdate();
             
             showMessage(`${employee.name} has returned to work and moved to Working Today tab`, 'success');
