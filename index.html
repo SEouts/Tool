@@ -656,10 +656,16 @@
         }
 
         function switchTab(tabName) {
+            // Remove active class from all tabs
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            
+            // Add active class to clicked tab
             document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
             
+            // Hide all tab content
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Show selected tab content
             document.getElementById(tabName + 'Tab').classList.add('active');
         }
 
