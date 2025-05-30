@@ -991,24 +991,35 @@
 
         // Find manager with least employees function
         function findManagerWithLeastEmployees() {
-            if (workingEmployees.length === 0) {
-                return 'No Manager';
-            }
-            
-            // Count employees per manager (only in working employees)
+            // Count total employees per manager (working + off employees assigned to them)
             const managerCounts = {};
+            
+            // First, count working employees
             workingEmployees.forEach(emp => {
                 const manager = emp.manager || 'No Manager';
                 managerCounts[manager] = (managerCounts[manager] || 0) + 1;
             });
             
-            // If no working employees, return first manager from allManagers
+            // Then, add off employees that have been reassigned to managers
+            offEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                managerCounts[manager] = (managerCounts[manager] || 0) + 1;
+            });
+            
+            // If no managers have any employees, return first manager from allManagers
             if (Object.keys(managerCounts).length === 0) {
                 const managersArray = Array.from(allManagers);
                 return managersArray.length > 0 ? managersArray[0] : 'No Manager';
             }
             
-            // Find manager with minimum count
+            // Ensure all managers from allManagers are represented (even with 0 count)
+            Array.from(allManagers).forEach(manager => {
+                if (!(manager in managerCounts)) {
+                    managerCounts[manager] = 0;
+                }
+            });
+            
+            // Find manager with minimum total count
             let minCount = Infinity;
             let managerWithLeast = 'No Manager';
             
@@ -1019,8 +1030,8 @@
                 }
             });
             
-            console.log('Manager counts:', managerCounts);
-            console.log('Manager with least employees:', managerWithLeast, 'with', minCount, 'employees');
+            console.log('Total manager counts (working + off):', managerCounts);
+            console.log('Manager with least total employees:', managerWithLeast, 'with', minCount, 'total employees');
             
             return managerWithLeast;
         }
