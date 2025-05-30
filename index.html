@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Availability Management</title>
+    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
@@ -66,9 +67,9 @@
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('working')">👥 Working Today (<span id="workingCount">0</span>)</button>
-            <button class="tab" onclick="switchTab('off')">🏖️ Off Today (<span id="offCount">0</span>)</button>
-            <button class="tab" onclick="switchTab('manual')" id="quickActionsTab">🔒 Quick Actions</button>
+            <button class="tab active" onclick="window.appData.switchTab('working')">👥 Working Today (<span id="workingCount">0</span>)</button>
+            <button class="tab" onclick="window.appData.switchTab('off')">🏖️ Off Today (<span id="offCount">0</span>)</button>
+            <button class="tab" onclick="window.appData.switchTab('manual')" id="quickActionsTab">🔒 Quick Actions</button>
         </div>
 
         <div id="workingTab" class="tab-content active">
@@ -76,13 +77,13 @@
                 <h4>📋 Filter by Manager:</h4>
                 <div id="workingManagerCheckboxes" class="manager-checkboxes"></div>
                 <div style="text-align: center;">
-                    <button class="btn btn-primary" onclick="clearManagerFilter('working')" style="padding: 8px 16px;">Clear All</button>
-                    <button class="btn btn-success" onclick="selectAllManagers('working')" style="padding: 8px 16px; margin-left: 10px;">Select All</button>
+                    <button class="btn btn-primary" onclick="window.appData.clearManagerFilter('working')" style="padding: 8px 16px;">Clear All</button>
+                    <button class="btn btn-success" onclick="window.appData.selectAllManagers('working')" style="padding: 8px 16px; margin-left: 10px;">Select All</button>
                 </div>
             </div>
             <div class="table-container">
                 <div style="padding: 10px 15px; background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
-                    <button onclick="clearAllCheckboxes('working')" style="background: #333; color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 11px; cursor: pointer; font-weight: 600;" title="Clear all checkboxes">Clear</button>
+                    <button onclick="window.appData.clearAllCheckboxes('working')" style="background: #333; color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 11px; cursor: pointer; font-weight: 600;" title="Clear all checkboxes">Clear</button>
                 </div>
                 <table>
                     <thead>
@@ -90,7 +91,7 @@
                             <th style="width: 50px;">✓</th>
                             <th>Employee</th>
                             <th>Manager</th>
-                            <th onclick="sortBySchedule()" class="sortable-header">Schedule <span id="sortIndicator" class="sort-indicator">⏹</span></th>
+                            <th onclick="window.appData.sortBySchedule()" class="sortable-header">Schedule <span id="sortIndicator" class="sort-indicator">⏹</span></th>
                         </tr>
                     </thead>
                     <tbody id="workingTableBody">
@@ -105,13 +106,13 @@
                 <h4>📋 Filter by Manager:</h4>
                 <div id="offManagerCheckboxes" class="manager-checkboxes"></div>
                 <div style="text-align: center;">
-                    <button class="btn btn-primary" onclick="clearManagerFilter('off')" style="padding: 8px 16px;">Clear All</button>
-                    <button class="btn btn-success" onclick="selectAllManagers('off')" style="padding: 8px 16px; margin-left: 10px;">Select All</button>
+                    <button class="btn btn-primary" onclick="window.appData.clearManagerFilter('off')" style="padding: 8px 16px;">Clear All</button>
+                    <button class="btn btn-success" onclick="window.appData.selectAllManagers('off')" style="padding: 8px 16px; margin-left: 10px;">Select All</button>
                 </div>
             </div>
             <div class="table-container">
                 <div style="padding: 10px 15px; background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
-                    <button onclick="clearAllCheckboxes('off')" style="background: #333; color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 11px; cursor: pointer; font-weight: 600;" title="Clear all checkboxes">Clear</button>
+                    <button onclick="window.appData.clearAllCheckboxes('off')" style="background: #333; color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 11px; cursor: pointer; font-weight: 600;" title="Clear all checkboxes">Clear</button>
                 </div>
                 <table>
                     <thead>
@@ -133,7 +134,7 @@
         <div id="manualTab" class="tab-content">
             <div style="max-width: 800px; margin: 0 auto;">
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <button class="btn btn-success" onclick="toggleSummarySection()" id="summaryToggleButton" style="padding: 12px 25px; font-size: 16px; border-radius: 25px;">📊 Show Manager Summary</button>
+                    <button class="btn btn-success" onclick="window.appData.toggleSummarySection()" id="summaryToggleButton" style="padding: 12px 25px; font-size: 16px; border-radius: 25px;">📊 Show Manager Summary</button>
                 </div>
 
                 <div id="managerSummarySection" style="display: none; transition: all 0.3s ease; margin-bottom: 30px;">
@@ -160,12 +161,12 @@
                         <div class="upload-box">
                             <h3>📅 Upload Schedule File</h3>
                             <p>Excel file with employee schedules</p>
-                            <input type="file" id="scheduleFile" accept=".xlsx,.xls,.csv" />
+                            <input type="file" id="scheduleFile" accept=".xlsx,.xls,.csv" onchange="window.appData.handleScheduleFile(event)" />
                         </div>
                         <div class="upload-box">
                             <h3>🏖️ Upload Time Off File</h3>
                             <p>Excel file with scheduled time off</p>
-                            <input type="file" id="timeOffFile" accept=".xlsx,.xls,.csv" />
+                            <input type="file" id="timeOffFile" accept=".xlsx,.xls,.csv" onchange="window.appData.handleTimeOffFile(event)" />
                         </div>
                     </div>
                 </div>
@@ -178,17 +179,17 @@
                 <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
                     <div style="margin-bottom: 30px;">
                         <label style="display: block; font-weight: 600; margin-bottom: 10px; font-size: 16px;">Employee Name:</label>
-                        <input type="text" id="manualEmployeeName" placeholder="Enter employee name..." style="width: 100%; padding: 15px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 16px; transition: all 0.3s ease;" onfocus="this.style.borderColor='#4facfe'; this.style.boxShadow='0 0 0 3px rgba(79, 172, 254, 0.1)'" onblur="this.style.borderColor='#e9ecef'; this.style.boxShadow='none'" />
+                        <input type="text" id="manualEmployeeName" placeholder="Enter employee name..." style="width: 100%; padding: 15px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 16px; transition: all 0.3s ease;" onfocus="this.style.borderColor='#4facfe'; this.style.boxShadow='0 0 0 3px rgba(79, 172, 254, 0.1)'" onblur="this.style.borderColor='#e9ecef'; this.style.boxShadow='none'" onkeypress="if(event.key==='Enter')window.appData.markEmployeeWithStatus('Off Today')" />
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                        <button class="btn btn-danger" onclick="markEmployeeWithStatus('Off Today')" style="padding: 20px; font-size: 16px; border-radius: 15px;">🏖️ Off Today</button>
-                        <button class="btn" onclick="markEmployeeWithStatus('Left Early')" style="padding: 20px; font-size: 16px; border-radius: 15px; background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%); color: white;">⏰ Left Early</button>
+                        <button class="btn btn-danger" onclick="window.appData.markEmployeeWithStatus('Off Today')" style="padding: 20px; font-size: 16px; border-radius: 15px;">🏖️ Off Today</button>
+                        <button class="btn" onclick="window.appData.markEmployeeWithStatus('Left Early')" style="padding: 20px; font-size: 16px; border-radius: 15px; background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%); color: white;">⏰ Left Early</button>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                        <button class="btn btn-primary" onclick="returnToWork()" style="padding: 20px; font-size: 16px; border-radius: 15px;">✅ Returned To Work</button>
-                        <button class="btn" onclick="toggleShiftChange()" style="padding: 20px; font-size: 16px; border-radius: 15px; background: linear-gradient(135deg, #9c88ff 0%, #8c7ae6 100%); color: white;">🕐 Change Shift</button>
+                        <button class="btn btn-primary" onclick="window.appData.returnToWork()" style="padding: 20px; font-size: 16px; border-radius: 15px;">✅ Returned To Work</button>
+                        <button class="btn" onclick="window.appData.toggleShiftChange()" style="padding: 20px; font-size: 16px; border-radius: 15px; background: linear-gradient(135deg, #9c88ff 0%, #8c7ae6 100%); color: white;">🕐 Change Shift</button>
                     </div>
 
                     <div id="shiftChangeSection" style="display: none; margin-bottom: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px; border: 2px solid #9c88ff;">
@@ -204,13 +205,13 @@
                             </div>
                         </div>
                         <div style="text-align: center;">
-                            <button class="btn" onclick="updateShift()" style="padding: 12px 25px; border-radius: 10px; background: linear-gradient(135deg, #9c88ff 0%, #8c7ae6 100%); color: white;">Update Schedule</button>
-                            <button class="btn" onclick="toggleShiftChange()" style="padding: 12px 25px; border-radius: 10px; background: #6c757d; color: white; margin-left: 10px;">Cancel</button>
+                            <button class="btn" onclick="window.appData.updateShift()" style="padding: 12px 25px; border-radius: 10px; background: linear-gradient(135deg, #9c88ff 0%, #8c7ae6 100%); color: white;">Update Schedule</button>
+                            <button class="btn" onclick="window.appData.toggleShiftChange()" style="padding: 12px 25px; border-radius: 10px; background: #6c757d; color: white; margin-left: 10px;">Cancel</button>
                         </div>
                     </div>
 
                     <div style="text-align: center; margin-bottom: 20px;">
-                        <button class="btn btn-success" onclick="exportData()" style="font-size: 18px; padding: 15px 30px; border-radius: 15px;">📊 Export Daily Report</button>
+                        <button class="btn btn-success" onclick="window.appData.exportData()" style="font-size: 18px; padding: 15px 30px; border-radius: 15px;">📊 Export Daily Report</button>
                     </div>
 
                     <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #4facfe;">
@@ -227,127 +228,219 @@
         </div>
     </div>
 
-<script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-<script defer>
-window.addEventListener('load', function() {
-    window.workingEmployees = [];
-    window.offEmployees = [];
-    window.allManagers = new Set();
-    window.scheduleSortOrder = 'none';
+<script>
+window.appData = {
+    workingEmployees: [],
+    offEmployees: [],
+    allManagers: new Set(),
+    scheduleSortOrder: 'none',
+    quickActionsUnlocked: false,
     
-    window.switchTab = function(tabName) {
-        if (tabName === 'manual' && !window.quickActionsUnlocked) {
+    showMessage: function(text, type) {
+        var messageArea = document.getElementById('messageArea');
+        messageArea.innerHTML = '<div class="' + (type === 'success' ? 'success-msg' : 'error-msg') + '">' + text + '</div>';
+        setTimeout(function() { messageArea.innerHTML = ''; }, 5000);
+    },
+    
+    switchTab: function(tabName) {
+        if (tabName === 'manual' && !this.quickActionsUnlocked) {
             var password = prompt('Enter password to access Quick Actions:');
             if (password !== '789') {
-                showMessage('Incorrect password. Access denied to Quick Actions.', 'error');
+                this.showMessage('Incorrect password. Access denied to Quick Actions.', 'error');
                 return;
             }
-            window.quickActionsUnlocked = true;
-            showMessage('Quick Actions unlocked!', 'success');
+            this.quickActionsUnlocked = true;
+            this.showMessage('Quick Actions unlocked!', 'success');
             document.getElementById('quickActionsTab').innerHTML = '⚡ Quick Actions';
         }
         
         document.querySelectorAll('.tab').forEach(function(tab) { tab.classList.remove('active'); });
-        var activeTab = document.querySelector("[onclick=\"switchTab('" + tabName + "')\"]");
+        var activeTab = document.querySelector("[onclick*=\"switchTab('" + tabName + "')\"]");
         if (activeTab) activeTab.classList.add('active');
         
         document.querySelectorAll('.tab-content').forEach(function(content) { content.classList.remove('active'); });
         var targetTab = document.getElementById(tabName + 'Tab');
         if (targetTab) targetTab.classList.add('active');
-    };
+    },
     
-    window.showMessage = function(text, type) {
-        var messageArea = document.getElementById('messageArea');
-        messageArea.innerHTML = '<div class="' + (type === 'success' ? 'success-msg' : 'error-msg') + '">' + text + '</div>';
-        setTimeout(function() { messageArea.innerHTML = ''; }, 5000);
-    };
-    
-    window.sortBySchedule = function() {
-        if (window.scheduleSortOrder === 'none' || window.scheduleSortOrder === 'desc') {
-            window.scheduleSortOrder = 'asc';
-        } else {
-            window.scheduleSortOrder = 'desc';
-        }
-        
-        var indicator = document.getElementById('sortIndicator');
-        if (indicator) {
-            indicator.textContent = window.scheduleSortOrder === 'asc' ? '▲' : '▼';
-        }
-        
-        var sorted = window.workingEmployees.slice().sort(function(a, b) {
-            var timeA = extractStartTime(a.schedule || '');
-            var timeB = extractStartTime(b.schedule || '');
-            return window.scheduleSortOrder === 'asc' ? timeA - timeB : timeB - timeA;
-        });
-        
-        updateTableDirect('working', sorted);
-        showMessage('Schedule sorted ' + window.scheduleSortOrder, 'success');
-    };
-    
-    function extractStartTime(schedule) {
-        if (!schedule) return 0;
-        var match = schedule.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-        if (!match) return 0;
-        var hours = parseInt(match[1]);
-        var minutes = parseInt(match[2]);
-        var ampm = match[3].toUpperCase();
-        if (ampm === 'PM' && hours !== 12) hours += 12;
-        else if (ampm === 'AM' && hours === 12) hours = 0;
-        return hours * 60 + minutes;
-    }
-    
-    function updateTableDirect(tabType, employees) {
-        var tableBody = document.getElementById(tabType + 'TableBody');
-        if (!tableBody || !employees || employees.length === 0) {
-            if (tableBody) tableBody.innerHTML = '<tr><td colspan="' + (tabType === 'working' ? 4 : 5) + '" class="no-data">No employees found</td></tr>';
+    handleScheduleFile: function(event) {
+        var file = event.target.files[0];
+        if (!file || typeof XLSX === 'undefined') {
+            this.showMessage('Please wait for Excel library to load and try again.', 'error');
             return;
         }
         
-        var html = '';
-        employees.forEach(function(employee) {
-            if (tabType === 'working') {
-                html += '<tr><td style="text-align: center;"><input type="checkbox" style="transform: scale(1.2); cursor: pointer;" /></td><td><strong>' + employee.name + '</strong></td><td>' + (employee.manager || 'N/A') + '</td><td>' + (employee.schedule || 'N/A') + '</td></tr>';
-            } else {
-                var statusClass = employee.type === 'partial' ? 'status-partial' : (employee.type === 'manual' ? 'status-manual' : 'status-scheduled');
-                html += '<tr><td style="text-align: center;"><input type="checkbox" style="transform: scale(1.2); cursor: pointer;" /></td><td><strong>' + employee.name + '</strong></td><td>' + (employee.manager || 'N/A') + '</td><td><span class="status-badge ' + statusClass + '">' + employee.status + '</span></td><td><span class="timestamp">' + employee.timeAdded + '</span></td></tr>';
+        this.showMessage('Processing schedule file...', 'success');
+        var self = this;
+        
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                var data = new Uint8Array(e.target.result);
+                var workbook = XLSX.read(data, { type: 'array' });
+                var worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                self.processScheduleData(jsonData);
+                self.updateDisplay();
+                self.forceTableUpdate();
+                
+                self.showMessage('Schedule processed! Found ' + self.workingEmployees.length + ' working employees.', 'success');
+            } catch (error) {
+                self.showMessage('Error reading schedule file: ' + error.message, 'error');
             }
+        };
+        reader.readAsArrayBuffer(file);
+    },
+    
+    handleTimeOffFile: function(event) {
+        var file = event.target.files[0];
+        if (!file || typeof XLSX === 'undefined') {
+            this.showMessage('Please wait for Excel library to load and try again.', 'error');
+            return;
+        }
+        
+        this.showMessage('Processing time off file...', 'success');
+        var self = this;
+        
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                var data = new Uint8Array(e.target.result);
+                var workbook = XLSX.read(data, { type: 'array' });
+                var worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                self.processTimeOffData(jsonData);
+                self.updateDisplay();
+                self.forceTableUpdate();
+                
+                self.showMessage('Time off processed! Found ' + self.offEmployees.length + ' employees off today.', 'success');
+            } catch (error) {
+                self.showMessage('Error reading time off file: ' + error.message, 'error');
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    },
+    
+    cleanManagerName: function(managerName) {
+        if (!managerName) return '';
+        var cleaned = managerName.trim().replace(/^sales\s*/i, '');
+        if (cleaned.indexOf('(') !== -1 && cleaned.indexOf(')') !== -1) {
+            var match = cleaned.match(/\(([^)]+)\)/);
+            if (match) cleaned = match[1].trim();
+        }
+        return cleaned;
+    },
+    
+    cleanSchedule: function(schedule) {
+        if (!schedule) return '';
+        var cleaned = schedule.trim().replace(/^[^:]*:\s*/, '');
+        var timePattern = /(\d{1,2}:\d{2}\s*(?:AM|PM))/gi;
+        var times = cleaned.match(timePattern);
+        if (times && times.length >= 2) {
+            return times[0] + ' – ' + times[times.length - 1];
+        }
+        cleaned = cleaned.replace(/\d{2}\/\d{2}\/\d{4},?\s*/g, '').replace(/\s+/g, ' ').trim();
+        return cleaned || schedule;
+    },
+    
+    processScheduleData: function(data) {
+        this.workingEmployees = [];
+        for (var i = 1; i < data.length; i++) {
+            var row = data[i];
+            if (!row || !row[0]) continue;
+            
+            var employee = {
+                name: String(row[0]).trim(),
+                manager: this.cleanManagerName(String(row[1] || '')),
+                schedule: this.cleanSchedule(String(row[2] || '')),
+                type: 'scheduled'
+            };
+            
+            if (employee.name) {
+                this.workingEmployees.push(employee);
+                if (employee.manager) this.allManagers.add(employee.manager);
+            }
+        }
+    },
+    
+    processTimeOffData: function(data) {
+        for (var i = 1; i < data.length; i++) {
+            var row = data[i];
+            if (!row || !row[2]) continue;
+            
+            var timeOffHours = String(row[0] || '');
+            var isPartialDay = timeOffHours.indexOf('4 Hours') !== -1;
+            
+            var employee = {
+                name: String(row[2]).trim(),
+                manager: this.cleanManagerName(String(row[1] || '')),
+                status: isPartialDay ? 'Partial Day (4 Hours)' : 'Full Day Off',
+                type: isPartialDay ? 'partial' : 'scheduled',
+                timeAdded: 'Scheduled'
+            };
+            
+            if (employee.name) {
+                this.offEmployees.push(employee);
+                if (employee.manager) this.allManagers.add(employee.manager);
+                this.workingEmployees = this.workingEmployees.filter(function(emp) {
+                    return emp.name !== employee.name;
+                });
+            }
+        }
+    },
+    
+    updateDisplay: function() {
+        var workingCount = document.getElementById('workingCount');
+        var offCount = document.getElementById('offCount');
+        if (workingCount) workingCount.textContent = this.workingEmployees.length;
+        if (offCount) offCount.textContent = this.offEmployees.length;
+        this.updateSummaries();
+    },
+    
+    updateSummaries: function() {
+        var workingByManager = {};
+        this.workingEmployees.forEach(function(emp) {
+            var manager = emp.manager || 'No Manager';
+            workingByManager[manager] = (workingByManager[manager] || 0) + 1;
         });
-        tableBody.innerHTML = html;
-    }
+        
+        var workingSummary = document.getElementById('workingSummary');
+        if (workingSummary) {
+            var html = '';
+            Object.keys(workingByManager).forEach(function(manager) {
+                html += '<div class="summary-card"><h3>' + workingByManager[manager] + '</h3><p>' + manager + '</p></div>';
+            });
+            workingSummary.innerHTML = html;
+        }
+        
+        var offByManager = {};
+        this.offEmployees.forEach(function(emp) {
+            var manager = emp.manager || 'No Manager';
+            offByManager[manager] = (offByManager[manager] || 0) + 1;
+        });
+        
+        var offSummary = document.getElementById('offSummary');
+        if (offSummary) {
+            var html = '';
+            Object.keys(offByManager).forEach(function(manager) {
+                if (offByManager[manager] > 0) {
+                    html += '<div class="summary-card"><h3>' + offByManager[manager] + '</h3><p>' + manager + '</p></div>';
+                }
+            });
+            offSummary.innerHTML = html;
+        }
+    },
     
-    window.clearAllCheckboxes = function(tabType) {
+    forceTableUpdate: function() {
+        this.updateTableDirect('working', this.workingEmployees);
+        this.updateTableDirect('off', this.offEmployees);
+        this.updateManagerCheckboxes();
+        this.updateDisplay();
+    },
+    
+    updateTableDirect: function(tabType, employees) {
         var tableBody = document.getElementById(tabType + 'TableBody');
-        if (tableBody) {
-            tableBody.querySelectorAll('input[type="checkbox"]').forEach(function(cb) { cb.checked = false; });
-            showMessage('All checkboxes cleared', 'success');
-        }
-    };
-    
-    window.clearManagerFilter = function(tabType) { showMessage('Manager filters cleared', 'success'); };
-    window.selectAllManagers = function(tabType) { showMessage('All managers selected', 'success'); };
-    window.toggleSummarySection = function() {
-        var section = document.getElementById('managerSummarySection');
-        var button = document.getElementById('summaryToggleButton');
-        if (section.style.display === 'none') {
-            section.style.display = 'block';
-            button.innerHTML = '📊 Hide Manager Summary';
-        } else {
-            section.style.display = 'none';
-            button.innerHTML = '📊 Show Manager Summary';
-        }
-    };
-    
-    window.markEmployeeWithStatus = function(status) { showMessage('Upload Excel files first to enable this feature', 'error'); };
-    window.returnToWork = function() { showMessage('Upload Excel files first to enable this feature', 'error'); };
-    window.toggleShiftChange = function() {
-        var section = document.getElementById('shiftChangeSection');
-        section.style.display = section.style.display === 'none' ? 'block' : 'none';
-    };
-    window.updateShift = function() { showMessage('Upload Excel files first to enable this feature', 'error'); };
-    window.exportData = function() { showMessage('Upload Excel files first to enable this feature', 'error'); };
-    
-    showMessage('Application ready! Upload Excel files to enable full functionality.', 'success');
-});
-</script>
-</body>
-</html>
+        if (!tableBody || !employees || employees.length === 0) {
+            if (table
