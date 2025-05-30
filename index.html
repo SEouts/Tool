@@ -563,6 +563,317 @@ function showMessage(text, type) {
     setTimeout(() => messageArea.innerHTML = '', 5000);
 }
 
+// Load XLSX library
+function loadXLSX() {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.onload = () => {
+            if (typeof XLSX !== 'undefined') {
+                showMessage('Excel processing library loaded successfully!', 'success');
+                resolve();
+            } else {
+                reject('XLSX not available');
+            }
+        };
+        script.onerror = () => reject('Failed to load XLSX');
+        script.src = 'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js';
+        document.head.appendChild(script);
+    });
+}
+
+// Helper functions
+function cleanManagerName(managerName) {
+    if (!managerName) return '';
+    let cleaned = managerName.trim();
+    cleaned = cleaned.replace(/^sales\s*/i, '');
+    if (cleaned.includes('(') && cleaned.includes(')')) {
+        const match = cleaned.match(/\(([^)]+)\)/);
+        if (match) {
+            cleaned = match[1].trim();
+        }
+    }
+    return cleaned;
+}
+
+function cleanSchedule(schedule) {
+    if (!schedule) return '';
+    let cleaned = schedule.trim();
+    cleaned = cleaned.replace(/^[^:]*:\s*/, '');
+    const timePattern = /(\d{1,2}:\d{2}\s*(?:AM|PM))/gi;
+    const times = cleaned.match(timePattern);
+    if (times && times.length >= 2) {
+        return `${times[0]} – ${times[times.length - 1]}`;
+    }
+    cleaned = cleaned.replace(/\d{2}\/\d{2}\/\d{4},?\s*/g, '');
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    return cleaned || schedule;
+}
+
+// File handling
+function handleScheduleFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!xlsxLoaded) {
+        showMessage('Excel processing library not ready. Please wait and try again.', 'error');
+        return;
+    }
+
+    showMessage('Processing schedule file...', 'success');
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            
+            processScheduleData(jsonData);
+            updateDisplay();
+            forceTableUpdate();
+            
+            showMessage(`Schedule processed! Found ${workingEmployees.length} working employees.`, 'success');
+        } catch (error) {
+            showMessage('Error reading schedule file: ' + error.message, 'error');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function handleTimeOffFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!xlsxLoaded) {
+        showMessage('Excel processing library not ready. Please wait and try again.', 'error');
+        return;
+    }
+
+    showMessage('Processing time off file...', 'success');
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            
+            processTimeOffData(jsonData);
+            updateDisplay();
+            forceTableUpdate();
+            
+            showMessage(`Time off processed! Found ${offEmployees.length} employees off today.`, 'success');
+        } catch (error) {
+            showMessage('Error reading time off file: ' + error.message, 'error');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+// Data processing
+function processScheduleData(data) {
+    workingEmployees = [];
+    
+    for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        if (!row || !row[0]) continue;
+        
+        const employee = {
+            name: String(row[0]).trim(),
+            manager: cleanManagerName(String(row[1] || '')),
+            schedule: cleanSchedule(String(row[2] || '')),
+            type: 'scheduled'
+        };
+        
+        if (employee.name) {
+            workingEmployees.push(employee);
+            if (employee.manager) {
+                allManagers.add(employee.manager);
+            }
+        }
+    }
+}
+
+function processTimeOffData(data) {
+    for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        if (!row || !row[2]) continue;
+        
+        const timeOffHours = String(row[0] || '');
+        const isPartialDay = timeOffHours.includes('4 Hours');
+        
+        const employee = {
+            name: String(row[2]).trim(),
+            manager: cleanManagerName(String(row[1] || '')),
+            status: isPartialDay ? 'Partial Day (4 Hours)' : 'Full Day Off',
+            type: isPartialDay ? 'partial' : 'scheduled',
+            timeAdded: 'Scheduled'
+        };
+        
+        if (employee.name) {
+            offEmployees.push(employee);
+            if (employee.manager) {
+                allManagers.add(employee.manager);
+            }
+            workingEmployees = workingEmployees.filter(emp => emp.name !== employee.name);
+        }
+    }
+}
+
+// Display functions
+function updateDisplay() {
+    updateCounts();
+    updateSummaries();
+}
+
+function updateCounts() {
+    const workingCount = document.getElementById('workingCount');
+    const offCount = document.getElementById('offCount');
+    if (workingCount) workingCount.textContent = workingEmployees.length;
+    if (offCount) offCount.textContent = offEmployees.length;
+}
+
+function updateSummaries() {
+    const workingByManager = {};
+    workingEmployees.forEach(emp => {
+        const manager = emp.manager || 'No Manager';
+        workingByManager[manager] = (workingByManager[manager] || 0) + 1;
+    });
+    
+    const workingSummary = document.getElementById('workingSummary');
+    if (workingSummary) {
+        let workingSummaryHtml = '';
+        Object.entries(workingByManager).forEach(([manager, count]) => {
+            workingSummaryHtml += `
+                <div class="summary-card">
+                    <h3>${count}</h3>
+                    <p>${manager}</p>
+                </div>
+            `;
+        });
+        workingSummary.innerHTML = workingSummaryHtml;
+    }
+    
+    const offByManager = {};
+    offEmployees.forEach(emp => {
+        const manager = emp.manager || 'No Manager';
+        offByManager[manager] = (offByManager[manager] || 0) + 1;
+    });
+    
+    const offSummary = document.getElementById('offSummary');
+    if (offSummary) {
+        let offSummaryHtml = '';
+        const allManagersList = Array.from(allManagers);
+        allManagersList.forEach(manager => {
+            const count = offByManager[manager] || 0;
+            if (count > 0) {
+                offSummaryHtml += `
+                    <div class="summary-card">
+                        <h3>${count}</h3>
+                        <p>${manager}</p>
+                    </div>
+                `;
+            }
+        });
+        
+        Object.entries(offByManager).forEach(([manager, count]) => {
+            if (!allManagersList.includes(manager) && count > 0) {
+                offSummaryHtml += `
+                    <div class="summary-card">
+                        <h3>${count}</h3>
+                        <p>${manager}</p>
+                    </div>
+                `;
+            }
+        });
+        
+        offSummary.innerHTML = offSummaryHtml;
+    }
+}
+
+function forceTableUpdate() {
+    updateTableDirect('working', workingEmployees);
+    updateTableDirect('off', offEmployees);
+    
+    const workingContainer = document.getElementById('workingManagerCheckboxes');
+    const offContainer = document.getElementById('offManagerCheckboxes');
+    
+    if (workingContainer && offContainer) {
+        updateManagerCheckboxes();
+    }
+    updateDisplay();
+}
+
+function updateManagerCheckboxes() {
+    const workingContainer = document.getElementById('workingManagerCheckboxes');
+    const offContainer = document.getElementById('offManagerCheckboxes');
+    
+    if (!workingContainer || !offContainer) return;
+    
+    const managers = Array.from(allManagers).sort();
+    
+    workingContainer.innerHTML = '';
+    managers.forEach((manager, index) => {
+        if (manager) {
+            const checkboxId = 'working-manager-' + index;
+            workingContainer.innerHTML += `
+                <label class="manager-checkbox" for="${checkboxId}">
+                    <input type="checkbox" id="${checkboxId}" 
+                           value="${manager}" 
+                           onchange="handleManagerCheckboxChange('working')">
+                    <span>${manager}</span>
+                </label>
+            `;
+        }
+    });
+    
+    offContainer.innerHTML = '';
+    managers.forEach((manager, index) => {
+        if (manager) {
+            const checkboxId = 'off-manager-' + index;
+            offContainer.innerHTML += `
+                <label class="manager-checkbox" for="${checkboxId}">
+                    <input type="checkbox" id="${checkboxId}" 
+                           value="${manager}" 
+                           onchange="handleManagerCheckboxChange('off')">
+                    <span>${manager}</span>
+                </label>
+            `;
+        }
+    });
+}
+
+function handleManagerCheckboxChange(tabType) {
+    const container = document.getElementById(tabType + 'ManagerCheckboxes');
+    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+    const selectedManagers = [];
+    
+    checkboxes.forEach(checkbox => {
+        const label = checkbox.parentElement;
+        if (checkbox.checked) {
+            selectedManagers.push(checkbox.value);
+            label.classList.add('selected');
+        } else {
+            label.classList.remove('selected');
+        }
+    });
+    
+    const allEmployees = tabType === 'working' ? workingEmployees : offEmployees;
+    let filteredEmployees = allEmployees;
+    
+    if (selectedManagers.length > 0) {
+        filteredEmployees = allEmployees.filter(emp => selectedManagers.includes(emp.manager));
+    }
+    
+    updateTableDirect(tabType, filteredEmployees);
+    
+    if (selectedManagers.length > 0) {
+        showMessage(`Showing ${selectedManagers.length} selected manager(s)`, 'success');
+    }
+}
+
 function clearAllCheckboxes(tabType) {
     const tableBody = document.getElementById(tabType + 'TableBody');
     if (!tableBody) return;
@@ -643,6 +954,267 @@ function updateTableDirect(tabType, employees) {
                 <tr>
                     <td style="text-align: center;">
                         <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
+                    </td>
+                    <td><strong>${employee.name}</strong></td>
+                    <td>${employee.manager || 'N/A'}</td>
+                    <td>
+                        <span class="status-badge ${statusClass}">${employee.status}</span>
+                    </td>
+                    <td>
+                        <span class="timestamp">${employee.timeAdded}</span>
+                    </td>
+                </tr>
+            `;
+        }
+    });
+    
+    tableBody.innerHTML = html;
+}
+
+// Load balancing and employee actions
+function findManagerWithLeastEmployees() {
+    const managerCounts = {};
+    
+    workingEmployees.forEach(emp => {
+        const manager = emp.manager || 'No Manager';
+        managerCounts[manager] = (managerCounts[manager] || 0) + 1;
+    });
+    
+    offEmployees.forEach(emp => {
+        const manager = emp.manager || 'No Manager';
+        managerCounts[manager] = (managerCounts[manager] || 0) + 1;
+    });
+    
+    if (Object.keys(managerCounts).length === 0) {
+        const managersArray = Array.from(allManagers);
+        return managersArray.length > 0 ? managersArray[0] : 'No Manager';
+    }
+    
+    Array.from(allManagers).forEach(manager => {
+        if (!(manager in managerCounts)) {
+            managerCounts[manager] = 0;
+        }
+    });
+    
+    let minCount = Infinity;
+    let managerWithLeast = 'No Manager';
+    
+    Object.entries(managerCounts).forEach(([manager, count]) => {
+        if (count < minCount) {
+            minCount = count;
+            managerWithLeast = manager;
+        }
+    });
+    
+    return managerWithLeast;
+}
+
+function markEmployeeWithStatus(status) {
+    const nameInput = document.getElementById('manualEmployeeName');
+    const employeeName = nameInput.value.trim();
+    
+    if (!employeeName) {
+        showMessage('Please enter an employee name', 'error');
+        return;
+    }
+    
+    const employeeIndex = workingEmployees.findIndex(emp => 
+        emp.name.toLowerCase().includes(employeeName.toLowerCase())
+    );
+    
+    if (employeeIndex === -1) {
+        showMessage('Employee not found in working list. Please check the spelling.', 'error');
+        return;
+    }
+    
+    const employee = workingEmployees[employeeIndex];
+    const originalManager = employee.manager;
+    const newManager = findManagerWithLeastEmployees();
+    
+    const offEmployee = {
+        name: employee.name,
+        manager: newManager,
+        status: status,
+        type: 'manual',
+        timeAdded: new Date().toLocaleString(),
+        originalManager: originalManager
+    };
+    
+    offEmployees.push(offEmployee);
+    workingEmployees.splice(employeeIndex, 1);
+    manuallyAdded.set(employee.name, new Date());
+    
+    nameInput.value = '';
+    updateDisplay();
+    forceTableUpdate();
+    
+    let message = `${employee.name} has been marked as "${status}"`;
+    if (newManager !== originalManager) {
+        message += ` and reassigned from ${originalManager} to ${newManager} (manager with least employees)`;
+    }
+    
+    showMessage(message, 'success');
+    switchTab('off');
+}
+
+function returnToWork() {
+    const nameInput = document.getElementById('manualEmployeeName');
+    const employeeName = nameInput.value.trim();
+    
+    if (!employeeName) {
+        showMessage('Please enter an employee name', 'error');
+        return;
+    }
+    
+    const employeeIndex = offEmployees.findIndex(emp => 
+        emp.name.toLowerCase().includes(employeeName.toLowerCase())
+    );
+    
+    if (employeeIndex === -1) {
+        showMessage('Employee not found in off list. Please check the spelling.', 'error');
+        return;
+    }
+    
+    const employee = offEmployees[employeeIndex];
+    
+    const workingEmployee = {
+        name: employee.name,
+        manager: employee.originalManager || employee.manager,
+        schedule: 'Returned - Check original schedule',
+        type: 'returned'
+    };
+    
+    workingEmployees.push(workingEmployee);
+    offEmployees.splice(employeeIndex, 1);
+    manuallyAdded.delete(employee.name);
+    
+    nameInput.value = '';
+    updateDisplay();
+    forceTableUpdate();
+    
+    showMessage(`${employee.name} has returned to work and moved to Working Today tab`, 'success');
+    switchTab('working');
+}
+
+function toggleShiftChange() {
+    const section = document.getElementById('shiftChangeSection');
+    section.style.display = section.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateShift() {
+    const nameInput = document.getElementById('manualEmployeeName');
+    const employeeName = nameInput.value.trim();
+    const startTime = document.getElementById('shiftStartTime').value;
+    const endTime = document.getElementById('shiftEndTime').value;
+    
+    if (!employeeName) {
+        showMessage('Please enter an employee name', 'error');
+        return;
+    }
+    
+    if (!startTime || !endTime) {
+        showMessage('Please enter both start and end times', 'error');
+        return;
+    }
+    
+    const employeeIndex = workingEmployees.findIndex(emp => 
+        emp.name.toLowerCase().includes(employeeName.toLowerCase())
+    );
+    
+    if (employeeIndex === -1) {
+        showMessage('Employee not found in working list. Please check the spelling.', 'error');
+        return;
+    }
+    
+    const employee = workingEmployees[employeeIndex];
+    
+    function formatTime(time24) {
+        const [hours, minutes] = time24.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+        return `${hour12}:${minutes} ${ampm}`;
+    }
+    
+    const newSchedule = `${formatTime(startTime)} – ${formatTime(endTime)}`;
+    
+    workingEmployees[employeeIndex].schedule = newSchedule;
+    workingEmployees[employeeIndex].type = 'updated';
+    
+    nameInput.value = '';
+    document.getElementById('shiftStartTime').value = '';
+    document.getElementById('shiftEndTime').value = '';
+    toggleShiftChange();
+    
+    forceTableUpdate();
+    
+    showMessage(`${employee.name}'s shift updated to ${newSchedule}`, 'success');
+    switchTab('working');
+}
+
+function exportData() {
+    if (!xlsxLoaded) {
+        showMessage('Excel export not available. Please refresh the page.', 'error');
+        return;
+    }
+
+    try {
+        const wb = XLSX.utils.book_new();
+        
+        const workingData = [['Employee', 'Manager', 'Schedule', 'Status']];
+        workingEmployees.forEach(emp => {
+            workingData.push([emp.name, emp.manager, emp.schedule, 'Working']);
+        });
+        const workingWs = XLSX.utils.aoa_to_sheet(workingData);
+        XLSX.utils.book_append_sheet(wb, workingWs, 'Working Today');
+        
+        const offData = [['Employee', 'Manager', 'Status', 'Time Added', 'Type']];
+        offEmployees.forEach(emp => {
+            offData.push([emp.name, emp.manager, emp.status, emp.timeAdded, emp.type]);
+        });
+        const offWs = XLSX.utils.aoa_to_sheet(offData);
+        XLSX.utils.book_append_sheet(wb, offWs, 'Off Today');
+        
+        const fileName = `Employee_Availability_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+        showMessage('Report exported successfully!', 'success');
+    } catch (error) {
+        showMessage('Error exporting report: ' + error.message, 'error');
+    }
+}
+
+// Initialize
+async function init() {
+    try {
+        await loadXLSX();
+        xlsxLoaded = true;
+        setupEventListeners();
+        showMessage('Application ready! You can now upload your Excel files.', 'success');
+    } catch (error) {
+        showMessage('Warning: Excel file processing may not work. Try refreshing the page.', 'error');
+        setupEventListeners();
+    }
+}
+
+function setupEventListeners() {
+    const scheduleFile = document.getElementById('scheduleFile');
+    const timeOffFile = document.getElementById('timeOffFile');
+    const employeeName = document.getElementById('manualEmployeeName');
+    
+    if (scheduleFile) scheduleFile.addEventListener('change', handleScheduleFile);
+    if (timeOffFile) timeOffFile.addEventListener('change', handleTimeOffFile);
+    
+    if (employeeName) {
+        employeeName.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                markEmployeeWithStatus('Off Today');
+            }
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>" style="transform: scale(1.2); cursor: pointer;" />
                     </td>
                     <td><strong>${employee.name}</strong></td>
                     <td>${employee.manager || 'N/A'}</td>
