@@ -355,7 +355,10 @@
                             <th style="width: 50px;">✓</th>
                             <th>Employee</th>
                             <th>Manager</th>
-                            <th>Schedule</th>
+                            <th onclick="sortBySchedule()" style="cursor: pointer; position: relative;">
+                                Schedule 
+                                <span id="sortIndicator" style="position: absolute; right: 5px; font-size: 12px;">⏹</span>
+                            </th>
                         </tr>
                     </thead>
                     <tbody id="workingTableBody">
@@ -536,7 +539,78 @@ let allManagers = new Set();
 let manuallyAdded = new Map();
 let xlsxLoaded = false;
 let quickActionsUnlocked = false;
+let scheduleSortOrder = 'none'; // 'none', 'asc', 'desc'
 const QUICK_ACTIONS_PASSWORD = "789";
+
+function sortBySchedule() {
+    const workingContainer = document.getElementById('workingManagerCheckboxes');
+    const checkboxes = workingContainer.querySelectorAll('input[type="checkbox"]:checked');
+    const selectedManagers = Array.from(checkboxes).map(cb => cb.value);
+    
+    // Get current filtered employees or all employees
+    let employeesToSort = workingEmployees;
+    if (selectedManagers.length > 0) {
+        employeesToSort = workingEmployees.filter(emp => selectedManagers.includes(emp.manager));
+    }
+    
+    // Toggle sort order
+    if (scheduleSortOrder === 'none' || scheduleSortOrder === 'desc') {
+        scheduleSortOrder = 'asc';
+    } else {
+        scheduleSortOrder = 'desc';
+    }
+    
+    // Sort the employees
+    const sortedEmployees = [...employeesToSort].sort((a, b) => {
+        const timeA = extractStartTime(a.schedule || '');
+        const timeB = extractStartTime(b.schedule || '');
+        
+        if (scheduleSortOrder === 'asc') {
+            return timeA - timeB;
+        } else {
+            return timeB - timeA;
+        }
+    });
+    
+    // Update sort indicator
+    const indicator = document.getElementById('sortIndicator');
+    if (indicator) {
+        if (scheduleSortOrder === 'asc') {
+            indicator.textContent = '▲';
+            indicator.title = 'Sorted ascending - click to sort descending';
+        } else {
+            indicator.textContent = '▼';
+            indicator.title = 'Sorted descending - click to sort ascending';
+        }
+    }
+    
+    // Update the table with sorted data
+    updateTableDirect('working', sortedEmployees);
+    
+    showMessage(`Schedule sorted ${scheduleSortOrder === 'asc' ? 'ascending' : 'descending'} by start time`, 'success');
+}
+
+function extractStartTime(schedule) {
+    if (!schedule) return 0;
+    
+    // Extract time from formats like "9:00 AM – 6:00 PM" or "10:30 AM – 7:00 PM"
+    const timeMatch = schedule.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (!timeMatch) return 0;
+    
+    let hours = parseInt(timeMatch[1]);
+    const minutes = parseInt(timeMatch[2]);
+    const ampm = timeMatch[3].toUpperCase();
+    
+    // Convert to 24-hour format for comparison
+    if (ampm === 'PM' && hours !== 12) {
+        hours += 12;
+    } else if (ampm === 'AM' && hours === 12) {
+        hours = 0;
+    }
+    
+    // Return total minutes since midnight for easy comparison
+    return hours * 60 + minutes;
+}
 
 function switchTab(tabName) {
     if (tabName === 'manual' && !quickActionsUnlocked) {
