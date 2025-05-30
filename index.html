@@ -332,16 +332,16 @@ function processScheduleFile(data) {
         var header = (headers[i] || '').toString().toLowerCase().trim();
         console.log('Checking header', i + ':', header);
         
-        if (header.includes('name') || header.includes('employee') || header === 'name' || header === 'employee') {
+        if (header.includes('name') || header.includes('employee') || header === 'name' || header === 'employee' || header === 'worker' || header.includes('worker')) {
             nameIndex = i;
             console.log('Found name column at index', i);
-        } else if (header.includes('manager') || header.includes('supervisor') || header === 'manager') {
+        } else if (header.includes('manager') || header.includes('supervisor') || header === 'manager' || header.includes('organization')) {
             managerIndex = i;
             console.log('Found manager column at index', i);
-        } else if (header.includes('start') || header.includes('in') || header.includes('time in')) {
+        } else if (header.includes('start') || header.includes('in') || header.includes('time in') || header.includes('schedule')) {
             startIndex = i;
             console.log('Found start time column at index', i);
-        } else if (header.includes('end') || header.includes('out') || header.includes('time out')) {
+        } else if (header.includes('end') || header.includes('out') || header.includes('time out') || header.includes('hours')) {
             endIndex = i;
             console.log('Found end time column at index', i);
         }
@@ -350,8 +350,9 @@ function processScheduleFile(data) {
     console.log('Column indices - Name:', nameIndex, 'Manager:', managerIndex, 'Start:', startIndex, 'End:', endIndex);
     
     if (nameIndex === -1) {
-        showMessage('Could not find employee name column in schedule file. Looking for columns with "name" or "employee"', 'error');
+        showMessage('Could not find employee name column in schedule file. Looking for columns with "name", "employee", or "worker"', 'error');
         console.log('Available headers:', headers);
+        console.log('Please make sure one of your columns contains employee names and has a header like "Name", "Employee", or "Worker"');
         return;
     }
     
@@ -398,24 +399,40 @@ function processScheduleFile(data) {
 }
 
 function processTimeOffFile(data) {
+    console.log('Processing time off file with', data.length, 'rows');
+    
     if (!data || data.length < 2) {
         showMessage('Time off file appears to be empty or invalid', 'error');
         return;
     }
     
     var headers = data[0];
+    console.log('Time off headers found:', headers);
+    
     var nameIndex = -1, managerIndex = -1, statusIndex = -1;
     
-    // Find column indices
+    // Find column indices - be more flexible with header matching
     for (var i = 0; i < headers.length; i++) {
         var header = (headers[i] || '').toString().toLowerCase().trim();
-        if (header.includes('name') || header.includes('employee')) nameIndex = i;
-        else if (header.includes('manager') || header.includes('supervisor')) managerIndex = i;
-        else if (header.includes('status') || header.includes('reason') || header.includes('type')) statusIndex = i;
+        console.log('Checking time off header', i + ':', header);
+        
+        if (header.includes('name') || header.includes('employee') || header === 'worker' || header.includes('worker')) {
+            nameIndex = i;
+            console.log('Found name column at index', i);
+        } else if (header.includes('manager') || header.includes('supervisor') || header.includes('organization')) {
+            managerIndex = i;
+            console.log('Found manager column at index', i);
+        } else if (header.includes('status') || header.includes('reason') || header.includes('type') || header.includes('off')) {
+            statusIndex = i;
+            console.log('Found status column at index', i);
+        }
     }
     
+    console.log('Time off column indices - Name:', nameIndex, 'Manager:', managerIndex, 'Status:', statusIndex);
+    
     if (nameIndex === -1) {
-        showMessage('Could not find employee name column in time off file', 'error');
+        showMessage('Could not find employee name column in time off file. Looking for columns with "name", "employee", or "worker"', 'error');
+        console.log('Available time off headers:', headers);
         return;
     }
     
@@ -423,11 +440,16 @@ function processTimeOffFile(data) {
     var processedCount = 0;
     for (var i = 1; i < data.length; i++) {
         var row = data[i];
-        if (!row || !row[nameIndex]) continue;
+        if (!row || !row[nameIndex]) {
+            console.log('Skipping empty time off row', i);
+            continue;
+        }
         
         var employeeName = row[nameIndex].toString().trim();
         var status = statusIndex !== -1 && row[statusIndex] ? row[statusIndex].toString().trim() : 'Time Off';
         var manager = managerIndex !== -1 && row[managerIndex] ? row[managerIndex].toString().trim() : 'Unknown';
+        
+        console.log('Processing time off for:', employeeName, 'Status:', status, 'Manager:', manager);
         
         // Find and remove from working employees
         var workingIndex = workingEmployees.findIndex(function(emp) {
@@ -440,6 +462,7 @@ function processTimeOffFile(data) {
             employee.timeAdded = new Date().toLocaleTimeString();
             offEmployees.push(employee);
             processedCount++;
+            console.log('Moved', employeeName, 'from working to off');
         } else {
             // Add as new off employee if not found in working list
             offEmployees.push({
@@ -449,11 +472,13 @@ function processTimeOffFile(data) {
                 timeAdded: new Date().toLocaleTimeString()
             });
             processedCount++;
+            console.log('Added new off employee:', employeeName);
         }
         
         allManagers.add(manager);
     }
     
+    console.log('Processed', processedCount, 'time off employees');
     showMessage('Processed ' + processedCount + ' employees from time off file', 'success');
     updateWorkingTable();
     updateOffTable();
