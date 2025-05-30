@@ -709,6 +709,28 @@
             reader.readAsArrayBuffer(file);
         }
 
+        // Helper function to clean manager names
+        function cleanManagerName(managerName) {
+            if (!managerName) return '';
+            
+            // Remove "Sales" and parentheses, keeping just the name
+            // Handles formats like: "Sales (Chris Home)" -> "Chris Home"
+            let cleaned = managerName.trim();
+            
+            // Remove "Sales" at the beginning (case insensitive)
+            cleaned = cleaned.replace(/^sales\s*/i, '');
+            
+            // Remove parentheses and their contents become the main name
+            if (cleaned.includes('(') && cleaned.includes(')')) {
+                const match = cleaned.match(/\(([^)]+)\)/);
+                if (match) {
+                    cleaned = match[1].trim(); // Get content inside parentheses
+                }
+            }
+            
+            return cleaned;
+        }
+
         // Data processing functions
         function processScheduleData(data) {
             workingEmployees = [];
@@ -719,7 +741,7 @@
                 
                 const employee = {
                     name: String(row[0]).trim(),
-                    manager: String(row[1] || '').trim(),
+                    manager: cleanManagerName(String(row[1] || '')),
                     schedule: String(row[2] || '').trim(),
                     type: 'scheduled'
                 };
@@ -743,7 +765,7 @@
                 
                 const employee = {
                     name: String(row[2]).trim(),
-                    manager: String(row[1] || '').trim(),
+                    manager: cleanManagerName(String(row[1] || '')),
                     status: isPartialDay ? 'Partial Day (4 Hours)' : 'Full Day Off',
                     type: isPartialDay ? 'partial' : 'scheduled',
                     timeAdded: 'Scheduled'
