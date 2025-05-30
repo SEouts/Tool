@@ -731,6 +731,38 @@
             return cleaned;
         }
 
+        // Helper function to clean schedule information
+        function cleanSchedule(schedule) {
+            if (!schedule) return '';
+            
+            // Extract just the time portions from formats like:
+            // "Skyler Giordano:05/22/2025, 9:00 AM – 05/22/2025, 6:00 PM"
+            // Should return: "9:00 AM – 6:00 PM"
+            
+            let cleaned = schedule.trim();
+            
+            // Remove employee name and colon (everything before the first date)
+            cleaned = cleaned.replace(/^[^:]*:\s*/, '');
+            
+            // Extract time patterns (like "9:00 AM" and "6:00 PM")
+            const timePattern = /(\d{1,2}:\d{2}\s*(?:AM|PM))/gi;
+            const times = cleaned.match(timePattern);
+            
+            if (times && times.length >= 2) {
+                // Join the times with a dash
+                return `${times[0]} – ${times[times.length - 1]}`;
+            }
+            
+            // Fallback: if we can't parse it properly, try a simpler approach
+            // Look for time patterns and dates, remove dates
+            cleaned = cleaned.replace(/\d{2}\/\d{2}\/\d{4},?\s*/g, '');
+            
+            // Clean up extra spaces and dashes
+            cleaned = cleaned.replace(/\s+/g, ' ').trim();
+            
+            return cleaned || schedule; // Return original if cleaning fails
+        }
+
         // Data processing functions
         function processScheduleData(data) {
             workingEmployees = [];
