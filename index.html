@@ -373,8 +373,20 @@
                             <th style="width: 50px;">✓</th>
                             <th>Employee</th>
                             <th>Manager</th>
-                            <th onclick="sortBySchedule()" class="sortable-header" style="cursor: pointer; user-select: none; position: relative;">
-                                Schedule <span id="sortIndicator" style="position: absolute; right: 5px; font-size: 12px; top: 50%; transform: translateY(-50%);">⏹</span>
+                            <th style="position: relative;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <button onclick="sortByStartTime()" 
+                                            style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; font-weight: 600; margin-right: 5px;"
+                                            title="Sort by start time">
+                                        Start ⬆
+                                    </button>
+                                    <button onclick="sortByEndTime()" 
+                                            style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; font-weight: 600;"
+                                            title="Sort by end time">
+                                        End ⬆
+                                    </button>
+                                </div>
+                                Schedule
                             </th>
                         </tr>
                     </thead>
@@ -560,10 +572,7 @@
         function timeToMinutes(timeStr) {
             if (!timeStr || timeStr === 'N/A') return 0;
             
-            const startTime = timeStr.split(' - ')[0];
-            if (!startTime) return 0;
-            
-            const match = startTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)/i);
+            const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)/i);
             if (!match) return 0;
             
             let hours = parseInt(match[1]);
@@ -579,44 +588,55 @@
             return hours * 60 + minutes;
         }
 
-        function sortBySchedule() {
+        function getStartTime(schedule) {
+            if (!schedule || schedule === 'N/A') return 0;
+            const startTime = schedule.split(' - ')[0];
+            return timeToMinutes(startTime);
+        }
+
+        function getEndTime(schedule) {
+            if (!schedule || schedule === 'N/A') return 0;
+            const parts = schedule.split(' - ');
+            if (parts.length < 2) return 0;
+            const endTime = parts[1];
+            return timeToMinutes(endTime);
+        }
+
+        function sortByStartTime() {
             if (workingEmployees.length === 0) {
                 showMessage('No employees to sort. Please upload schedule file first.', 'error');
                 return;
             }
             
-            if (scheduleSortOrder === 'none' || scheduleSortOrder === 'desc') {
-                scheduleSortOrder = 'asc';
-            } else if (scheduleSortOrder === 'asc') {
-                scheduleSortOrder = 'desc';
-            }
-            
-            const indicator = document.getElementById('sortIndicator');
-            if (indicator) {
-                if (scheduleSortOrder === 'asc') {
-                    indicator.textContent = '▲';
-                    indicator.title = 'Sorted by start time (earliest first)';
-                } else if (scheduleSortOrder === 'desc') {
-                    indicator.textContent = '▼';
-                    indicator.title = 'Sorted by start time (latest first)';
-                }
-            }
-            
             workingEmployees.sort((a, b) => {
-                const timeA = timeToMinutes(a.schedule);
-                const timeB = timeToMinutes(b.schedule);
-                
-                if (scheduleSortOrder === 'asc') {
-                    return timeA - timeB;
-                } else {
-                    return timeB - timeA;
-                }
+                const timeA = getStartTime(a.schedule);
+                const timeB = getStartTime(b.schedule);
+                return timeA - timeB;
             });
             
             forceTableUpdate();
+            showMessage('Schedule sorted by start time (earliest to latest)', 'success');
+        }
+
+        function sortByEndTime() {
+            if (workingEmployees.length === 0) {
+                showMessage('No employees to sort. Please upload schedule file first.', 'error');
+                return;
+            }
             
-            const sortDirection = scheduleSortOrder === 'asc' ? 'earliest to latest' : 'latest to earliest';
-            showMessage(`Schedule sorted by start time (${sortDirection})`, 'success');
+            workingEmployees.sort((a, b) => {
+                const timeA = getEndTime(a.schedule);
+                const timeB = getEndTime(b.schedule);
+                return timeA - timeB;
+            });
+            
+            forceTableUpdate();
+            showMessage('Schedule sorted by end time (earliest to latest)', 'success');
+        }
+
+        function sortBySchedule() {
+            // Keep this function for backward compatibility, but it now defaults to start time
+            sortByStartTime();
         }
 
         function cleanManagerName(managerName) {
