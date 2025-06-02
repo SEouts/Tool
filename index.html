@@ -374,16 +374,20 @@
                             <th>Employee</th>
                             <th>Manager</th>
                             <th style="position: relative;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 8px;">
                                     <button onclick="sortByStartTime()" 
-                                            style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; font-weight: 600; margin-right: 5px;"
-                                            title="Sort by start time">
-                                        Start ⬆
+                                            style="background: rgba(255,255,255,0.9); color: #333; border: none; border-radius: 4px; padding: 6px 12px; font-size: 11px; cursor: pointer; font-weight: 600; transition: all 0.2s ease;"
+                                            onmouseover="this.style.background='white'; this.style.transform='translateY(-1px)'"
+                                            onmouseout="this.style.background='rgba(255,255,255,0.9)'; this.style.transform='translateY(0)'"
+                                            title="Sort by start time (earliest first)">
+                                        🕐 Start ↑
                                     </button>
                                     <button onclick="sortByEndTime()" 
-                                            style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; font-weight: 600;"
-                                            title="Sort by end time">
-                                        End ⬆
+                                            style="background: rgba(255,255,255,0.9); color: #333; border: none; border-radius: 4px; padding: 6px 12px; font-size: 11px; cursor: pointer; font-weight: 600; transition: all 0.2s ease;"
+                                            onmouseover="this.style.background='white'; this.style.transform='translateY(-1px)'"
+                                            onmouseout="this.style.background='rgba(255,255,255,0.9)'; this.style.transform='translateY(0)'"
+                                            title="Sort by end time (earliest first)">
+                                        🕕 End ↑
                                     </button>
                                 </div>
                                 Schedule
@@ -603,6 +607,7 @@
         }
 
         function sortByStartTime() {
+            console.log('sortByStartTime called');
             if (workingEmployees.length === 0) {
                 showMessage('No employees to sort. Please upload schedule file first.', 'error');
                 return;
@@ -611,6 +616,7 @@
             workingEmployees.sort((a, b) => {
                 const timeA = getStartTime(a.schedule);
                 const timeB = getStartTime(b.schedule);
+                console.log(`Comparing start times: ${a.name} (${timeA}) vs ${b.name} (${timeB})`);
                 return timeA - timeB;
             });
             
@@ -619,6 +625,7 @@
         }
 
         function sortByEndTime() {
+            console.log('sortByEndTime called');
             if (workingEmployees.length === 0) {
                 showMessage('No employees to sort. Please upload schedule file first.', 'error');
                 return;
@@ -627,6 +634,7 @@
             workingEmployees.sort((a, b) => {
                 const timeA = getEndTime(a.schedule);
                 const timeB = getEndTime(b.schedule);
+                console.log(`Comparing end times: ${a.name} (${timeA}) vs ${b.name} (${timeB})`);
                 return timeA - timeB;
             });
             
