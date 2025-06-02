@@ -593,52 +593,76 @@
         }
 
         function getStartTime(schedule) {
-            if (!schedule || schedule === 'N/A') return 0;
-            const startTime = schedule.split(' - ')[0];
-            return timeToMinutes(startTime);
+            if (!schedule || schedule === 'N/A' || schedule.trim() === '') return 999999; // Put N/A at end
+            
+            console.log('Getting start time from:', schedule);
+            const parts = schedule.split(' - ');
+            if (parts.length < 1) return 999999;
+            
+            const startTime = parts[0].trim();
+            console.log('Start time extracted:', startTime);
+            
+            const minutes = timeToMinutes(startTime);
+            console.log('Start time in minutes:', minutes);
+            return minutes;
         }
 
         function getEndTime(schedule) {
-            if (!schedule || schedule === 'N/A') return 0;
+            if (!schedule || schedule === 'N/A' || schedule.trim() === '') return 999999; // Put N/A at end
+            
+            console.log('Getting end time from:', schedule);
             const parts = schedule.split(' - ');
-            if (parts.length < 2) return 0;
-            const endTime = parts[1];
-            return timeToMinutes(endTime);
+            if (parts.length < 2) return 999999;
+            
+            const endTime = parts[1].trim();
+            console.log('End time extracted:', endTime);
+            
+            const minutes = timeToMinutes(endTime);
+            console.log('End time in minutes:', minutes);
+            return minutes;
         }
 
         function sortByStartTime() {
-            console.log('sortByStartTime called');
+            console.log('=== SORTING BY START TIME ===');
             if (workingEmployees.length === 0) {
                 showMessage('No employees to sort. Please upload schedule file first.', 'error');
                 return;
             }
+            
+            console.log('Before sorting:', workingEmployees.map(emp => `${emp.name}: ${emp.schedule}`));
             
             workingEmployees.sort((a, b) => {
                 const timeA = getStartTime(a.schedule);
                 const timeB = getStartTime(b.schedule);
-                console.log(`Comparing start times: ${a.name} (${timeA}) vs ${b.name} (${timeB})`);
+                console.log(`Comparing: ${a.name} (${timeA} min) vs ${b.name} (${timeB} min) = ${timeA - timeB}`);
                 return timeA - timeB;
             });
             
-            forceTableUpdate();
+            console.log('After sorting:', workingEmployees.map(emp => `${emp.name}: ${emp.schedule}`));
+            
+            updateTableDirect('working', workingEmployees);
             showMessage('Schedule sorted by start time (earliest to latest)', 'success');
         }
 
         function sortByEndTime() {
-            console.log('sortByEndTime called');
+            console.log('=== SORTING BY END TIME ===');
             if (workingEmployees.length === 0) {
                 showMessage('No employees to sort. Please upload schedule file first.', 'error');
                 return;
             }
             
+            console.log('Before sorting:', workingEmployees.map(emp => `${emp.name}: ${emp.schedule}`));
+            
             workingEmployees.sort((a, b) => {
                 const timeA = getEndTime(a.schedule);
                 const timeB = getEndTime(b.schedule);
-                console.log(`Comparing end times: ${a.name} (${timeA}) vs ${b.name} (${timeB})`);
+                console.log(`Comparing: ${a.name} (${timeA} min) vs ${b.name} (${timeB} min) = ${timeA - timeB}`);
                 return timeA - timeB;
             });
             
-            forceTableUpdate();
+            console.log('After sorting:', workingEmployees.map(emp => `${emp.name}: ${emp.schedule}`));
+            
+            updateTableDirect('working', workingEmployees);
             showMessage('Schedule sorted by end time (earliest to latest)', 'success');
         }
 
