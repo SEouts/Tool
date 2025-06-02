@@ -715,6 +715,46 @@
             return cleaned.trim();
         }
 
+        // Function to clean schedule display
+        function cleanScheduleDisplay(schedule) {
+            if (!schedule || schedule.trim() === '') return schedule;
+            
+            // Example input: "Jonathan Pass:05/22/2025, 10:00 AM – 05/22/2025, 7:00 PM"
+            // Desired output: "10:00 AM - 7:00 PM"
+            
+            // Look for pattern with times separated by –, -, or similar
+            const timePattern = /(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))\s*[–-]\s*(?:\d{2}\/\d{2}\/\d{4},?\s*)?(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))/i;
+            const match = schedule.match(timePattern);
+            
+            if (match) {
+                const startTime = match[1].trim();
+                const endTime = match[2].trim();
+                return `${startTime} - ${endTime}`;
+            }
+            
+            // If no match found, try to extract just times from the string
+            const times = schedule.match(/\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)/gi);
+            if (times && times.length >= 2) {
+                return `${times[0]} - ${times[1]}`;
+            }
+            
+            // If still no match, return original but try to remove name and dates
+            let cleaned = schedule;
+            
+            // Remove name prefix (everything before first colon)
+            if (cleaned.includes(':')) {
+                cleaned = cleaned.split(':').slice(1).join(':').trim();
+            }
+            
+            // Remove dates (MM/DD/YYYY format)
+            cleaned = cleaned.replace(/\d{2}\/\d{2}\/\d{4},?\s*/g, '');
+            
+            // Clean up extra spaces and normalize dash
+            cleaned = cleaned.replace(/\s+/g, ' ').replace(/[–—]/, '-').trim();
+            
+            return cleaned || schedule; // Return original if cleaning failed
+        }
+
         // Data processing functions
         function processScheduleData(data) {
             workingEmployees = [];
@@ -725,11 +765,13 @@
                 
                 const rawManager = String(row[1] || '').trim();
                 const cleanedManager = cleanManagerName(rawManager);
+                const rawSchedule = String(row[2] || '').trim();
+                const cleanedSchedule = cleanScheduleDisplay(rawSchedule);
                 
                 const employee = {
                     name: String(row[0]).trim(),
                     manager: cleanedManager,
-                    schedule: String(row[2] || '').trim(),
+                    schedule: cleanedSchedule,
                     type: 'scheduled'
                 };
                 
