@@ -690,6 +690,31 @@
             reader.readAsArrayBuffer(file);
         }
 
+        // Function to clean manager names
+        function cleanManagerName(managerName) {
+            if (!managerName || managerName.trim() === '') return managerName;
+            
+            // Remove prefixes like "Sales", "Marketing", etc. and extract name from parentheses
+            // Example: "Sales (Derrick Man)" becomes "Derrick Man"
+            const match = managerName.match(/.*\((.+)\)/);
+            if (match) {
+                return match[1].trim();
+            }
+            
+            // If no parentheses, remove common prefixes
+            const prefixesToRemove = ['Sales ', 'Marketing ', 'Operations ', 'Finance ', 'HR ', 'IT ', 'Admin ', 'Manager '];
+            let cleaned = managerName.trim();
+            
+            for (const prefix of prefixesToRemove) {
+                if (cleaned.startsWith(prefix)) {
+                    cleaned = cleaned.substring(prefix.length);
+                    break;
+                }
+            }
+            
+            return cleaned.trim();
+        }
+
         // Data processing functions
         function processScheduleData(data) {
             workingEmployees = [];
@@ -698,9 +723,12 @@
                 const row = data[i];
                 if (!row || !row[0]) continue;
                 
+                const rawManager = String(row[1] || '').trim();
+                const cleanedManager = cleanManagerName(rawManager);
+                
                 const employee = {
                     name: String(row[0]).trim(),
-                    manager: String(row[1] || '').trim(),
+                    manager: cleanedManager,
                     schedule: String(row[2] || '').trim(),
                     type: 'scheduled'
                 };
@@ -721,10 +749,12 @@
                 
                 const timeOffHours = String(row[0] || '');
                 const isPartialDay = timeOffHours.includes('4 Hours');
+                const rawManager = String(row[1] || '').trim();
+                const cleanedManager = cleanManagerName(rawManager);
                 
                 const employee = {
                     name: String(row[2]).trim(),
-                    manager: String(row[1] || '').trim(),
+                    manager: cleanedManager,
                     status: isPartialDay ? 'Partial Day (4 Hours)' : 'Full Day Off',
                     type: isPartialDay ? 'partial' : 'scheduled',
                     timeAdded: 'Scheduled'
