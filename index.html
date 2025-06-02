@@ -303,6 +303,24 @@
             border-radius: 5px;
             margin: 10px 0;
         }
+
+        .sortable-header {
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+        }
+
+        .sortable-header:hover {
+            background: linear-gradient(135deg, #3a8bfe 0%, #00d4fe 100%);
+        }
+
+        .sort-indicator {
+            position: absolute;
+            right: 5px;
+            font-size: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
     </style>
 </head>
 <body>
@@ -355,7 +373,9 @@
                             <th style="width: 50px;">✓</th>
                             <th>Employee</th>
                             <th>Manager</th>
-                            <th>Schedule</th>
+                            <th onclick="sortBySchedule()" class="sortable-header" style="cursor: pointer; user-select: none; position: relative;">
+                                Schedule <span id="sortIndicator" style="position: absolute; right: 5px; font-size: 12px; top: 50%; transform: translateY(-50%);">⏹</span>
+                            </th>
                         </tr>
                     </thead>
                     <tbody id="workingTableBody">
@@ -405,7 +425,6 @@
 
         <div id="manualTab" class="tab-content">
             <div style="max-width: 800px; margin: 0 auto;">
-                <!-- Summary Toggle Button -->
                 <div style="text-align: center; margin-bottom: 20px;">
                     <button class="btn btn-success" onclick="toggleSummarySection()" id="summaryToggleButton" 
                             style="padding: 12px 25px; font-size: 16px; border-radius: 25px;">
@@ -413,7 +432,6 @@
                     </button>
                 </div>
 
-                <!-- Manager Summary Section (Hidden by Default) -->
                 <div id="managerSummarySection" style="display: none; transition: all 0.3s ease; margin-bottom: 30px;">
                     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
                         <h2 style="margin-bottom: 8px;">📊 Manager Summary</h2>
@@ -431,7 +449,6 @@
                     </div>
                 </div>
 
-                <!-- File Upload Section (Always Visible) -->
                 <div style="margin-bottom: 40px;">
                     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
                         <h2 style="margin-bottom: 8px;">📁 Upload Daily Files</h2>
@@ -452,7 +469,6 @@
                     </div>
                 </div>
 
-                <!-- Employee Actions Section -->
                 <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 30px;">
                     <h2 style="margin-bottom: 10px;">🚀 Quick Employee Actions</h2>
                     <p>Mark employees as off or left early with one click</p>
@@ -489,7 +505,6 @@
                         </button>
                     </div>
 
-                    <!-- Shift Change Section (Initially Hidden) -->
                     <div id="shiftChangeSection" style="display: none; margin-bottom: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px; border: 2px solid #9c88ff;">
                         <h4 style="margin-bottom: 15px; color: #8c7ae6;">⏰ Update Shift Times</h4>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
@@ -514,7 +529,6 @@
                         </div>
                     </div>
 
-                    <!-- Export Report Button -->
                     <div style="text-align: center; margin-bottom: 20px;">
                         <button class="btn btn-success" onclick="exportData()" style="font-size: 18px; padding: 15px 30px; border-radius: 15px;">
                             📊 Export Daily Report
@@ -536,37 +550,141 @@
     </div>
 
     <script>
-        // Global variables
         let workingEmployees = [];
         let offEmployees = [];
         let allManagers = new Set();
         let manuallyAdded = new Map();
         let xlsxLoaded = false;
+        let scheduleSortOrder = 'none';
 
-        // Tab switching function - defined first
-        function switchTab(tabName) {
-            console.log('Switching to tab:', tabName);
+        function timeToMinutes(timeStr) {
+            if (!timeStr || timeStr === 'N/A') return 0;
             
-            // Remove active class from all tabs
+            const startTime = timeStr.split(' - ')[0];
+            if (!startTime) return 0;
+            
+            const match = startTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)/i);
+            if (!match) return 0;
+            
+            let hours = parseInt(match[1]);
+            const minutes = parseInt(match[2]);
+            const period = match[3].toUpperCase();
+            
+            if (period === 'PM' && hours !== 12) {
+                hours += 12;
+            } else if (period === 'AM' && hours === 12) {
+                hours = 0;
+            }
+            
+            return hours * 60 + minutes;
+        }
+
+        function sortBySchedule() {
+            if (workingEmployees.length === 0) {
+                showMessage('No employees to sort. Please upload schedule file first.', 'error');
+                return;
+            }
+            
+            if (scheduleSortOrder === 'none' || scheduleSortOrder === 'desc') {
+                scheduleSortOrder = 'asc';
+            } else if (scheduleSortOrder === 'asc') {
+                scheduleSortOrder = 'desc';
+            }
+            
+            const indicator = document.getElementById('sortIndicator');
+            if (indicator) {
+                if (scheduleSortOrder === 'asc') {
+                    indicator.textContent = '▲';
+                    indicator.title = 'Sorted by start time (earliest first)';
+                } else if (scheduleSortOrder === 'desc') {
+                    indicator.textContent = '▼';
+                    indicator.title = 'Sorted by start time (latest first)';
+                }
+            }
+            
+            workingEmployees.sort((a, b) => {
+                const timeA = timeToMinutes(a.schedule);
+                const timeB = timeToMinutes(b.schedule);
+                
+                if (scheduleSortOrder === 'asc') {
+                    return timeA - timeB;
+                } else {
+                    return timeB - timeA;
+                }
+            });
+            
+            forceTableUpdate();
+            
+            const sortDirection = scheduleSortOrder === 'asc' ? 'earliest to latest' : 'latest to earliest';
+            showMessage(`Schedule sorted by start time (${sortDirection})`, 'success');
+        }
+
+        function cleanManagerName(managerName) {
+            if (!managerName || managerName.trim() === '') return managerName;
+            
+            const match = managerName.match(/.*\((.+)\)/);
+            if (match) {
+                return match[1].trim();
+            }
+            
+            const prefixesToRemove = ['Sales ', 'Marketing ', 'Operations ', 'Finance ', 'HR ', 'IT ', 'Admin ', 'Manager '];
+            let cleaned = managerName.trim();
+            
+            for (const prefix of prefixesToRemove) {
+                if (cleaned.startsWith(prefix)) {
+                    cleaned = cleaned.substring(prefix.length);
+                    break;
+                }
+            }
+            
+            return cleaned.trim();
+        }
+
+        function cleanScheduleDisplay(schedule) {
+            if (!schedule || schedule.trim() === '') return schedule;
+            
+            const timePattern = /(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))\s*[–-]\s*(?:\d{2}\/\d{2}\/\d{4},?\s*)?(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))/i;
+            const match = schedule.match(timePattern);
+            
+            if (match) {
+                const startTime = match[1].trim();
+                const endTime = match[2].trim();
+                return `${startTime} - ${endTime}`;
+            }
+            
+            const times = schedule.match(/\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)/gi);
+            if (times && times.length >= 2) {
+                return `${times[0]} - ${times[1]}`;
+            }
+            
+            let cleaned = schedule;
+            
+            if (cleaned.includes(':')) {
+                cleaned = cleaned.split(':').slice(1).join(':').trim();
+            }
+            
+            cleaned = cleaned.replace(/\d{2}\/\d{2}\/\d{4},?\s*/g, '');
+            cleaned = cleaned.replace(/\s+/g, ' ').replace(/[–—]/, '-').trim();
+            
+            return cleaned || schedule;
+        }
+
+        function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             
-            // Add active class to clicked tab
             const activeTab = document.querySelector(`[onclick="switchTab('${tabName}')"]`);
             if (activeTab) {
                 activeTab.classList.add('active');
             }
             
-            // Hide all tab content
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
-            // Show selected tab content
             const targetTab = document.getElementById(tabName + 'Tab');
             if (targetTab) {
                 targetTab.classList.add('active');
             }
         }
 
-        // XLSX loading function
         function loadXLSX() {
             return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
@@ -584,22 +702,18 @@
             });
         }
 
-        // Initialize application
         async function init() {
-            console.log('Initializing application...');
             try {
                 await loadXLSX();
                 xlsxLoaded = true;
                 setupEventListeners();
                 showMessage('Application ready! You can now upload your Excel files.', 'success');
             } catch (error) {
-                console.error('Initialization error:', error);
                 showMessage('Warning: Excel file processing may not work. Try refreshing the page.', 'error');
                 setupEventListeners();
             }
         }
 
-        // Message display function
         function showMessage(text, type) {
             const messageArea = document.getElementById('messageArea');
             const className = type === 'success' ? 'success-msg' : 'error-msg';
@@ -609,7 +723,6 @@
             }, 5000);
         }
 
-        // Setup event listeners
         function setupEventListeners() {
             const scheduleFile = document.getElementById('scheduleFile');
             const timeOffFile = document.getElementById('timeOffFile');
@@ -627,7 +740,6 @@
             }
         }
 
-        // File handling functions
         function handleScheduleFile(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -690,72 +802,6 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // Function to clean manager names
-        function cleanManagerName(managerName) {
-            if (!managerName || managerName.trim() === '') return managerName;
-            
-            // Remove prefixes like "Sales", "Marketing", etc. and extract name from parentheses
-            // Example: "Sales (Derrick Man)" becomes "Derrick Man"
-            const match = managerName.match(/.*\((.+)\)/);
-            if (match) {
-                return match[1].trim();
-            }
-            
-            // If no parentheses, remove common prefixes
-            const prefixesToRemove = ['Sales ', 'Marketing ', 'Operations ', 'Finance ', 'HR ', 'IT ', 'Admin ', 'Manager '];
-            let cleaned = managerName.trim();
-            
-            for (const prefix of prefixesToRemove) {
-                if (cleaned.startsWith(prefix)) {
-                    cleaned = cleaned.substring(prefix.length);
-                    break;
-                }
-            }
-            
-            return cleaned.trim();
-        }
-
-        // Function to clean schedule display
-        function cleanScheduleDisplay(schedule) {
-            if (!schedule || schedule.trim() === '') return schedule;
-            
-            // Example input: "Jonathan Pass:05/22/2025, 10:00 AM – 05/22/2025, 7:00 PM"
-            // Desired output: "10:00 AM - 7:00 PM"
-            
-            // Look for pattern with times separated by –, -, or similar
-            const timePattern = /(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))\s*[–-]\s*(?:\d{2}\/\d{2}\/\d{4},?\s*)?(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))/i;
-            const match = schedule.match(timePattern);
-            
-            if (match) {
-                const startTime = match[1].trim();
-                const endTime = match[2].trim();
-                return `${startTime} - ${endTime}`;
-            }
-            
-            // If no match found, try to extract just times from the string
-            const times = schedule.match(/\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)/gi);
-            if (times && times.length >= 2) {
-                return `${times[0]} - ${times[1]}`;
-            }
-            
-            // If still no match, return original but try to remove name and dates
-            let cleaned = schedule;
-            
-            // Remove name prefix (everything before first colon)
-            if (cleaned.includes(':')) {
-                cleaned = cleaned.split(':').slice(1).join(':').trim();
-            }
-            
-            // Remove dates (MM/DD/YYYY format)
-            cleaned = cleaned.replace(/\d{2}\/\d{2}\/\d{4},?\s*/g, '');
-            
-            // Clean up extra spaces and normalize dash
-            cleaned = cleaned.replace(/\s+/g, ' ').replace(/[–—]/, '-').trim();
-            
-            return cleaned || schedule; // Return original if cleaning failed
-        }
-
-        // Data processing functions
         function processScheduleData(data) {
             workingEmployees = [];
             
@@ -813,7 +859,6 @@
             }
         }
 
-        // Display update functions
         function forceTableUpdate() {
             updateTableDirect('working', workingEmployees);
             updateTableDirect('off', offEmployees);
@@ -825,7 +870,6 @@
                 updateManagerCheckboxes();
             }
             
-            // Also update the summaries
             updateDisplay();
         }
 
@@ -886,7 +930,6 @@
             
             const managers = Array.from(allManagers).sort();
             
-            // Clear and populate working checkboxes
             workingContainer.innerHTML = '';
             managers.forEach((manager, index) => {
                 if (manager) {
@@ -902,7 +945,6 @@
                 }
             });
             
-            // Clear and populate off checkboxes
             offContainer.innerHTML = '';
             managers.forEach((manager, index) => {
                 if (manager) {
@@ -919,7 +961,6 @@
             });
         }
 
-        // Clear all checkboxes function
         function clearAllCheckboxes(tabType) {
             const tableBody = document.getElementById(tabType + 'TableBody');
             if (!tableBody) return;
@@ -932,7 +973,6 @@
             showMessage(`All checkboxes cleared in ${tabType === 'working' ? 'Working Today' : 'Off Today'} tab`, 'success');
         }
 
-        // Manager filter functions
         function handleManagerCheckboxChange(tabType) {
             const container = document.getElementById(tabType + 'ManagerCheckboxes');
             const checkboxes = container.querySelectorAll('input[type="checkbox"]');
@@ -992,7 +1032,6 @@
             showMessage('All managers selected', 'success');
         }
 
-        // Summary toggle function
         function toggleSummarySection() {
             const summarySection = document.getElementById('managerSummarySection');
             const toggleButton = document.getElementById('summaryToggleButton');
@@ -1008,7 +1047,6 @@
             }
         }
 
-        // Employee action functions
         function markEmployeeWithStatus(status) {
             const nameInput = document.getElementById('manualEmployeeName');
             const employeeName = nameInput.value.trim();
@@ -1030,7 +1068,6 @@
             const employee = workingEmployees[employeeIndex];
             const originalManager = employee.manager;
             
-            // Find manager with least employees
             const newManager = findManagerWithLeastEmployees();
             
             const offEmployee = {
@@ -1039,7 +1076,7 @@
                 status: status,
                 type: 'manual',
                 timeAdded: new Date().toLocaleString(),
-                originalManager: originalManager // Store original manager for reference
+                originalManager: originalManager
             };
             
             offEmployees.push(offEmployee);
@@ -1048,7 +1085,6 @@
             
             nameInput.value = '';
             
-            // Force update everything including summaries
             updateDisplay();
             forceTableUpdate();
             
@@ -1061,37 +1097,30 @@
             switchTab('off');
         }
 
-        // Find manager with least employees function
         function findManagerWithLeastEmployees() {
-            // Count total employees per manager (working + off employees assigned to them)
             const managerCounts = {};
             
-            // First, count working employees
             workingEmployees.forEach(emp => {
                 const manager = emp.manager || 'No Manager';
                 managerCounts[manager] = (managerCounts[manager] || 0) + 1;
             });
             
-            // Then, add off employees that have been reassigned to managers
             offEmployees.forEach(emp => {
                 const manager = emp.manager || 'No Manager';
                 managerCounts[manager] = (managerCounts[manager] || 0) + 1;
             });
             
-            // If no managers have any employees, return first manager from allManagers
             if (Object.keys(managerCounts).length === 0) {
                 const managersArray = Array.from(allManagers);
                 return managersArray.length > 0 ? managersArray[0] : 'No Manager';
             }
             
-            // Ensure all managers from allManagers are represented (even with 0 count)
             Array.from(allManagers).forEach(manager => {
                 if (!(manager in managerCounts)) {
                     managerCounts[manager] = 0;
                 }
             });
             
-            // Find manager with minimum total count
             let minCount = Infinity;
             let managerWithLeast = 'No Manager';
             
@@ -1101,9 +1130,6 @@
                     managerWithLeast = manager;
                 }
             });
-            
-            console.log('Total manager counts (working + off):', managerCounts);
-            console.log('Manager with least total employees:', managerWithLeast, 'with', minCount, 'total employees');
             
             return managerWithLeast;
         }
@@ -1130,7 +1156,7 @@
             
             const workingEmployee = {
                 name: employee.name,
-                manager: employee.originalManager || employee.manager, // Use original manager if available
+                manager: employee.originalManager || employee.manager,
                 schedule: 'Returned - Check original schedule',
                 type: 'returned'
             };
@@ -1141,7 +1167,6 @@
             
             nameInput.value = '';
             
-            // Force update everything including summaries
             updateDisplay();
             forceTableUpdate();
             
@@ -1195,10 +1220,7 @@
                 return `${hour12}:${minutes} ${ampm}`;
             }
             
-            const today = new Date();
-            const dateStr = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`;
-            
-            const newSchedule = `${employee.name}:${dateStr}, ${formatTime(startTime)} – ${dateStr}, ${formatTime(endTime)}`;
+            const newSchedule = `${formatTime(startTime)} - ${formatTime(endTime)}`;
             
             workingEmployees[employeeIndex].schedule = newSchedule;
             workingEmployees[employeeIndex].type = 'updated';
@@ -1210,11 +1232,10 @@
             
             forceTableUpdate();
             
-            showMessage(`${employee.name}'s shift updated to ${formatTime(startTime)} - ${formatTime(endTime)}`, 'success');
+            showMessage(`${employee.name}'s shift updated to ${newSchedule}`, 'success');
             switchTab('working');
         }
 
-        // Display functions
         function updateDisplay() {
             updateCounts();
             updateSummaries();
@@ -1249,28 +1270,20 @@
                 workingSummary.innerHTML = workingSummaryHtml;
             }
             
-            // Debug logging for off employees
-            console.log('Off employees for summary:', offEmployees);
-            
-            // Updated Off summary calculation - count by assigned manager after reassignments
             const offByManager = {};
             offEmployees.forEach(emp => {
-                const manager = emp.manager || 'No Manager'; // This is now the reassigned manager
+                const manager = emp.manager || 'No Manager';
                 offByManager[manager] = (offByManager[manager] || 0) + 1;
-                console.log(`Adding ${emp.name} to manager ${manager}, status: ${emp.status}`);
             });
-            
-            console.log('Off by manager counts:', offByManager);
             
             const offSummary = document.getElementById('offSummary');
             if (offSummary) {
                 let offSummaryHtml = '';
                 
-                // Ensure we show all managers, even if they have 0 off employees
                 const allManagersList = Array.from(allManagers);
                 allManagersList.forEach(manager => {
                     const count = offByManager[manager] || 0;
-                    if (count > 0) {  // Only show managers with off employees
+                    if (count > 0) {
                         offSummaryHtml += `
                             <div class="summary-card">
                                 <h3>${count}</h3>
@@ -1280,7 +1293,6 @@
                     }
                 });
                 
-                // Also include any managers not in allManagers but present in offEmployees
                 Object.entries(offByManager).forEach(([manager, count]) => {
                     if (!allManagersList.includes(manager) && count > 0) {
                         offSummaryHtml += `
@@ -1296,7 +1308,6 @@
             }
         }
 
-        // Export function
         function exportData() {
             if (!xlsxLoaded) {
                 showMessage('Excel export not available. Please refresh the page.', 'error');
@@ -1328,7 +1339,6 @@
             }
         }
 
-        // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
