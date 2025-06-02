@@ -574,10 +574,16 @@
         let scheduleSortOrder = 'none';
 
         function timeToMinutes(timeStr) {
-            if (!timeStr || timeStr === 'N/A') return 0;
+            if (!timeStr || timeStr === 'N/A' || timeStr.trim() === '') {
+                console.log('Invalid time string:', timeStr);
+                return 999999; // Push invalid times to end
+            }
             
             const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)/i);
-            if (!match) return 0;
+            if (!match) {
+                console.log('No time match found for:', timeStr);
+                return 999999;
+            }
             
             let hours = parseInt(match[1]);
             const minutes = parseInt(match[2]);
@@ -589,15 +595,23 @@
                 hours = 0;
             }
             
-            return hours * 60 + minutes;
+            const totalMinutes = hours * 60 + minutes;
+            console.log(`Time ${timeStr} = ${totalMinutes} minutes`);
+            return totalMinutes;
         }
 
         function getStartTime(schedule) {
-            if (!schedule || schedule === 'N/A' || schedule.trim() === '') return 999999; // Put N/A at end
+            if (!schedule || schedule === 'N/A' || schedule.trim() === '') {
+                console.log('Invalid schedule for start time:', schedule);
+                return 999999; // Put N/A at end
+            }
             
             console.log('Getting start time from:', schedule);
             const parts = schedule.split(' - ');
-            if (parts.length < 1) return 999999;
+            if (parts.length < 1) {
+                console.log('No dash found in schedule:', schedule);
+                return 999999;
+            }
             
             const startTime = parts[0].trim();
             console.log('Start time extracted:', startTime);
@@ -608,11 +622,17 @@
         }
 
         function getEndTime(schedule) {
-            if (!schedule || schedule === 'N/A' || schedule.trim() === '') return 999999; // Put N/A at end
+            if (!schedule || schedule === 'N/A' || schedule.trim() === '') {
+                console.log('Invalid schedule for end time:', schedule);
+                return 999999; // Put N/A at end
+            }
             
             console.log('Getting end time from:', schedule);
             const parts = schedule.split(' - ');
-            if (parts.length < 2) return 999999;
+            if (parts.length < 2) {
+                console.log('No end time found in schedule:', schedule);
+                return 999999;
+            }
             
             const endTime = parts[1].trim();
             console.log('End time extracted:', endTime);
@@ -640,8 +660,8 @@
             
             console.log('After sorting:', workingEmployees.map(emp => `${emp.name}: ${emp.schedule}`));
             
-            // Use skipSort=true to preserve the time-based sorting order
-            updateTableDirect('working', workingEmployees, true);
+            // Force immediate table rebuild
+            rebuildWorkingTable();
             showMessage('Schedule sorted by start time (earliest to latest)', 'success');
         }
 
@@ -663,9 +683,33 @@
             
             console.log('After sorting:', workingEmployees.map(emp => `${emp.name}: ${emp.schedule}`));
             
-            // Use skipSort=true to preserve the time-based sorting order
-            updateTableDirect('working', workingEmployees, true);
+            // Force immediate table rebuild
+            rebuildWorkingTable();
             showMessage('Schedule sorted by end time (earliest to latest)', 'success');
+        }
+
+        function rebuildWorkingTable() {
+            const tableBody = document.getElementById('workingTableBody');
+            if (!tableBody) return;
+            
+            console.log('Rebuilding table with order:', workingEmployees.map(emp => emp.name));
+            
+            let html = '';
+            workingEmployees.forEach((employee, index) => {
+                html += `
+                    <tr>
+                        <td style="text-align: center;">
+                            <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
+                        </td>
+                        <td><strong>${employee.name}</strong></td>
+                        <td>${employee.manager || 'N/A'}</td>
+                        <td>${employee.schedule || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+            console.log('Table rebuilt successfully');
         }
 
         function sortBySchedule() {
@@ -914,8 +958,8 @@
         }
 
         function forceTableUpdate() {
-            updateTableDirect('working', workingEmployees);
-            updateTableDirect('off', offEmployees);
+            updateTableDirect('working', workingEmployees, false); // Use default manager sorting
+            updateTableDirect('off', offEmployees, false);
             
             const workingContainer = document.getElementById('workingManagerCheckboxes');
             const offContainer = document.getElementById('offManagerCheckboxes');
