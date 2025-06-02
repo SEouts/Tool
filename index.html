@@ -640,7 +640,8 @@
             
             console.log('After sorting:', workingEmployees.map(emp => `${emp.name}: ${emp.schedule}`));
             
-            updateTableDirect('working', workingEmployees);
+            // Use skipSort=true to preserve the time-based sorting order
+            updateTableDirect('working', workingEmployees, true);
             showMessage('Schedule sorted by start time (earliest to latest)', 'success');
         }
 
@@ -662,7 +663,8 @@
             
             console.log('After sorting:', workingEmployees.map(emp => `${emp.name}: ${emp.schedule}`));
             
-            updateTableDirect('working', workingEmployees);
+            // Use skipSort=true to preserve the time-based sorting order
+            updateTableDirect('working', workingEmployees, true);
             showMessage('Schedule sorted by end time (earliest to latest)', 'success');
         }
 
@@ -925,7 +927,7 @@
             updateDisplay();
         }
 
-        function updateTableDirect(tabType, employees) {
+        function updateTableDirect(tabType, employees, skipSort = false) {
             const tableBody = document.getElementById(tabType + 'TableBody');
             if (!tableBody) return;
             
@@ -934,7 +936,11 @@
                 return;
             }
             
-            employees.sort((a, b) => (a.manager || '').localeCompare(b.manager || ''));
+            // Only sort by manager if skipSort is false (default behavior)
+            // When skipSort is true, preserve the current order (used for time sorting)
+            if (!skipSort) {
+                employees.sort((a, b) => (a.manager || '').localeCompare(b.manager || ''));
+            }
             
             let html = '';
             employees.forEach(employee => {
