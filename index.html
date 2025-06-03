@@ -839,6 +839,16 @@
         }
 
         function switchTab(tabName) {
+            // Check if trying to access Quick Actions tab
+            if (tabName === 'manual') {
+                const password = prompt('Enter password to access Quick Actions:');
+                if (password !== '789') {
+                    showMessage('Incorrect password. Access denied.', 'error');
+                    return; // Don't switch tabs
+                }
+                showMessage('Access granted to Quick Actions tab', 'success');
+            }
+            
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             
             const activeTab = document.querySelector(`[onclick="switchTab('${tabName}')"]`);
