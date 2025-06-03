@@ -382,11 +382,11 @@
                                             title="Sort by start time (earliest first)">
                                         🕐 Start ↑
                                     </button>
-                                    <button onclick="sortByEndTime()" 
+                                    <button onclick="toggleNearEndFilter()" 
                                             style="background: rgba(255,255,255,0.9); color: #333; border: none; border-radius: 4px; padding: 6px 12px; font-size: 11px; cursor: pointer; font-weight: 600; transition: all 0.2s ease;"
                                             onmouseover="this.style.background='white'; this.style.transform='translateY(-1px)'"
                                             onmouseout="this.style.background='rgba(255,255,255,0.9)'; this.style.transform='translateY(0)'"
-                                            title="Sort by end time (earliest first)">
+                                            title="Hide employees within 2 hours of shift end">
                                         🕕 End ↑
                                     </button>
                                 </div>
@@ -573,6 +573,8 @@
         let manuallyAdded = new Map();
         let xlsxLoaded = false;
         let scheduleSortOrder = 'none';
+        let nearEndFilterActive = false;
+        let allWorkingEmployees = []; // Store complete list for filtering
 
         function timeToMinutes(timeStr) {
             if (!timeStr || timeStr === 'N/A') return 0;
@@ -646,27 +648,55 @@
             showMessage('Schedule sorted by start time (earliest to latest)', 'success');
         }
 
-        function sortByEndTime() {
-            console.log('=== SORTING BY END TIME ===');
-            if (workingEmployees.length === 0) {
-                showMessage('No employees to sort. Please upload schedule file first.', 'error');
-                return;
+        function getCurrentTimeInMinutes() {
+            const now = new Date();
+            return now.getHours() * 60 + now.getMinutes();
+        }
+
+        function isWithinTwoHoursOfEnd(schedule) {
+            if (!schedule || schedule === 'N/A' || schedule.trim() === '') return false;
+            
+            const endTimeMinutes = getEndTime(schedule);
+            if (endTimeMinutes === 999999) return false; // Invalid schedule
+            
+            const currentTimeMinutes = getCurrentTimeInMinutes();
+            const timeDifference = endTimeMinutes - currentTimeMinutes;
+            
+            console.log(`Schedule: ${schedule}, End: ${endTimeMinutes}, Current: ${currentTimeMinutes}, Diff: ${timeDifference} minutes`);
+            
+            // Within 2 hours (120 minutes) and not past end time
+            return timeDifference <= 120 && timeDifference >= 0;
+        }
+
+        function toggleNearEndFilter() {
+            nearEndFilterActive = !nearEndFilterActive;
+            const button = document.querySelector('button[onclick="sortByEndTime()"]');
+            
+            if (nearEndFilterActive) {
+                // Filter out employees within 2 hours of shift end
+                const currentTime = new Date();
+                const timeString = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                workingEmployees = allWorkingEmployees.filter(emp => !isWithinTwoHoursOfEnd(emp.schedule));
+                
+                button.innerHTML = '👁️ Show All';
+                button.title = 'Show all employees including those near shift end';
+                button.style.background = 'rgba(255,200,200,0.9)'; // Light red to indicate filter is active
+                
+                showMessage(`Filter active! Hiding employees within 2 hours of shift end (Current time: ${timeString})`, 'success');
+            } else {
+                // Show all employees
+                workingEmployees = [...allWorkingEmployees];
+                
+                button.innerHTML = '🕕 End ↑';
+                button.title = 'Hide employees within 2 hours of shift end';
+                button.style.background = 'rgba(255,255,255,0.9)';
+                
+                showMessage('Filter removed - showing all employees', 'success');
             }
             
-            console.log('Before sorting:', workingEmployees.map(emp => `${emp.name}: ${emp.schedule}`));
-            
-            workingEmployees.sort((a, b) => {
-                const timeA = getEndTime(a.schedule);
-                const timeB = getEndTime(b.schedule);
-                console.log(`Comparing: ${a.name} (${timeA} min) vs ${b.name} (${timeB} min) = ${timeA - timeB}`);
-                return timeA - timeB;
-            });
-            
-            console.log('After sorting:', workingEmployees.map(emp => `${emp.name}: ${emp.schedule}`));
-            
-            // Use skipSort=true to preserve the time-based sorting order
             updateTableDirect('working', workingEmployees, true);
-            showMessage('Schedule sorted by end time (earliest to latest)', 'success');
+            updateDisplay();
         }
 
         function sortBySchedule() {
@@ -859,6 +889,7 @@
 
         function processScheduleData(data) {
             workingEmployees = [];
+            allWorkingEmployees = []; // Reset the complete list
             
             for (let i = 1; i < data.length; i++) {
                 const row = data[i];
@@ -878,6 +909,7 @@
                 
                 if (employee.name) {
                     workingEmployees.push(employee);
+                    allWorkingEmployees.push({...employee}); // Store copy in complete list
                     if (employee.manager) {
                         allManagers.add(employee.manager);
                     }
@@ -910,6 +942,7 @@
                     }
                     
                     workingEmployees = workingEmployees.filter(emp => emp.name !== employee.name);
+                    allWorkingEmployees = allWorkingEmployees.filter(emp => emp.name !== employee.name);
                 }
             }
         }
