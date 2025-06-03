@@ -342,7 +342,7 @@
                 🏖️ Off Today (<span id="offCount">0</span>)
             </button>
             <button class="tab" onclick="switchTab('manual')">
-                ⚡ Quick Actions
+                ⚡ Sales Admin
             </button>
         </div>
 
@@ -839,14 +839,14 @@
         }
 
         function switchTab(tabName) {
-            // Check if trying to access Quick Actions tab
+            // Check if trying to access Sales Admin tab
             if (tabName === 'manual') {
-                const password = prompt('Enter password to access Quick Actions:');
+                const password = prompt('Enter password to access Sales Admin:');
                 if (password !== '789') {
                     showMessage('Incorrect password. Access denied.', 'error');
                     return; // Don't switch tabs
                 }
-                showMessage('Access granted to Quick Actions tab', 'success');
+                showMessage('Access granted to Sales Admin tab', 'success');
             }
             
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
