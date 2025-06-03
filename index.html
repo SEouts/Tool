@@ -389,6 +389,13 @@
                                             title="Hide employees within 2 hours of shift end">
                                         <2hrs
                                     </button>
+                                    <button onclick="toggleOneHourFilter()" 
+                                            style="background: rgba(255,255,255,0.9); color: #333; border: none; border-radius: 4px; padding: 6px 12px; font-size: 11px; cursor: pointer; font-weight: 600; transition: all 0.2s ease;"
+                                            onmouseover="this.style.background='white'; this.style.transform='translateY(-1px)'"
+                                            onmouseout="this.style.background='rgba(255,255,255,0.9)'; this.style.transform='translateY(0)'"
+                                            title="Hide employees within 1 hour 15 minutes of shift end">
+                                        <1hr
+                                    </button>
                                 </div>
                                 Schedule
                             </th>
@@ -574,6 +581,7 @@
         let xlsxLoaded = false;
         let scheduleSortOrder = 'none';
         let nearEndFilterActive = false;
+        let oneHourFilterActive = false;
         let allWorkingEmployees = []; // Store complete list for filtering
 
         function timeToMinutes(timeStr) {
@@ -653,6 +661,67 @@
             return now.getHours() * 60 + now.getMinutes();
         }
 
+        function isWithinOneHourFifteenOfEnd(schedule) {
+            if (!schedule || schedule === 'N/A' || schedule.trim() === '') return false;
+            
+            const endTimeMinutes = getEndTime(schedule);
+            if (endTimeMinutes === 999999) return false; // Invalid schedule
+            
+            const currentTimeMinutes = getCurrentTimeInMinutes();
+            const timeDifference = endTimeMinutes - currentTimeMinutes;
+            
+            console.log(`Schedule: ${schedule}, End: ${endTimeMinutes}, Current: ${currentTimeMinutes}, Diff: ${timeDifference} minutes (1hr15min check)`);
+            
+            // Within 1 hour 15 minutes (75 minutes) and not past end time
+            return timeDifference <= 75 && timeDifference >= 0;
+        }
+
+        function toggleOneHourFilter() {
+            oneHourFilterActive = !oneHourFilterActive;
+            const button = document.querySelector('button[onclick="toggleOneHourFilter()"]');
+            
+            // If other filter is active, turn it off first
+            if (nearEndFilterActive) {
+                nearEndFilterActive = false;
+                const otherButton = document.querySelector('button[onclick="toggleNearEndFilter()"]');
+                if (otherButton) {
+                    otherButton.innerHTML = '<2hrs';
+                    otherButton.title = 'Hide employees within 2 hours of shift end';
+                    otherButton.style.background = 'rgba(255,255,255,0.9)';
+                }
+            }
+            
+            if (oneHourFilterActive) {
+                // Filter out employees within 1 hour 15 minutes of shift end
+                const currentTime = new Date();
+                const timeString = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                workingEmployees = allWorkingEmployees.filter(emp => !isWithinOneHourFifteenOfEnd(emp.schedule));
+                
+                if (button) {
+                    button.innerHTML = '👁️ Show All';
+                    button.title = 'Show all employees including those near shift end';
+                    button.style.background = 'rgba(255,200,200,0.9)'; // Light red to indicate filter is active
+                }
+                
+                showMessage(`Filter active! Hiding employees within 1hr 15min of shift end (Current time: ${timeString})`, 'success');
+            } else {
+                // Show all employees
+                workingEmployees = [...allWorkingEmployees];
+                
+                if (button) {
+                    button.innerHTML = '<1hr';
+                    button.title = 'Hide employees within 1 hour 15 minutes of shift end';
+                    button.style.background = 'rgba(255,255,255,0.9)';
+                }
+                
+                showMessage('Filter removed - showing all employees', 'success');
+            }
+            
+            updateTableDirect('working', workingEmployees, true);
+            updateDisplay();
+        }
+
         function isWithinTwoHoursOfEnd(schedule) {
             if (!schedule || schedule === 'N/A' || schedule.trim() === '') return false;
             
@@ -662,7 +731,7 @@
             const currentTimeMinutes = getCurrentTimeInMinutes();
             const timeDifference = endTimeMinutes - currentTimeMinutes;
             
-            console.log(`Schedule: ${schedule}, End: ${endTimeMinutes}, Current: ${currentTimeMinutes}, Diff: ${timeDifference} minutes`);
+            console.log(`Schedule: ${schedule}, End: ${endTimeMinutes}, Current: ${currentTimeMinutes}, Diff: ${timeDifference} minutes (2hr check)`);
             
             // Within 2 hours (120 minutes) and not past end time
             return timeDifference <= 120 && timeDifference >= 0;
@@ -671,6 +740,17 @@
         function toggleNearEndFilter() {
             nearEndFilterActive = !nearEndFilterActive;
             const button = document.querySelector('button[onclick="toggleNearEndFilter()"]');
+            
+            // If other filter is active, turn it off first
+            if (oneHourFilterActive) {
+                oneHourFilterActive = false;
+                const otherButton = document.querySelector('button[onclick="toggleOneHourFilter()"]');
+                if (otherButton) {
+                    otherButton.innerHTML = '<1hr';
+                    otherButton.title = 'Hide employees within 1 hour 15 minutes of shift end';
+                    otherButton.style.background = 'rgba(255,255,255,0.9)';
+                }
+            }
             
             if (nearEndFilterActive) {
                 // Filter out employees within 2 hours of shift end
