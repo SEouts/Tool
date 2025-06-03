@@ -670,7 +670,7 @@
 
         function toggleNearEndFilter() {
             nearEndFilterActive = !nearEndFilterActive;
-            const button = document.querySelector('button[onclick="sortByEndTime()"]');
+            const button = document.querySelector('button[onclick="toggleNearEndFilter()"]');
             
             if (nearEndFilterActive) {
                 // Filter out employees within 2 hours of shift end
@@ -679,18 +679,22 @@
                 
                 workingEmployees = allWorkingEmployees.filter(emp => !isWithinTwoHoursOfEnd(emp.schedule));
                 
-                button.innerHTML = '👁️ Show All';
-                button.title = 'Show all employees including those near shift end';
-                button.style.background = 'rgba(255,200,200,0.9)'; // Light red to indicate filter is active
+                if (button) {
+                    button.innerHTML = '👁️ Show All';
+                    button.title = 'Show all employees including those near shift end';
+                    button.style.background = 'rgba(255,200,200,0.9)'; // Light red to indicate filter is active
+                }
                 
                 showMessage(`Filter active! Hiding employees within 2 hours of shift end (Current time: ${timeString})`, 'success');
             } else {
                 // Show all employees
                 workingEmployees = [...allWorkingEmployees];
                 
-                button.innerHTML = '🕕 End ↑';
-                button.title = 'Hide employees within 2 hours of shift end';
-                button.style.background = 'rgba(255,255,255,0.9)';
+                if (button) {
+                    button.innerHTML = '🕕 End ↑';
+                    button.title = 'Hide employees within 2 hours of shift end';
+                    button.style.background = 'rgba(255,255,255,0.9)';
+                }
                 
                 showMessage('Filter removed - showing all employees', 'success');
             }
