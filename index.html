@@ -357,6 +357,11 @@
                     <button class="btn btn-success" onclick="selectAllManagers('working')" style="padding: 8px 16px; margin-left: 10px;">
                         Select All
                     </button>
+                    <label style="margin-left: 20px; display: inline-flex; align-items: center; font-weight: 600; color: #4facfe;">
+                        <input type="checkbox" id="showDedicatedWorking" onchange="toggleDedicatedFilter('working')" 
+                               style="margin-right: 8px; transform: scale(1.2); accent-color: #4facfe;">
+                        Show Dedicated
+                    </label>
                 </div>
             </div>
             <div class="table-container">
@@ -419,6 +424,11 @@
                     <button class="btn btn-success" onclick="selectAllManagers('off')" style="padding: 8px 16px; margin-left: 10px;">
                         Select All
                     </button>
+                    <label style="margin-left: 20px; display: inline-flex; align-items: center; font-weight: 600; color: #4facfe;">
+                        <input type="checkbox" id="showDedicatedOff" onchange="toggleDedicatedFilter('off')" 
+                               style="margin-right: 8px; transform: scale(1.2); accent-color: #4facfe;">
+                        Show Dedicated
+                    </label>
                 </div>
             </div>
             <div class="table-container">
@@ -478,7 +488,7 @@
                         <p>Start by uploading your schedule and time off files</p>
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px;">
                         <div class="upload-box">
                             <h3>📅 Upload Schedule File</h3>
                             <p>Excel file with employee schedules</p>
@@ -488,6 +498,11 @@
                             <h3>🏖️ Upload Time Off File</h3>
                             <p>Excel file with scheduled time off</p>
                             <input type="file" id="timeOffFile" accept=".xlsx,.xls,.csv" />
+                        </div>
+                        <div class="upload-box">
+                            <h3>👥 Upload Dedicated List</h3>
+                            <p>Excel file with dedicated workers to hide</p>
+                            <input type="file" id="dedicatedFile" accept=".xlsx,.xls,.csv" />
                         </div>
                     </div>
                 </div>
@@ -583,6 +598,8 @@
         let nearEndFilterActive = false;
         let oneHourFilterActive = false;
         let allWorkingEmployees = []; // Store complete list for filtering
+        let dedicatedWorkers = new Set(); // Store dedicated workers to hide
+        let showDedicated = false; // Track if dedicated workers should be shown
 
         function timeToMinutes(timeStr) {
             if (!timeStr || timeStr === 'N/A') return 0;
@@ -633,32 +650,24 @@
             return minutes;
         }
 
-        function sortByStartTime() {
-            console.log('=== SORTING BY START TIME ===');
-            if (workingEmployees.length === 0) {
-                showMessage('No employees to sort. Please upload schedule file first.', 'error');
-                return;
-            }
-            
-            console.log('Before sorting:', workingEmployees.map(emp => `${emp.name}: ${emp.schedule}`));
-            
-            workingEmployees.sort((a, b) => {
-                const timeA = getStartTime(a.schedule);
-                const timeB = getStartTime(b.schedule);
-                console.log(`Comparing: ${a.name} (${timeA} min) vs ${b.name} (${timeB} min) = ${timeA - timeB}`);
-                return timeA - timeB;
-            });
-            
-            console.log('After sorting:', workingEmployees.map(emp => `${emp.name}: ${emp.schedule}`));
-            
-            // Use skipSort=true to preserve the time-based sorting order
-            updateTableDirect('working', workingEmployees, true);
-            showMessage('Schedule sorted by start time (earliest to latest)', 'success');
-        }
-
         function getCurrentTimeInMinutes() {
             const now = new Date();
             return now.getHours() * 60 + now.getMinutes();
+        }
+
+        function isWithinTwoHoursOfEnd(schedule) {
+            if (!schedule || schedule === 'N/A' || schedule.trim() === '') return false;
+            
+            const endTimeMinutes = getEndTime(schedule);
+            if (endTimeMinutes === 999999) return false; // Invalid schedule
+            
+            const currentTimeMinutes = getCurrentTimeInMinutes();
+            const timeDifference = endTimeMinutes - currentTimeMinutes;
+            
+            console.log(`Schedule: ${schedule}, End: ${endTimeMinutes}, Current: ${currentTimeMinutes}, Diff: ${timeDifference} minutes (2hr check)`);
+            
+            // Within 2 hours (120 minutes) and not past end time
+            return timeDifference <= 120 && timeDifference >= 0;
         }
 
         function isWithinOneHourFifteenOfEnd(schedule) {
@@ -674,6 +683,59 @@
             
             // Within 1 hour 15 minutes (75 minutes) and not past end time
             return timeDifference <= 75 && timeDifference >= 0;
+        }
+
+        function toggleDedicatedFilter(tabType) {
+            const checkbox = document.getElementById('showDedicated' + (tabType === 'working' ? 'Working' : 'Off'));
+            const shouldShow = checkbox.checked;
+            
+            // Apply filter and update display
+            if (tabType === 'working') {
+                applyAllFilters();
+            } else {
+                applyAllFiltersOff();
+            }
+            
+            const action = shouldShow ? 'Showing' : 'Hiding';
+            showMessage(`${action} dedicated workers in ${tabType === 'working' ? 'Working Today' : 'Off Today'} tab`, 'success');
+        }
+
+        function isDedicatedWorker(employeeName) {
+            return dedicatedWorkers.has(employeeName.toLowerCase().trim());
+        }
+
+        function applyAllFilters() {
+            let filteredEmployees = [...allWorkingEmployees];
+            
+            // Apply dedicated worker filter first
+            const showDedicatedWorking = document.getElementById('showDedicatedWorking').checked;
+            if (!showDedicatedWorking) {
+                filteredEmployees = filteredEmployees.filter(emp => !isDedicatedWorker(emp.name));
+            }
+            
+            // Apply time-based filters
+            if (nearEndFilterActive) {
+                filteredEmployees = filteredEmployees.filter(emp => !isWithinTwoHoursOfEnd(emp.schedule));
+            } else if (oneHourFilterActive) {
+                filteredEmployees = filteredEmployees.filter(emp => !isWithinOneHourFifteenOfEnd(emp.schedule));
+            }
+            
+            workingEmployees = filteredEmployees;
+            updateTableDirect('working', workingEmployees, nearEndFilterActive || oneHourFilterActive);
+            updateDisplay();
+        }
+
+        function applyAllFiltersOff() {
+            let filteredEmployees = [...offEmployees];
+            
+            // Apply dedicated worker filter
+            const showDedicatedOff = document.getElementById('showDedicatedOff').checked;
+            if (!showDedicatedOff) {
+                filteredEmployees = filteredEmployees.filter(emp => !isDedicatedWorker(emp.name));
+            }
+            
+            updateTableDirect('off', filteredEmployees);
+            updateDisplay();
         }
 
         function toggleOneHourFilter() {
@@ -718,23 +780,8 @@
                 showMessage('Filter removed - showing all employees', 'success');
             }
             
-            updateTableDirect('working', workingEmployees, true);
-            updateDisplay();
-        }
-
-        function isWithinTwoHoursOfEnd(schedule) {
-            if (!schedule || schedule === 'N/A' || schedule.trim() === '') return false;
-            
-            const endTimeMinutes = getEndTime(schedule);
-            if (endTimeMinutes === 999999) return false; // Invalid schedule
-            
-            const currentTimeMinutes = getCurrentTimeInMinutes();
-            const timeDifference = endTimeMinutes - currentTimeMinutes;
-            
-            console.log(`Schedule: ${schedule}, End: ${endTimeMinutes}, Current: ${currentTimeMinutes}, Diff: ${timeDifference} minutes (2hr check)`);
-            
-            // Within 2 hours (120 minutes) and not past end time
-            return timeDifference <= 120 && timeDifference >= 0;
+            // Apply all filters including dedicated workers
+            applyAllFilters();
         }
 
         function toggleNearEndFilter() {
@@ -779,8 +826,31 @@
                 showMessage('Filter removed - showing all employees', 'success');
             }
             
+            // Apply all filters including dedicated workers
+            applyAllFilters();
+        }
+
+        function sortByStartTime() {
+            console.log('=== SORTING BY START TIME ===');
+            if (workingEmployees.length === 0) {
+                showMessage('No employees to sort. Please upload schedule file first.', 'error');
+                return;
+            }
+            
+            console.log('Before sorting:', workingEmployees.map(emp => `${emp.name}: ${emp.schedule}`));
+            
+            workingEmployees.sort((a, b) => {
+                const timeA = getStartTime(a.schedule);
+                const timeB = getStartTime(b.schedule);
+                console.log(`Comparing: ${a.name} (${timeA} min) vs ${b.name} (${timeB} min) = ${timeA - timeB}`);
+                return timeA - timeB;
+            });
+            
+            console.log('After sorting:', workingEmployees.map(emp => `${emp.name}: ${emp.schedule}`));
+            
+            // Use skipSort=true to preserve the time-based sorting order
             updateTableDirect('working', workingEmployees, true);
-            updateDisplay();
+            showMessage('Schedule sorted by start time (earliest to latest)', 'success');
         }
 
         function sortBySchedule() {
@@ -905,10 +975,12 @@
         function setupEventListeners() {
             const scheduleFile = document.getElementById('scheduleFile');
             const timeOffFile = document.getElementById('timeOffFile');
+            const dedicatedFile = document.getElementById('dedicatedFile');
             const employeeName = document.getElementById('manualEmployeeName');
             
             if (scheduleFile) scheduleFile.addEventListener('change', handleScheduleFile);
             if (timeOffFile) timeOffFile.addEventListener('change', handleTimeOffFile);
+            if (dedicatedFile) dedicatedFile.addEventListener('change', handleDedicatedFile);
             
             if (employeeName) {
                 employeeName.addEventListener('keypress', function(e) {
@@ -941,6 +1013,7 @@
                     processScheduleData(jsonData);
                     updateDisplay();
                     forceTableUpdate();
+                    applyAllFilters(); // Apply dedicated worker filter after loading schedule
                     
                     showMessage(`Schedule processed! Found ${workingEmployees.length} working employees.`, 'success');
                 } catch (error) {
@@ -972,6 +1045,7 @@
                     processTimeOffData(jsonData);
                     updateDisplay();
                     forceTableUpdate();
+                    applyAllFiltersOff(); // Apply dedicated worker filter after loading time off
                     
                     showMessage(`Time off processed! Found ${offEmployees.length} employees off today.`, 'success');
                 } catch (error) {
@@ -979,6 +1053,53 @@
                 }
             };
             reader.readAsArrayBuffer(file);
+        }
+
+        function handleDedicatedFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!xlsxLoaded) {
+                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
+                return;
+            }
+
+            showMessage('Processing dedicated workers file...', 'success');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    processDedicatedData(jsonData);
+                    applyAllFilters();
+                    applyAllFiltersOff();
+                    
+                    showMessage(`Dedicated workers processed! Found ${dedicatedWorkers.size} dedicated workers to hide.`, 'success');
+                } catch (error) {
+                    showMessage('Error reading dedicated file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processDedicatedData(data) {
+            dedicatedWorkers.clear();
+            
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || !row[0]) continue;
+                
+                const workerName = String(row[0]).trim().toLowerCase();
+                if (workerName) {
+                    dedicatedWorkers.add(workerName);
+                }
+            }
+            
+            console.log('Dedicated workers loaded:', Array.from(dedicatedWorkers));
         }
 
         function processScheduleData(data) {
@@ -1269,89 +1390,6 @@
             workingEmployees.splice(employeeIndex, 1);
             manuallyAdded.set(employee.name, new Date());
             
-            nameInput.value = '';
-            
-            updateDisplay();
-            forceTableUpdate();
-            
-            let message = `${employee.name} has been marked as "${status}"`;
-            if (newManager !== originalManager) {
-                message += ` and reassigned from ${originalManager} to ${newManager} (manager with least employees)`;
-            }
-            
-            showMessage(message, 'success');
-            switchTab('off');
-        }
-
-        function findManagerWithLeastEmployees() {
-            const managerCounts = {};
-            
-            workingEmployees.forEach(emp => {
-                const manager = emp.manager || 'No Manager';
-                managerCounts[manager] = (managerCounts[manager] || 0) + 1;
-            });
-            
-            offEmployees.forEach(emp => {
-                const manager = emp.manager || 'No Manager';
-                managerCounts[manager] = (managerCounts[manager] || 0) + 1;
-            });
-            
-            if (Object.keys(managerCounts).length === 0) {
-                const managersArray = Array.from(allManagers);
-                return managersArray.length > 0 ? managersArray[0] : 'No Manager';
-            }
-            
-            Array.from(allManagers).forEach(manager => {
-                if (!(manager in managerCounts)) {
-                    managerCounts[manager] = 0;
-                }
-            });
-            
-            let minCount = Infinity;
-            let managerWithLeast = 'No Manager';
-            
-            Object.entries(managerCounts).forEach(([manager, count]) => {
-                if (count < minCount) {
-                    minCount = count;
-                    managerWithLeast = manager;
-                }
-            });
-            
-            return managerWithLeast;
-        }
-
-        function returnToWork() {
-            const nameInput = document.getElementById('manualEmployeeName');
-            const employeeName = nameInput.value.trim();
-            
-            if (!employeeName) {
-                showMessage('Please enter an employee name', 'error');
-                return;
-            }
-            
-            const employeeIndex = offEmployees.findIndex(emp => 
-                emp.name.toLowerCase().includes(employeeName.toLowerCase())
-            );
-            
-            if (employeeIndex === -1) {
-                showMessage('Employee not found in off list. Please check the spelling.', 'error');
-                return;
-            }
-            
-            const employee = offEmployees[employeeIndex];
-            
-            const workingEmployee = {
-                name: employee.name,
-                manager: employee.originalManager || employee.manager,
-                schedule: 'Returned - Check original schedule',
-                type: 'returned'
-            };
-            
-            workingEmployees.push(workingEmployee);
-            offEmployees.splice(employeeIndex, 1);
-            manuallyAdded.delete(employee.name);
-            
-            nameInput.value = '';
             
             updateDisplay();
             forceTableUpdate();
@@ -1529,3 +1567,84 @@
     </script>
 </body>
 </html>
+            updateDisplay();
+            forceTableUpdate();
+            
+            let message = `${employee.name} has been marked as "${status}"`;
+            if (newManager !== originalManager) {
+                message += ` and reassigned from ${originalManager} to ${newManager} (manager with least employees)`;
+            }
+            
+            showMessage(message, 'success');
+            switchTab('off');
+        }
+
+        function findManagerWithLeastEmployees() {
+            const managerCounts = {};
+            
+            workingEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                managerCounts[manager] = (managerCounts[manager] || 0) + 1;
+            });
+            
+            offEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                managerCounts[manager] = (managerCounts[manager] || 0) + 1;
+            });
+            
+            if (Object.keys(managerCounts).length === 0) {
+                const managersArray = Array.from(allManagers);
+                return managersArray.length > 0 ? managersArray[0] : 'No Manager';
+            }
+            
+            Array.from(allManagers).forEach(manager => {
+                if (!(manager in managerCounts)) {
+                    managerCounts[manager] = 0;
+                }
+            });
+            
+            let minCount = Infinity;
+            let managerWithLeast = 'No Manager';
+            
+            Object.entries(managerCounts).forEach(([manager, count]) => {
+                if (count < minCount) {
+                    minCount = count;
+                    managerWithLeast = manager;
+                }
+            });
+            
+            return managerWithLeast;
+        }
+
+        function returnToWork() {
+            const nameInput = document.getElementById('manualEmployeeName');
+            const employeeName = nameInput.value.trim();
+            
+            if (!employeeName) {
+                showMessage('Please enter an employee name', 'error');
+                return;
+            }
+            
+            const employeeIndex = offEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                showMessage('Employee not found in off list. Please check the spelling.', 'error');
+                return;
+            }
+            
+            const employee = offEmployees[employeeIndex];
+            
+            const workingEmployee = {
+                name: employee.name,
+                manager: employee.originalManager || employee.manager,
+                schedule: 'Returned - Check original schedule',
+                type: 'returned'
+            };
+            
+            workingEmployees.push(workingEmployee);
+            offEmployees.splice(employeeIndex, 1);
+            manuallyAdded.delete(employee.name);
+            
+            nameInput.value = '';
