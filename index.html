@@ -387,7 +387,7 @@
                                             onmouseover="this.style.background='white'; this.style.transform='translateY(-1px)'"
                                             onmouseout="this.style.background='rgba(255,255,255,0.9)'; this.style.transform='translateY(0)'"
                                             title="Hide employees within 2 hours of shift end">
-                                        🕕 End ↑
+                                        <2hrs
                                     </button>
                                 </div>
                                 Schedule
@@ -691,7 +691,7 @@
                 workingEmployees = [...allWorkingEmployees];
                 
                 if (button) {
-                    button.innerHTML = '🕕 End ↑';
+                    button.innerHTML = '<2hrs';
                     button.title = 'Hide employees within 2 hours of shift end';
                     button.style.background = 'rgba(255,255,255,0.9)';
                 }
