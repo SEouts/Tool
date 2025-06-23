@@ -448,6 +448,11 @@
 
         <div id="manualTab" class="tab-content">
             <div style="max-width: 800px; margin: 0 auto;">
+                <div id="managerWarningBanner" style="display: none; background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; box-shadow: 0 5px 15px rgba(255,71,87,0.3); border: 2px solid #ff1e30;">
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 700;">⚠️ MANAGER OVERLOAD WARNING ⚠️</h3>
+                    <p id="warningMessage" style="margin: 8px 0 0 0; font-size: 16px; font-weight: 600;"></p>
+                </div>
+                
                 <div style="text-align: center; margin-bottom: 20px;">
                     <button class="btn btn-success" onclick="toggleSummarySection()" id="summaryToggleButton" 
                             style="padding: 12px 25px; font-size: 16px; border-radius: 25px;">
@@ -1427,6 +1432,48 @@
         function updateDisplay() {
             updateCounts();
             updateSummaries();
+            checkManagerLimits();
+        }
+
+        function checkManagerLimits() {
+            const managerCounts = {};
+            
+            // Count employees for each manager (working + off)
+            workingEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                managerCounts[manager] = (managerCounts[manager] || 0) + 1;
+            });
+            
+            offEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                managerCounts[manager] = (managerCounts[manager] || 0) + 1;
+            });
+            
+            // Find managers over the limit
+            const overLimitManagers = [];
+            Object.entries(managerCounts).forEach(([manager, count]) => {
+                if (count >= 21 && manager !== 'No Manager') {
+                    overLimitManagers.push({ manager, count });
+                }
+            });
+            
+            // Show/hide warning banner
+            const warningBanner = document.getElementById('managerWarningBanner');
+            const warningMessage = document.getElementById('warningMessage');
+            
+            if (overLimitManagers.length > 0) {
+                warningBanner.style.display = 'block';
+                
+                if (overLimitManagers.length === 1) {
+                    const { manager, count } = overLimitManagers[0];
+                    warningMessage.textContent = `Warning: Manager ${manager} is over their 20 limit with ${count} total employees`;
+                } else {
+                    const managerList = overLimitManagers.map(m => `${m.manager} (${m.count})`).join(', ');
+                    warningMessage.textContent = `Warning: Multiple managers are over their 20 limit: ${managerList}`;
+                }
+            } else {
+                warningBanner.style.display = 'none';
+            }
         }
 
         function updateCounts() {
