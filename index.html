@@ -1,4 +1,34 @@
-<!DOCTYPE html>
+function handleManagerCheckboxChange(tabType) {
+            const container = document.getElementById(tabType + 'ManagerCheckboxes');
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            const selectedFilters = [];
+            
+            checkboxes.forEach(checkbox => {
+                const label = checkbox.parentElement;
+                if (checkbox.checked) {
+                    selectedFilters.push(checkbox.value);
+                    label.classList.add('selected');
+                } else {
+                    label.classList.remove('selected');
+                }
+            });
+            
+            const allEmployees = tabType === 'working' ? workingEmployees : offEmployees;
+            let filteredEmployees = allEmployees;
+            
+            if (selectedFilters.length > 0) {
+                if (tabType === 'working') {
+                    // Working tab - filter by manager only
+                    filteredEmployees = allEmployees.filter(emp => selectedFilters.includes(emp.manager));
+                } else {
+                    // Off tab - filter by manager OR support specialist
+                    filteredEmployees = allEmployees.filter(emp => {
+                        // Show if manager matches and no support specialist assigned
+                        if (selectedFilters.includes(emp.manager) && !emp.supportSpecialist) {
+                            return true;
+                        }
+                        // Show if support specialist matches
+                        if (emp.supportSpec<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -452,6 +482,39 @@
                     <h3 style="margin: 0; font-size: 18px; font-weight: 700;">⚠️ MANAGER OVERLOAD WARNING ⚠️</h3>
                     <p id="warningMessage" style="margin: 8px 0 0 0; font-size: 16px; font-weight: 600;"></p>
                 </div>
+
+                <div id="reassignmentSection" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; margin-bottom: 30px;">
+                    <h3 style="margin: 0 0 20px 0; text-align: center; font-size: 20px;">🔄 Employee Reassignment Center</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 8px;">Over-Limit Manager:</label>
+                            <select id="overLimitManagerSelect" style="width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px;" onchange="loadManagerEmployees()">
+                                <option value="">Select manager...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 8px;">Assign to Support Specialist:</label>
+                            <select id="supportSpecialistSelect" style="width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px;">
+                                <option value="">Select specialist...</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="managerEmployeesList" style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 15px; margin-bottom: 20px; min-height: 100px;">
+                        <h4 style="margin: 0 0 15px 0;">Employees to Reassign:</h4>
+                        <div id="employeeCheckboxes" style="max-height: 200px; overflow-y: auto;">
+                            <p style="color: rgba(255,255,255,0.7); font-style: italic;">Select a manager to see their employees</p>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center;">
+                        <button class="btn" onclick="reassignSelectedEmployees()" 
+                                style="padding: 15px 30px; font-size: 16px; border-radius: 10px; background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%); color: white; font-weight: 600;">
+                            🔄 Reassign Selected Employees
+                        </button>
+                    </div>
+                </div>
                 
                 <div style="text-align: center; margin-bottom: 20px;">
                     <button class="btn btn-success" onclick="toggleSummarySection()" id="summaryToggleButton" 
@@ -483,7 +546,7 @@
                         <p>Start by uploading your schedule and time off files</p>
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px;">
                         <div class="upload-box">
                             <h3>📅 Upload Schedule File</h3>
                             <p>Excel file with employee schedules</p>
@@ -493,6 +556,11 @@
                             <h3>🏖️ Upload Time Off File</h3>
                             <p>Excel file with scheduled time off</p>
                             <input type="file" id="timeOffFile" accept=".xlsx,.xls,.csv" />
+                        </div>
+                        <div class="upload-box">
+                            <h3>🤝 Upload Support Specialists</h3>
+                            <p>Excel file with sales support team</p>
+                            <input type="file" id="supportFile" accept=".xlsx,.xls,.csv" />
                         </div>
                     </div>
                 </div>
@@ -582,6 +650,7 @@
         let workingEmployees = [];
         let offEmployees = [];
         let allManagers = new Set();
+        let supportSpecialists = []; // New: Store support specialists
         let manuallyAdded = new Map();
         let xlsxLoaded = false;
         let scheduleSortOrder = 'none';
@@ -910,10 +979,12 @@
         function setupEventListeners() {
             const scheduleFile = document.getElementById('scheduleFile');
             const timeOffFile = document.getElementById('timeOffFile');
+            const supportFile = document.getElementById('supportFile');
             const employeeName = document.getElementById('manualEmployeeName');
             
             if (scheduleFile) scheduleFile.addEventListener('change', handleScheduleFile);
             if (timeOffFile) timeOffFile.addEventListener('change', handleTimeOffFile);
+            if (supportFile) supportFile.addEventListener('change', handleSupportFile);
             
             if (employeeName) {
                 employeeName.addEventListener('keypress', function(e) {
@@ -986,6 +1057,36 @@
             reader.readAsArrayBuffer(file);
         }
 
+        function handleSupportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!xlsxLoaded) {
+                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
+                return;
+            }
+
+            showMessage('Processing support specialists file...', 'success');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    processSupportData(jsonData);
+                    updateDisplay();
+                    
+                    showMessage(`Support specialists loaded! Found ${supportSpecialists.length} specialists available.`, 'success');
+                } catch (error) {
+                    showMessage('Error reading support file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
         function processScheduleData(data) {
             workingEmployees = [];
             allWorkingEmployees = []; // Reset the complete list
@@ -1031,7 +1132,8 @@
                     manager: cleanedManager,
                     status: isPartialDay ? 'Partial Day (4 Hours)' : 'Full Day Off',
                     type: isPartialDay ? 'partial' : 'scheduled',
-                    timeAdded: 'Scheduled'
+                    timeAdded: 'Scheduled',
+                    supportSpecialist: null // New field for support specialist assignment
                 };
                 
                 if (employee.name) {
@@ -1044,6 +1146,28 @@
                     allWorkingEmployees = allWorkingEmployees.filter(emp => emp.name !== employee.name);
                 }
             }
+        }
+
+        function processSupportData(data) {
+            supportSpecialists = [];
+            
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || !row[0]) continue;
+                
+                const specialist = {
+                    name: String(row[0]).trim(),
+                    partnershipLevel: String(row[1] || '').trim(),
+                    coverageGuidance: parseInt(row[2]) || 0
+                };
+                
+                if (specialist.name) {
+                    supportSpecialists.push(specialist);
+                }
+            }
+            
+            // Update the support specialist dropdown
+            updateSupportSpecialistDropdown();
         }
 
         function forceTableUpdate() {
@@ -1121,6 +1245,16 @@
             
             const managers = Array.from(allManagers).sort();
             
+            // Add support specialists to the filter options for Off Today tab
+            const allFilterOptions = [...managers];
+            supportSpecialists.forEach(specialist => {
+                if (!allFilterOptions.includes(specialist.name)) {
+                    allFilterOptions.push(specialist.name);
+                }
+            });
+            allFilterOptions.sort();
+            
+            // Working Today tab - only managers
             workingContainer.innerHTML = '';
             managers.forEach((manager, index) => {
                 if (manager) {
@@ -1136,16 +1270,20 @@
                 }
             });
             
+            // Off Today tab - managers + support specialists
             offContainer.innerHTML = '';
-            managers.forEach((manager, index) => {
-                if (manager) {
+            allFilterOptions.forEach((filterOption, index) => {
+                if (filterOption) {
                     const checkboxId = 'off-manager-' + index;
+                    const isSpecialist = supportSpecialists.some(s => s.name === filterOption);
+                    const label = isSpecialist ? `🤝 ${filterOption}` : filterOption;
+                    
                     offContainer.innerHTML += `
                         <label class="manager-checkbox" for="${checkboxId}">
                             <input type="checkbox" id="${checkboxId}" 
-                                   value="${manager}" 
+                                   value="${filterOption}" 
                                    onchange="handleManagerCheckboxChange('off')">
-                            <span>${manager}</span>
+                            <span>${label}</span>
                         </label>
                     `;
                 }
@@ -1265,7 +1403,8 @@
                 status: status,
                 type: 'manual',
                 timeAdded: new Date().toLocaleString(),
-                originalManager: originalManager
+                originalManager: originalManager,
+                supportSpecialist: null // Initialize as null
             };
             
             offEmployees.push(offEmployee);
@@ -1438,15 +1577,18 @@
         function checkManagerLimits() {
             const managerCounts = {};
             
-            // Count employees for each manager (working + off)
+            // Count employees for each manager (working + off, excluding those assigned to support specialists)
             workingEmployees.forEach(emp => {
                 const manager = emp.manager || 'No Manager';
                 managerCounts[manager] = (managerCounts[manager] || 0) + 1;
             });
             
             offEmployees.forEach(emp => {
-                const manager = emp.manager || 'No Manager';
-                managerCounts[manager] = (managerCounts[manager] || 0) + 1;
+                // Only count if not assigned to a support specialist
+                if (!emp.supportSpecialist) {
+                    const manager = emp.manager || 'No Manager';
+                    managerCounts[manager] = (managerCounts[manager] || 0) + 1;
+                }
             });
             
             // Find managers over the limit
@@ -1457,12 +1599,14 @@
                 }
             });
             
-            // Show/hide warning banner
+            // Show/hide warning banner and reassignment section
             const warningBanner = document.getElementById('managerWarningBanner');
             const warningMessage = document.getElementById('warningMessage');
+            const reassignmentSection = document.getElementById('reassignmentSection');
             
             if (overLimitManagers.length > 0) {
                 warningBanner.style.display = 'block';
+                reassignmentSection.style.display = 'block';
                 
                 if (overLimitManagers.length === 1) {
                     const { manager, count } = overLimitManagers[0];
@@ -1471,9 +1615,116 @@
                     const managerList = overLimitManagers.map(m => `${m.manager} (${m.count})`).join(', ');
                     warningMessage.textContent = `Warning: Multiple managers are over their 20 limit: ${managerList}`;
                 }
+                
+                // Update the over-limit manager dropdown
+                updateOverLimitManagerDropdown(overLimitManagers);
             } else {
                 warningBanner.style.display = 'none';
+                reassignmentSection.style.display = 'none';
             }
+        }
+
+        function updateOverLimitManagerDropdown(overLimitManagers) {
+            const dropdown = document.getElementById('overLimitManagerSelect');
+            if (!dropdown) return;
+            
+            dropdown.innerHTML = '<option value="">Select manager...</option>';
+            
+            overLimitManagers.forEach(({ manager, count }) => {
+                const option = document.createElement('option');
+                option.value = manager;
+                option.textContent = `${manager} (${count} employees)`;
+                dropdown.appendChild(option);
+            });
+        }
+
+        function updateSupportSpecialistDropdown() {
+            const dropdown = document.getElementById('supportSpecialistSelect');
+            if (!dropdown) return;
+            
+            dropdown.innerHTML = '<option value="">Select specialist...</option>';
+            
+            supportSpecialists.forEach(specialist => {
+                const option = document.createElement('option');
+                option.value = specialist.name;
+                option.textContent = `${specialist.name} (${specialist.partnershipLevel})`;
+                dropdown.appendChild(option);
+            });
+        }
+
+        function loadManagerEmployees() {
+            const selectedManager = document.getElementById('overLimitManagerSelect').value;
+            const employeeCheckboxes = document.getElementById('employeeCheckboxes');
+            
+            if (!selectedManager) {
+                employeeCheckboxes.innerHTML = '<p style="color: rgba(255,255,255,0.7); font-style: italic;">Select a manager to see their employees</p>';
+                return;
+            }
+            
+            // Get employees for this manager (off employees only, not assigned to specialists)
+            const managerEmployees = offEmployees.filter(emp => 
+                emp.manager === selectedManager && !emp.supportSpecialist
+            );
+            
+            if (managerEmployees.length === 0) {
+                employeeCheckboxes.innerHTML = '<p style="color: rgba(255,255,255,0.7); font-style: italic;">No employees available for reassignment</p>';
+                return;
+            }
+            
+            let html = '';
+            managerEmployees.forEach((emp, index) => {
+                html += `
+                    <label style="display: flex; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: 6px; margin-bottom: 8px; cursor: pointer;">
+                        <input type="checkbox" value="${emp.name}" style="margin-right: 12px; transform: scale(1.2);">
+                        <span style="font-weight: 500;">${emp.name}</span>
+                        <span style="margin-left: auto; font-size: 12px; opacity: 0.8;">${emp.status}</span>
+                    </label>
+                `;
+            });
+            
+            employeeCheckboxes.innerHTML = html;
+        }
+
+        function reassignSelectedEmployees() {
+            const selectedManager = document.getElementById('overLimitManagerSelect').value;
+            const selectedSpecialist = document.getElementById('supportSpecialistSelect').value;
+            const employeeCheckboxes = document.querySelectorAll('#employeeCheckboxes input[type="checkbox"]:checked');
+            
+            if (!selectedManager) {
+                showMessage('Please select a manager first', 'error');
+                return;
+            }
+            
+            if (!selectedSpecialist) {
+                showMessage('Please select a support specialist', 'error');
+                return;
+            }
+            
+            if (employeeCheckboxes.length === 0) {
+                showMessage('Please select at least one employee to reassign', 'error');
+                return;
+            }
+            
+            let reassignedCount = 0;
+            const employeeNames = Array.from(employeeCheckboxes).map(cb => cb.value);
+            
+            // Reassign selected employees
+            offEmployees.forEach(emp => {
+                if (employeeNames.includes(emp.name) && emp.manager === selectedManager) {
+                    emp.supportSpecialist = selectedSpecialist;
+                    reassignedCount++;
+                }
+            });
+            
+            // Clear the selection and update displays
+            document.getElementById('overLimitManagerSelect').value = '';
+            document.getElementById('supportSpecialistSelect').value = '';
+            loadManagerEmployees(); // Clear the employee list
+            
+            updateDisplay();
+            forceTableUpdate();
+            
+            showMessage(`Successfully reassigned ${reassignedCount} employee(s) from ${selectedManager} to ${selectedSpecialist}`, 'success');
         }
 
         function updateCounts() {
