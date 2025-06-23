@@ -28,7 +28,20 @@ function handleManagerCheckboxChange(tabType) {
                             return true;
                         }
                         // Show if support specialist matches
-                        if (emp.supportSpec<!DOCTYPE html>
+                        if (emp.supportSpecialist && selectedFilters.includes(emp.supportSpecialist)) {
+                            return true;
+                        }
+                        return false;
+                    });
+                }
+            }
+            
+            updateTableDirect(tabType, filteredEmployees);
+            
+            if (selectedFilters.length > 0) {
+                showMessage(`Showing ${selectedFilters.length} selected filter(s)`, 'success');
+            }
+        }<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
