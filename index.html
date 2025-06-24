@@ -510,28 +510,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    
     <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyA3kHzRZaCJtRf19MRC9AQqJ0M30cQyaYU",
-            authDomain: "se-outs-tool.firebaseapp.com",
-            databaseURL: "https://se-outs-tool-default-rtdb.firebaseio.com/",
-            projectId: "se-outs-tool",
-            storageBucket: "se-outs-tool.firebasestorage.app",
-            messagingSenderId: "768819377199",
-            appId: "1:768819377199:web:244cda6ccc825fb6a102da"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
-        // Global variables
         let workingEmployees = [];
         let offEmployees = [];
         let allManagers = new Set();
@@ -540,151 +519,6 @@
         let nearEndFilterActive = false;
         let oneHourFilterActive = false;
         let allWorkingEmployees = []; // Store complete list for filtering
-        let lastUpdateTime = 0;
-        let userInterests = new Set(); // Track which managers the user is interested in
-
-        // Notification system
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: ${type === 'info' ? 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' : 'linear-gradient(135deg, #ff4757 0%, #ff3838 100%)'};
-                color: white;
-                padding: 15px 20px;
-                border-radius: 10px;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                z-index: 1000;
-                font-weight: 600;
-                max-width: 300px;
-                animation: slideIn 0.3s ease;
-            `;
-            
-            notification.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span>${type === 'info' ? '📢' : '⚠️'}</span>
-                    <span>${message}</span>
-                    <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 0; margin-left: auto;">×</button>
-                </div>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            // Auto-remove after 5 seconds
-            setTimeout(() => {
-                if (notification.parentElement) {
-                    notification.remove();
-                }
-            }, 5000);
-        }
-
-        // Add CSS for notification animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-        `;
-        document.head.appendChild(style);
-
-        // Firebase data listeners
-        function setupFirebaseListeners() {
-            // Listen for working employees changes
-            database.ref('workingEmployees').on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data && data.timestamp > lastUpdateTime) {
-                    const oldCount = workingEmployees.length;
-                    workingEmployees = data.employees || [];
-                    allWorkingEmployees = [...workingEmployees];
-                    
-                    // Check if this affects user's interests
-                    if (userInterests.size > 0) {
-                        const relevantChanges = workingEmployees.filter(emp => 
-                            userInterests.has(emp.manager)
-                        );
-                        if (relevantChanges.length > 0 && oldCount !== workingEmployees.length) {
-                            showNotification(`Working Today updated: ${relevantChanges.length} employees in your filtered managers`);
-                        }
-                    }
-                    
-                    updateDisplay();
-                }
-            });
-
-            // Listen for off employees changes
-            database.ref('offEmployees').on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data && data.timestamp > lastUpdateTime) {
-                    const oldCount = offEmployees.length;
-                    offEmployees = data.employees || [];
-                    
-                    // Check if this affects user's interests
-                    if (userInterests.size > 0) {
-                        const relevantChanges = offEmployees.filter(emp => 
-                            userInterests.has(emp.manager)
-                        );
-                        if (relevantChanges.length > 0 && oldCount !== offEmployees.length) {
-                            showNotification(`Off Today updated: ${relevantChanges.length} employees in your filtered managers`);
-                        }
-                    }
-                    
-                    updateDisplay();
-                }
-            });
-
-            // Listen for managers changes
-            database.ref('managers').on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    allManagers = new Set(data.list || []);
-                    updateManagerFilters();
-                }
-            });
-
-            // Listen for support specialists changes
-            database.ref('supportSpecialists').on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    supportSpecialists = data.specialists || [];
-                    updateSupportSpecialistDropdown();
-                }
-            });
-        }
-
-        // Save data to Firebase
-        function saveWorkingEmployees() {
-            const timestamp = Date.now();
-            database.ref('workingEmployees').set({
-                employees: workingEmployees,
-                timestamp: timestamp
-            });
-            lastUpdateTime = timestamp;
-        }
-
-        function saveOffEmployees() {
-            const timestamp = Date.now();
-            database.ref('offEmployees').set({
-                employees: offEmployees,
-                timestamp: timestamp
-            });
-            lastUpdateTime = timestamp;
-        }
-
-        function saveManagers() {
-            database.ref('managers').set({
-                list: Array.from(allManagers),
-                timestamp: Date.now()
-            });
-        }
-
-        function saveSupportSpecialists() {
-            database.ref('supportSpecialists').set({
-                specialists: supportSpecialists,
-                timestamp: Date.now()
-            });
-        }
 
         function timeToMinutes(timeStr) {
             if (!timeStr || timeStr === 'N/A') return 0;
@@ -936,11 +770,6 @@
             const filterId = tabType + 'ManagerFilter';
             const selectedManager = document.getElementById(filterId).value;
             
-            // Track user interest in this manager
-            if (selectedManager) {
-                userInterests.add(selectedManager);
-            }
-            
             let employeesToShow;
             if (tabType === 'working') {
                 employeesToShow = selectedManager ? 
@@ -1057,10 +886,6 @@
                     if (employee.manager) allManagers.add(employee.manager);
                 }
             }
-            
-            // Save to Firebase
-            saveWorkingEmployees();
-            saveManagers();
         }
 
         function processTimeOffData(data) {
@@ -1087,11 +912,6 @@
                     allWorkingEmployees = allWorkingEmployees.filter(emp => emp.name !== employee.name);
                 }
             }
-            
-            // Save to Firebase
-            saveOffEmployees();
-            saveWorkingEmployees();
-            saveManagers();
         }
 
         function processSupportData(data) {
@@ -1109,9 +929,6 @@
                 
                 if (specialist.name) supportSpecialists.push(specialist);
             }
-            
-            // Save to Firebase
-            saveSupportSpecialists();
             updateSupportSpecialistDropdown();
         }
 
@@ -1291,9 +1108,6 @@
             document.getElementById('supportSpecialistSelect').value = '';
             loadManagerEmployees();
             
-            // Save to Firebase
-            saveOffEmployees();
-            
             updateDisplay();
             
             showMessage(`Successfully reassigned ${reassignedCount} employee(s) from ${selectedManager} to ${selectedSpecialist}`, 'success');
@@ -1409,10 +1223,6 @@
             workingEmployees.splice(employeeIndex, 1);
             allWorkingEmployees = allWorkingEmployees.filter(emp => emp.name !== employee.name);
             
-            // Save to Firebase
-            saveOffEmployees();
-            saveWorkingEmployees();
-            
             nameInput.value = '';
             updateDisplay();
             
@@ -1450,10 +1260,6 @@
             workingEmployees.push(workingEmployee);
             allWorkingEmployees.push({...workingEmployee}); // Add to complete list too
             offEmployees.splice(employeeIndex, 1);
-            
-            // Save to Firebase
-            saveOffEmployees();
-            saveWorkingEmployees();
             
             nameInput.value = '';
             updateDisplay();
@@ -1505,12 +1311,6 @@
 
         async function init() {
             try {
-                // Initialize Firebase listeners first
-                setupFirebaseListeners();
-                
-                // Load existing data from Firebase
-                await loadDataFromFirebase();
-                
                 await new Promise((resolve) => {
                     if (typeof XLSX !== 'undefined') {
                         resolve();
@@ -1524,48 +1324,10 @@
                 
                 xlsxLoaded = true;
                 setupEventListeners();
-                showMessage('🔥 Firebase connected! Real-time sync active for all team members.', 'success');
+                showMessage('Application ready! You can now upload your Excel files.', 'success');
             } catch (error) {
-                showMessage('Warning: Firebase connection failed. Tool will work locally only.', 'error');
+                showMessage('Warning: Excel file processing may not work. Try refreshing the page.', 'error');
                 setupEventListeners();
-            }
-        }
-
-        async function loadDataFromFirebase() {
-            try {
-                // Load working employees
-                const workingSnapshot = await database.ref('workingEmployees').once('value');
-                const workingData = workingSnapshot.val();
-                if (workingData) {
-                    workingEmployees = workingData.employees || [];
-                    allWorkingEmployees = [...workingEmployees];
-                    lastUpdateTime = workingData.timestamp || 0;
-                }
-
-                // Load off employees  
-                const offSnapshot = await database.ref('offEmployees').once('value');
-                const offData = offSnapshot.val();
-                if (offData) {
-                    offEmployees = offData.employees || [];
-                }
-
-                // Load managers
-                const managersSnapshot = await database.ref('managers').once('value');
-                const managersData = managersSnapshot.val();
-                if (managersData) {
-                    allManagers = new Set(managersData.list || []);
-                }
-
-                // Load support specialists
-                const supportSnapshot = await database.ref('supportSpecialists').once('value');
-                const supportData = supportSnapshot.val();
-                if (supportData) {
-                    supportSpecialists = supportData.specialists || [];
-                }
-
-                updateDisplay();
-            } catch (error) {
-                console.warn('Failed to load data from Firebase:', error);
             }
         }
 
