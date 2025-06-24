@@ -636,6 +636,34 @@
                     forceTableUpdate();
                     showMessage(`Schedule processed! Found ${workingEmployees.length} working employees.`, 'success');
                 } catch (error) {
+                    showMessage('Error reading schedule file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function handleTimeOffFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!xlsxLoaded) {
+                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
+                return;
+            }
+            showMessage('Processing time off file...', 'success');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    processTimeOffData(jsonData);
+                    updateDisplay();
+                    forceTableUpdate();
+                    showMessage(`Time off processed! Found ${offEmployees.length} employees off today.`, 'success');
+                } catch (error) {
                     showMessage('Error reading time off file: ' + error.message, 'error');
                 }
             };
@@ -853,7 +881,6 @@
             
             const managers = Array.from(allManagers).sort();
             
-            // Working Today tab - show all managers
             workingContainer.innerHTML = '';
             managers.forEach((manager, index) => {
                 if (manager) {
@@ -869,31 +896,25 @@
                 }
             });
             
-            // Off Today tab - only show managers and specialists with assigned employees
             const managersWithOffEmployees = new Set();
             const specialistsWithAssignedEmployees = new Set();
             
             offEmployees.forEach(emp => {
                 if (emp.supportSpecialist) {
-                    // Employee is assigned to a support specialist
                     specialistsWithAssignedEmployees.add(emp.supportSpecialist);
                 } else {
-                    // Employee is still with their manager
                     if (emp.manager) {
                         managersWithOffEmployees.add(emp.manager);
                     }
                 }
             });
             
-            // Combine and sort the filter options for Off Today tab
             const offFilterOptions = [];
             
-            // Add managers who have off employees
             Array.from(managersWithOffEmployees).sort().forEach(manager => {
                 offFilterOptions.push({ name: manager, isSpecialist: false });
             });
             
-            // Add specialists who have assigned employees
             Array.from(specialistsWithAssignedEmployees).sort().forEach(specialist => {
                 offFilterOptions.push({ name: specialist, isSpecialist: true });
             });
@@ -1426,42 +1447,14 @@
                 
                 xlsxLoaded = true;
                 setupEventListeners();
-                showMessage('Application ready! You can now upload your Excel files.', 'success');
-            } catch (error) {
-                showMessage('Warning: Excel file processing may not work. Try refreshing the page.', 'error');
-                setupEventListeners();
             }
         }
 
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
-</html> {
-                    showMessage('Error reading schedule file: ' + error.message, 'error');
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function handleTimeOffFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            if (!xlsxLoaded) {
-                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
-                return;
-            }
-            showMessage('Processing time off file...', 'success');
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    
-                    processTimeOffData(jsonData);
-                    updateDisplay();
-                    forceTableUpdate();
-                    showMessage(`Time off processed! Found ${offEmployees.length} employees off today.`, 'success');
-                } catch (error)
+</html>();
+                showMessage('Application ready! You can now upload your Excel files.', 'success');
+            } catch (error) {
+                showMessage('Warning: Excel file processing may not work. Try refreshing the page.', 'error');
+                setupEventListeners
