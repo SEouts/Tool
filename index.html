@@ -147,6 +147,36 @@
             display: block;
         }
 
+        .manager-filter {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #4facfe;
+        }
+
+        .manager-filter label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+
+        .manager-filter select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .manager-filter select:focus {
+            border-color: #4facfe;
+            outline: none;
+        }
+
         .table-container {
             background: white;
             border-radius: 10px;
@@ -226,6 +256,12 @@
         </div>
 
         <div id="workingTab" class="tab-content active">
+            <div class="manager-filter">
+                <label for="workingManagerFilter">🎯 Filter by Manager:</label>
+                <select id="workingManagerFilter" onchange="filterEmployees('working')">
+                    <option value="">Show All Managers</option>
+                </select>
+            </div>
             <div class="table-container">
                 <table>
                     <thead>
@@ -244,6 +280,12 @@
         </div>
 
         <div id="offTab" class="tab-content">
+            <div class="manager-filter">
+                <label for="offManagerFilter">🎯 Filter by Manager/Support Specialist:</label>
+                <select id="offManagerFilter" onchange="filterEmployees('off')">
+                    <option value="">Show All Managers & Support Specialists</option>
+                </select>
+            </div>
             <div class="table-container">
                 <table>
                     <thead>
@@ -429,34 +471,60 @@
             setTimeout(() => messageArea.innerHTML = '', 5000);
         }
 
-        function markEmployeeWithStatus(status) {
-            const nameInput = document.getElementById('manualEmployeeName');
-            const employeeName = nameInput.value.trim();
-            
-            if (!employeeName) {
-                showMessage('Please enter an employee name', 'error');
-                return;
-            }
-            
-            showMessage(`${employeeName} has been marked as "${status}"`, 'success');
-            nameInput.value = '';
+        function getManagersWithEmployees(employeeList) {
+            const managersWithEmployees = new Set();
+            employeeList.forEach(emp => {
+                if (emp.manager && emp.manager.trim() !== '' && emp.manager !== 'No Manager') {
+                    managersWithEmployees.add(emp.manager);
+                }
+            });
+            return Array.from(managersWithEmployees).sort();
         }
 
-        function returnToWork() {
-            const nameInput = document.getElementById('manualEmployeeName');
-            const employeeName = nameInput.value.trim();
-            
-            if (!employeeName) {
-                showMessage('Please enter an employee name', 'error');
-                return;
+        function updateManagerFilters() {
+            // Update Working tab filter
+            const workingFilter = document.getElementById('workingManagerFilter');
+            if (workingFilter) {
+                const workingManagers = getManagersWithEmployees(workingEmployees);
+                workingFilter.innerHTML = '<option value="">Show All Managers</option>';
+                workingManagers.forEach(manager => {
+                    const option = document.createElement('option');
+                    option.value = manager;
+                    option.textContent = manager;
+                    workingFilter.appendChild(option);
+                });
             }
-            
-            showMessage(`${employeeName} has returned to work`, 'success');
-            nameInput.value = '';
+
+            // Update Off tab filter (includes both managers and support specialists)
+            const offFilter = document.getElementById('offManagerFilter');
+            if (offFilter) {
+                const offManagers = getManagersWithEmployees(offEmployees);
+                offFilter.innerHTML = '<option value="">Show All Managers & Support Specialists</option>';
+                offManagers.forEach(manager => {
+                    const option = document.createElement('option');
+                    option.value = manager;
+                    option.textContent = manager;
+                    offFilter.appendChild(option);
+                });
+            }
         }
 
-        function exportData() {
-            showMessage('Export functionality will be available after uploading files', 'error');
+        function filterEmployees(tabType) {
+            const filterId = tabType + 'ManagerFilter';
+            const selectedManager = document.getElementById(filterId).value;
+            
+            let employeesToShow;
+            if (tabType === 'working') {
+                employeesToShow = selectedManager ? 
+                    workingEmployees.filter(emp => emp.manager === selectedManager) : 
+                    workingEmployees;
+            } else {
+                employeesToShow = selectedManager ? 
+                    offEmployees.filter(emp => emp.manager === selectedManager) : 
+                    offEmployees;
+            }
+            
+            updateTable(tabType, employeesToShow);
         }
 
         function handleScheduleFile(event) {
@@ -601,10 +669,12 @@
                 
                 if (specialist.name) supportSpecialists.push(specialist);
             }
+            updateSupportSpecialistDropdown();
         }
 
         function updateDisplay() {
             updateCounts();
+            updateManagerFilters();
             updateTables();
             updateManagerSummary();
             checkManagerLimits();
@@ -796,24 +866,6 @@
                 toggleButton.innerHTML = '📊 Show Manager Summary';
                 toggleButton.style.background = 'linear-gradient(135deg, #2ed573 0%, #7bed9f 100%)';
             }
-        }
-
-        function processSupportData(data) {
-            supportSpecialists = [];
-            
-            for (let i = 1; i < data.length; i++) {
-                const row = data[i];
-                if (!row || !row[0]) continue;
-                
-                const specialist = {
-                    name: String(row[0]).trim(),
-                    partnershipLevel: String(row[1] || '').trim(),
-                    coverageGuidance: parseInt(row[2]) || 0
-                };
-                
-                if (specialist.name) supportSpecialists.push(specialist);
-            }
-            updateSupportSpecialistDropdown();
         }
 
         function updateCounts() {
