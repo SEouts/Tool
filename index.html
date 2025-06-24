@@ -636,6 +636,807 @@
                     forceTableUpdate();
                     showMessage(`Schedule processed! Found ${workingEmployees.length} working employees.`, 'success');
                 } catch (error) {
+                    showMessage('Error reading time off file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function handleSupportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!xlsxLoaded) {
+                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
+                return;
+            }
+            showMessage('Processing support specialists file...', 'success');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    processSupportData(jsonData);
+                    updateDisplay();
+                    showMessage(`Support specialists loaded! Found ${supportSpecialists.length} specialists available.`, 'success');
+                } catch (error) {
+                    showMessage('Error reading support file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function cleanManagerName(managerName) {
+            if (!managerName || managerName.trim() === '') return managerName;
+            
+            const match = managerName.match(/.*\((.+)\)/);
+            if (match) return match[1].trim();
+            
+            const prefixesToRemove = ['Sales ', 'Marketing ', 'Operations ', 'Finance ', 'HR ', 'IT ', 'Admin ', 'Manager '];
+            let cleaned = managerName.trim();
+            
+            for (const prefix of prefixesToRemove) {
+                if (cleaned.startsWith(prefix)) {
+                    cleaned = cleaned.substring(prefix.length);
+                    break;
+                }
+            }
+            return cleaned.trim();
+        }
+
+        function cleanScheduleDisplay(schedule) {
+            if (!schedule || schedule.trim() === '') return schedule;
+            
+            const timePattern = /(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))\s*[–-]\s*(?:\d{2}\/\d{2}\/\d{4},?\s*)?(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))/i;
+            const match = schedule.match(timePattern);
+            
+            if (match) {
+                const startTime = match[1].trim();
+                const endTime = match[2].trim();
+                return `${startTime} - ${endTime}`;
+            }
+            
+            const times = schedule.match(/\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)/gi);
+            if (times && times.length >= 2) {
+                return `${times[0]} - ${times[1]}`;
+            }
+            
+            let cleaned = schedule;
+            if (cleaned.includes(':')) {
+                cleaned = cleaned.split(':').slice(1).join(':').trim();
+            }
+            cleaned = cleaned.replace(/\d{2}\/\d{2}\/\d{4},?\s*/g, '');
+            cleaned = cleaned.replace(/\s+/g, ' ').replace(/[–—]/, '-').trim();
+            
+            return cleaned || schedule;
+        }
+
+        function processScheduleData(data) {
+            workingEmployees = [];
+            allWorkingEmployees = [];
+            
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || !row[0]) continue;
+                
+                const rawManager = String(row[1] || '').trim();
+                const cleanedManager = cleanManagerName(rawManager);
+                const rawSchedule = String(row[2] || '').trim();
+                const cleanedSchedule = cleanScheduleDisplay(rawSchedule);
+                
+                const employee = {
+                    name: String(row[0]).trim(),
+                    manager: cleanedManager,
+                    schedule: cleanedSchedule,
+                    type: 'scheduled'
+                };
+                
+                if (employee.name) {
+                    workingEmployees.push(employee);
+                    allWorkingEmployees.push({...employee});
+                    if (employee.manager) allManagers.add(employee.manager);
+                }
+            }
+        }
+
+        function processTimeOffData(data) {
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || !row[2]) continue;
+                
+                const timeOffHours = String(row[0] || '');
+                const isPartialDay = timeOffHours.includes('4 Hours');
+                const rawManager = String(row[1] || '').trim();
+                const cleanedManager = cleanManagerName(rawManager);
+                
+                const employee = {
+                    name: String(row[2]).trim(),
+                    manager: cleanedManager,
+                    status: isPartialDay ? 'Partial Day (4 Hours)' : 'Full Day Off',
+                    type: isPartialDay ? 'partial' : 'scheduled',
+                    timeAdded: 'Scheduled',
+                    supportSpecialist: null
+                };
+                
+                if (employee.name) {
+                    offEmployees.push(employee);
+                    if (employee.manager) allManagers.add(employee.manager);
+                    
+                    workingEmployees = workingEmployees.filter(emp => emp.name !== employee.name);
+                    allWorkingEmployees = allWorkingEmployees.filter(emp => emp.name !== employee.name);
+                }
+            }
+        }
+
+        function processSupportData(data) {
+            supportSpecialists = [];
+            
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || !row[0]) continue;
+                
+                const specialist = {
+                    name: String(row[0]).trim(),
+                    partnershipLevel: String(row[1] || '').trim(),
+                    coverageGuidance: parseInt(row[2]) || 0
+                };
+                
+                if (specialist.name) supportSpecialists.push(specialist);
+            }
+            updateSupportSpecialistDropdown();
+        }
+
+        function forceTableUpdate() {
+            updateTableDirect('working', workingEmployees);
+            updateTableDirect('off', offEmployees);
+            updateManagerCheckboxes();
+            updateDisplay();
+        }
+
+        function updateTableDirect(tabType, employees) {
+            const tableBody = document.getElementById(tabType + 'TableBody');
+            if (!tableBody) return;
+            
+            if (!employees || employees.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="${tabType === 'working' ? 4 : 5}" class="no-data">No employees found</td></tr>`;
+                return;
+            }
+            
+            employees.sort((a, b) => (a.manager || '').localeCompare(b.manager || ''));
+            
+            let html = '';
+            employees.forEach(employee => {
+                if (tabType === 'working') {
+                    html += `
+                        <tr>
+                            <td style="text-align: center;">
+                                <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
+                            </td>
+                            <td><strong>${employee.name}</strong></td>
+                            <td>${employee.manager || 'N/A'}</td>
+                            <td>${employee.schedule || 'N/A'}</td>
+                        </tr>
+                    `;
+                } else {
+                    const statusClass = employee.type === 'partial' ? 'status-partial' : 
+                                       employee.type === 'manual' ? 'status-manual' : 'status-scheduled';
+                    
+                    html += `
+                        <tr>
+                            <td style="text-align: center;">
+                                <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
+                            </td>
+                            <td><strong>${employee.name}</strong></td>
+                            <td>${employee.manager || 'N/A'}</td>
+                            <td>
+                                <span class="status-badge ${statusClass}">${employee.status}</span>
+                            </td>
+                            <td>
+                                <span class="timestamp">${employee.timeAdded}</span>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            tableBody.innerHTML = html;
+        }
+
+        function updateManagerCheckboxes() {
+            const workingContainer = document.getElementById('workingManagerCheckboxes');
+            const offContainer = document.getElementById('offManagerCheckboxes');
+            
+            if (!workingContainer || !offContainer) return;
+            
+            const managers = Array.from(allManagers).sort();
+            
+            // Working Today tab - show all managers
+            workingContainer.innerHTML = '';
+            managers.forEach((manager, index) => {
+                if (manager) {
+                    const checkboxId = 'working-manager-' + index;
+                    workingContainer.innerHTML += `
+                        <label class="manager-checkbox" for="${checkboxId}">
+                            <input type="checkbox" id="${checkboxId}" 
+                                   value="${manager}" 
+                                   onchange="handleManagerCheckboxChange('working')">
+                            <span>${manager}</span>
+                        </label>
+                    `;
+                }
+            });
+            
+            // Off Today tab - only show managers and specialists with assigned employees
+            const managersWithOffEmployees = new Set();
+            const specialistsWithAssignedEmployees = new Set();
+            
+            offEmployees.forEach(emp => {
+                if (emp.supportSpecialist) {
+                    // Employee is assigned to a support specialist
+                    specialistsWithAssignedEmployees.add(emp.supportSpecialist);
+                } else {
+                    // Employee is still with their manager
+                    if (emp.manager) {
+                        managersWithOffEmployees.add(emp.manager);
+                    }
+                }
+            });
+            
+            // Combine and sort the filter options for Off Today tab
+            const offFilterOptions = [];
+            
+            // Add managers who have off employees
+            Array.from(managersWithOffEmployees).sort().forEach(manager => {
+                offFilterOptions.push({ name: manager, isSpecialist: false });
+            });
+            
+            // Add specialists who have assigned employees
+            Array.from(specialistsWithAssignedEmployees).sort().forEach(specialist => {
+                offFilterOptions.push({ name: specialist, isSpecialist: true });
+            });
+            
+            offContainer.innerHTML = '';
+            offFilterOptions.forEach((filterOption, index) => {
+                const checkboxId = 'off-manager-' + index;
+                const label = filterOption.isSpecialist ? `🤝 ${filterOption.name}` : filterOption.name;
+                
+                offContainer.innerHTML += `
+                    <label class="manager-checkbox" for="${checkboxId}">
+                        <input type="checkbox" id="${checkboxId}" 
+                               value="${filterOption.name}" 
+                               onchange="handleManagerCheckboxChange('off')">
+                        <span>${label}</span>
+                    </label>
+                `;
+            });
+        }
+
+        function markEmployeeWithStatus(status) {
+            const nameInput = document.getElementById('manualEmployeeName');
+            const employeeName = nameInput.value.trim();
+            
+            if (!employeeName) {
+                showMessage('Please enter an employee name', 'error');
+                return;
+            }
+            
+            const employeeIndex = workingEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                showMessage('Employee not found in working list. Please check the spelling.', 'error');
+                return;
+            }
+            
+            const employee = workingEmployees[employeeIndex];
+            const originalManager = employee.manager;
+            
+            const offEmployee = {
+                name: employee.name,
+                manager: originalManager,
+                status: status,
+                type: 'manual',
+                timeAdded: new Date().toLocaleString(),
+                originalManager: originalManager,
+                supportSpecialist: null
+            };
+            
+            offEmployees.push(offEmployee);
+            workingEmployees.splice(employeeIndex, 1);
+            allWorkingEmployees = allWorkingEmployees.filter(emp => emp.name !== employee.name);
+            manuallyAdded.set(employee.name, new Date());
+            
+            nameInput.value = '';
+            updateDisplay();
+            forceTableUpdate();
+            
+            showMessage(`${employee.name} has been marked as "${status}" and kept with ${originalManager}`, 'success');
+            switchTab('off');
+        }
+
+        function returnToWork() {
+            const nameInput = document.getElementById('manualEmployeeName');
+            const employeeName = nameInput.value.trim();
+            
+            if (!employeeName) {
+                showMessage('Please enter an employee name', 'error');
+                return;
+            }
+            
+            const employeeIndex = offEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                showMessage('Employee not found in off list. Please check the spelling.', 'error');
+                return;
+            }
+            
+            const employee = offEmployees[employeeIndex];
+            
+            const workingEmployee = {
+                name: employee.name,
+                manager: employee.originalManager || employee.manager,
+                schedule: 'Returned - Check original schedule',
+                type: 'returned'
+            };
+            
+            workingEmployees.push(workingEmployee);
+            allWorkingEmployees.push({...workingEmployee});
+            offEmployees.splice(employeeIndex, 1);
+            manuallyAdded.delete(employee.name);
+            
+            nameInput.value = '';
+            updateDisplay();
+            forceTableUpdate();
+            
+            showMessage(`${employee.name} has returned to work and kept with ${workingEmployee.manager}`, 'success');
+            switchTab('working');
+        }
+
+        function toggleShiftChange() {
+            const section = document.getElementById('shiftChangeSection');
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+            } else {
+                section.style.display = 'none';
+                document.getElementById('shiftStartTime').value = '';
+                document.getElementById('shiftEndTime').value = '';
+            }
+        }
+
+        function updateShift() {
+            const nameInput = document.getElementById('manualEmployeeName');
+            const employeeName = nameInput.value.trim();
+            const startTime = document.getElementById('shiftStartTime').value;
+            const endTime = document.getElementById('shiftEndTime').value;
+            
+            if (!employeeName) {
+                showMessage('Please enter an employee name', 'error');
+                return;
+            }
+            
+            if (!startTime || !endTime) {
+                showMessage('Please enter both start and end times', 'error');
+                return;
+            }
+            
+            const employeeIndex = workingEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                showMessage('Employee not found in working list. Please check the spelling.', 'error');
+                return;
+            }
+            
+            const employee = workingEmployees[employeeIndex];
+            
+            function formatTime(time24) {
+                const [hours, minutes] = time24.split(':');
+                const hour = parseInt(hours);
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+                return `${hour12}:${minutes} ${ampm}`;
+            }
+            
+            const newSchedule = `${formatTime(startTime)} - ${formatTime(endTime)}`;
+            
+            workingEmployees[employeeIndex].schedule = newSchedule;
+            workingEmployees[employeeIndex].type = 'updated';
+            
+            const allEmployeeIndex = allWorkingEmployees.findIndex(emp => emp.name === employee.name);
+            if (allEmployeeIndex !== -1) {
+                allWorkingEmployees[allEmployeeIndex].schedule = newSchedule;
+                allWorkingEmployees[allEmployeeIndex].type = 'updated';
+            }
+            
+            nameInput.value = '';
+            document.getElementById('shiftStartTime').value = '';
+            document.getElementById('shiftEndTime').value = '';
+            toggleShiftChange();
+            
+            forceTableUpdate();
+            showMessage(`${employee.name}'s shift updated to ${newSchedule}`, 'success');
+            switchTab('working');
+        }
+
+        function clearAllCheckboxes(tabType) {
+            const tableBody = document.getElementById(tabType + 'TableBody');
+            if (!tableBody) return;
+            
+            const checkboxes = tableBody.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => checkbox.checked = false);
+            
+            showMessage(`All checkboxes cleared in ${tabType === 'working' ? 'Working Today' : 'Off Today'} tab`, 'success');
+        }
+
+        function handleManagerCheckboxChange(tabType) {
+            const container = document.getElementById(tabType + 'ManagerCheckboxes');
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            const selectedFilters = [];
+            
+            checkboxes.forEach(checkbox => {
+                const label = checkbox.parentElement;
+                if (checkbox.checked) {
+                    selectedFilters.push(checkbox.value);
+                    label.classList.add('selected');
+                } else {
+                    label.classList.remove('selected');
+                }
+            });
+            
+            const allEmployees = tabType === 'working' ? workingEmployees : offEmployees;
+            let filteredEmployees = allEmployees;
+            
+            if (selectedFilters.length > 0) {
+                if (tabType === 'working') {
+                    filteredEmployees = allEmployees.filter(emp => selectedFilters.includes(emp.manager));
+                } else {
+                    filteredEmployees = allEmployees.filter(emp => {
+                        if (selectedFilters.includes(emp.manager) && !emp.supportSpecialist) {
+                            return true;
+                        }
+                        if (emp.supportSpecialist && selectedFilters.includes(emp.supportSpecialist)) {
+                            return true;
+                        }
+                        return false;
+                    });
+                }
+            }
+            
+            updateTableDirect(tabType, filteredEmployees);
+            
+            if (selectedFilters.length > 0) {
+                showMessage(`Showing ${selectedFilters.length} selected filter(s)`, 'success');
+            }
+        }
+
+        function clearManagerFilter(tabType) {
+            const container = document.getElementById(tabType + 'ManagerCheckboxes');
+            if (!container) return;
+            
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                checkbox.parentElement.classList.remove('selected');
+            });
+            
+            const allEmployees = tabType === 'working' ? workingEmployees : offEmployees;
+            updateTableDirect(tabType, allEmployees);
+            showMessage('Filter cleared - showing all employees', 'success');
+        }
+
+        function selectAllManagers(tabType) {
+            const container = document.getElementById(tabType + 'ManagerCheckboxes');
+            if (!container) return;
+            
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+                checkbox.parentElement.classList.add('selected');
+            });
+            
+            const allEmployees = tabType === 'working' ? workingEmployees : offEmployees;
+            updateTableDirect(tabType, allEmployees);
+            showMessage('All managers selected', 'success');
+        }
+
+        function toggleSummarySection() {
+            const summarySection = document.getElementById('managerSummarySection');
+            const toggleButton = document.getElementById('summaryToggleButton');
+            
+            if (summarySection.style.display === 'none') {
+                summarySection.style.display = 'block';
+                toggleButton.innerHTML = '📊 Hide Manager Summary';
+                toggleButton.style.background = 'linear-gradient(135deg, #ff4757 0%, #ff3838 100%)';
+            } else {
+                summarySection.style.display = 'none';
+                toggleButton.innerHTML = '📊 Show Manager Summary';
+                toggleButton.style.background = 'linear-gradient(135deg, #2ed573 0%, #7bed9f 100%)';
+            }
+        }
+
+        function checkManagerLimits() {
+            const managerCounts = {};
+            
+            workingEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                managerCounts[manager] = (managerCounts[manager] || 0) + 1;
+            });
+            
+            offEmployees.forEach(emp => {
+                if (!emp.supportSpecialist) {
+                    const manager = emp.manager || 'No Manager';
+                    managerCounts[manager] = (managerCounts[manager] || 0) + 1;
+                }
+            });
+            
+            const overLimitManagers = [];
+            Object.entries(managerCounts).forEach(([manager, count]) => {
+                if (count >= 21 && manager !== 'No Manager') {
+                    overLimitManagers.push({ manager, count });
+                }
+            });
+            
+            const warningBanner = document.getElementById('managerWarningBanner');
+            const warningMessage = document.getElementById('warningMessage');
+            const reassignmentSection = document.getElementById('reassignmentSection');
+            
+            if (overLimitManagers.length > 0) {
+                warningBanner.style.display = 'block';
+                reassignmentSection.style.display = 'block';
+                
+                if (overLimitManagers.length === 1) {
+                    const { manager, count } = overLimitManagers[0];
+                    warningMessage.textContent = `Warning: Manager ${manager} is over their 20 limit with ${count} total employees`;
+                } else {
+                    const managerList = overLimitManagers.map(m => `${m.manager} (${m.count})`).join(', ');
+                    warningMessage.textContent = `Warning: Multiple managers are over their 20 limit: ${managerList}`;
+                }
+                
+                updateOverLimitManagerDropdown(overLimitManagers);
+            } else {
+                warningBanner.style.display = 'none';
+                reassignmentSection.style.display = 'none';
+            }
+        }
+
+        function updateOverLimitManagerDropdown(overLimitManagers) {
+            const dropdown = document.getElementById('overLimitManagerSelect');
+            if (!dropdown) return;
+            
+            dropdown.innerHTML = '<option value="">Select manager...</option>';
+            
+            overLimitManagers.forEach(({ manager, count }) => {
+                const option = document.createElement('option');
+                option.value = manager;
+                option.textContent = `${manager} (${count} employees)`;
+                dropdown.appendChild(option);
+            });
+        }
+
+        function updateSupportSpecialistDropdown() {
+            const dropdown = document.getElementById('supportSpecialistSelect');
+            if (!dropdown) return;
+            
+            dropdown.innerHTML = '<option value="">Select specialist...</option>';
+            
+            supportSpecialists.forEach(specialist => {
+                const option = document.createElement('option');
+                option.value = specialist.name;
+                option.textContent = `${specialist.name} (${specialist.partnershipLevel})`;
+                dropdown.appendChild(option);
+            });
+        }
+
+        function loadManagerEmployees() {
+            const selectedManager = document.getElementById('overLimitManagerSelect').value;
+            const employeeCheckboxes = document.getElementById('employeeCheckboxes');
+            
+            if (!selectedManager) {
+                employeeCheckboxes.innerHTML = '<p style="color: rgba(255,255,255,0.7); font-style: italic;">Select a manager to see their employees</p>';
+                return;
+            }
+            
+            const managerEmployees = offEmployees.filter(emp => 
+                emp.manager === selectedManager && !emp.supportSpecialist
+            );
+            
+            if (managerEmployees.length === 0) {
+                employeeCheckboxes.innerHTML = '<p style="color: rgba(255,255,255,0.7); font-style: italic;">No employees available for reassignment</p>';
+                return;
+            }
+            
+            let html = '';
+            managerEmployees.forEach(emp => {
+                html += `
+                    <label style="display: flex; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: 6px; margin-bottom: 8px; cursor: pointer;">
+                        <input type="checkbox" value="${emp.name}" style="margin-right: 12px; transform: scale(1.2);">
+                        <span style="font-weight: 500;">${emp.name}</span>
+                        <span style="margin-left: auto; font-size: 12px; opacity: 0.8;">${emp.status}</span>
+                    </label>
+                `;
+            });
+            
+            employeeCheckboxes.innerHTML = html;
+        }
+
+        function reassignSelectedEmployees() {
+            const selectedManager = document.getElementById('overLimitManagerSelect').value;
+            const selectedSpecialist = document.getElementById('supportSpecialistSelect').value;
+            const employeeCheckboxes = document.querySelectorAll('#employeeCheckboxes input[type="checkbox"]:checked');
+            
+            if (!selectedManager) {
+                showMessage('Please select a manager first', 'error');
+                return;
+            }
+            
+            if (!selectedSpecialist) {
+                showMessage('Please select a support specialist', 'error');
+                return;
+            }
+            
+            if (employeeCheckboxes.length === 0) {
+                showMessage('Please select at least one employee to reassign', 'error');
+                return;
+            }
+            
+            let reassignedCount = 0;
+            const employeeNames = Array.from(employeeCheckboxes).map(cb => cb.value);
+            
+            offEmployees.forEach(emp => {
+                if (employeeNames.includes(emp.name) && emp.manager === selectedManager) {
+                    emp.supportSpecialist = selectedSpecialist;
+                    reassignedCount++;
+                }
+            });
+            
+            document.getElementById('overLimitManagerSelect').value = '';
+            document.getElementById('supportSpecialistSelect').value = '';
+            loadManagerEmployees();
+            
+            updateDisplay();
+            forceTableUpdate();
+            
+            showMessage(`Successfully reassigned ${reassignedCount} employee(s) from ${selectedManager} to ${selectedSpecialist}`, 'success');
+        }
+
+        function updateDisplay() {
+            updateCounts();
+            updateSummaries();
+            checkManagerLimits();
+        }
+
+        function updateCounts() {
+            const workingCount = document.getElementById('workingCount');
+            const offCount = document.getElementById('offCount');
+            
+            if (workingCount) workingCount.textContent = workingEmployees.length;
+            if (offCount) offCount.textContent = offEmployees.length;
+        }
+
+        function updateSummaries() {
+            const workingByManager = {};
+            workingEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                workingByManager[manager] = (workingByManager[manager] || 0) + 1;
+            });
+            
+            const workingSummary = document.getElementById('workingSummary');
+            if (workingSummary) {
+                let workingSummaryHtml = '';
+                Object.entries(workingByManager).forEach(([manager, count]) => {
+                    workingSummaryHtml += `
+                        <div class="summary-card">
+                            <h3>${count}</h3>
+                            <p>${manager}</p>
+                        </div>
+                    `;
+                });
+                workingSummary.innerHTML = workingSummaryHtml;
+            }
+            
+            const offByManager = {};
+            offEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                offByManager[manager] = (offByManager[manager] || 0) + 1;
+            });
+            
+            const offSummary = document.getElementById('offSummary');
+            if (offSummary) {
+                let offSummaryHtml = '';
+                
+                const allManagersList = Array.from(allManagers);
+                allManagersList.forEach(manager => {
+                    const count = offByManager[manager] || 0;
+                    if (count > 0) {
+                        offSummaryHtml += `
+                            <div class="summary-card">
+                                <h3>${count}</h3>
+                                <p>${manager}</p>
+                            </div>
+                        `;
+                    }
+                });
+                
+                Object.entries(offByManager).forEach(([manager, count]) => {
+                    if (!allManagersList.includes(manager) && count > 0) {
+                        offSummaryHtml += `
+                            <div class="summary-card">
+                                <h3>${count}</h3>
+                                <p>${manager}</p>
+                            </div>
+                        `;
+                    }
+                });
+                
+                offSummary.innerHTML = offSummaryHtml;
+            }
+        }
+
+        function exportData() {
+            if (!xlsxLoaded) {
+                showMessage('Excel export not available. Please refresh the page.', 'error');
+                return;
+            }
+
+            try {
+                const wb = XLSX.utils.book_new();
+                
+                const workingData = [['Employee', 'Manager', 'Schedule', 'Status']];
+                workingEmployees.forEach(emp => {
+                    workingData.push([emp.name, emp.manager, emp.schedule, 'Working']);
+                });
+                const workingWs = XLSX.utils.aoa_to_sheet(workingData);
+                XLSX.utils.book_append_sheet(wb, workingWs, 'Working Today');
+                
+                const offData = [['Employee', 'Manager', 'Status', 'Time Added', 'Type', 'Support Specialist']];
+                offEmployees.forEach(emp => {
+                    offData.push([emp.name, emp.manager, emp.status, emp.timeAdded, emp.type, emp.supportSpecialist || '']);
+                });
+                const offWs = XLSX.utils.aoa_to_sheet(offData);
+                XLSX.utils.book_append_sheet(wb, offWs, 'Off Today');
+                
+                const fileName = `Employee_Availability_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                showMessage('Report exported successfully!', 'success');
+            } catch (error) {
+                showMessage('Error exporting report: ' + error.message, 'error');
+            }
+        }
+
+        async function init() {
+            try {
+                await new Promise((resolve, reject) => {
+                    if (typeof XLSX !== 'undefined') {
+                        resolve();
+                    } else {
+                        const script = document.createElement('script');
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        script.src = 'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js';
+                        document.head.appendChild(script);
+                    }
+                });
+                
+                xlsxLoaded = true;
+                setupEventListeners();
+                showMessage('Application ready! You can now upload your Excel files.', 'success');
+            } catch (error) {
+                showMessage('Warning: Excel file processing may not work. Try refreshing the page.', 'error');
+                setupEventListeners();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html> {
                     showMessage('Error reading schedule file: ' + error.message, 'error');
                 }
             };
