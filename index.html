@@ -402,26 +402,349 @@
             showMessage('Export functionality will be available after uploading files', 'error');
         }
 
+        function handleScheduleFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!xlsxLoaded) {
+                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
+                return;
+            }
+            showMessage('Processing schedule file...', 'success');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    processScheduleData(jsonData);
+                    updateDisplay();
+                    showMessage(`Schedule processed! Found ${workingEmployees.length} working employees.`, 'success');
+                } catch (error) {
+                    showMessage('Error reading schedule file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function handleTimeOffFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!xlsxLoaded) {
+                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
+                return;
+            }
+            showMessage('Processing time off file...', 'success');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    processTimeOffData(jsonData);
+                    updateDisplay();
+                    showMessage(`Time off processed! Found ${offEmployees.length} employees off today.`, 'success');
+                } catch (error) {
+                    showMessage('Error reading time off file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function handleSupportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!xlsxLoaded) {
+                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
+                return;
+            }
+            showMessage('Processing support specialists file...', 'success');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    processSupportData(jsonData);
+                    updateDisplay();
+                    showMessage(`Support specialists loaded! Found ${supportSpecialists.length} specialists available.`, 'success');
+                } catch (error) {
+                    showMessage('Error reading support file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processScheduleData(data) {
+            workingEmployees = [];
+            
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || !row[0]) continue;
+                
+                const employee = {
+                    name: String(row[0]).trim(),
+                    manager: String(row[1] || '').trim(),
+                    schedule: String(row[2] || '').trim(),
+                    type: 'scheduled'
+                };
+                
+                if (employee.name) {
+                    workingEmployees.push(employee);
+                    if (employee.manager) allManagers.add(employee.manager);
+                }
+            }
+        }
+
+        function processTimeOffData(data) {
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || !row[2]) continue;
+                
+                const timeOffHours = String(row[0] || '');
+                const isPartialDay = timeOffHours.includes('4 Hours');
+                
+                const employee = {
+                    name: String(row[2]).trim(),
+                    manager: String(row[1] || '').trim(),
+                    status: isPartialDay ? 'Partial Day (4 Hours)' : 'Full Day Off',
+                    type: isPartialDay ? 'partial' : 'scheduled',
+                    timeAdded: 'Scheduled'
+                };
+                
+                if (employee.name) {
+                    offEmployees.push(employee);
+                    if (employee.manager) allManagers.add(employee.manager);
+                    
+                    workingEmployees = workingEmployees.filter(emp => emp.name !== employee.name);
+                }
+            }
+        }
+
+        function processSupportData(data) {
+            supportSpecialists = [];
+            
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || !row[0]) continue;
+                
+                const specialist = {
+                    name: String(row[0]).trim(),
+                    partnershipLevel: String(row[1] || '').trim(),
+                    coverageGuidance: parseInt(row[2]) || 0
+                };
+                
+                if (specialist.name) supportSpecialists.push(specialist);
+            }
+        }
+
+        function updateDisplay() {
+            updateCounts();
+            updateTables();
+        }
+
+        function updateCounts() {
+            const workingCount = document.getElementById('workingCount');
+            const offCount = document.getElementById('offCount');
+            
+            if (workingCount) workingCount.textContent = workingEmployees.length;
+            if (offCount) offCount.textContent = offEmployees.length;
+        }
+
+        function updateTables() {
+            updateTable('working', workingEmployees);
+            updateTable('off', offEmployees);
+        }
+
+        function updateTable(tabType, employees) {
+            const tableBody = document.getElementById(tabType + 'TableBody');
+            if (!tableBody) return;
+            
+            if (!employees || employees.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="${tabType === 'working' ? 4 : 5}" class="no-data">No employees found</td></tr>`;
+                return;
+            }
+            
+            employees.sort((a, b) => (a.manager || '').localeCompare(b.manager || ''));
+            
+            let html = '';
+            employees.forEach(employee => {
+                if (tabType === 'working') {
+                    html += `
+                        <tr>
+                            <td style="text-align: center;">
+                                <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
+                            </td>
+                            <td><strong>${employee.name}</strong></td>
+                            <td>${employee.manager || 'N/A'}</td>
+                            <td>${employee.schedule || 'N/A'}</td>
+                        </tr>
+                    `;
+                } else {
+                    html += `
+                        <tr>
+                            <td style="text-align: center;">
+                                <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
+                            </td>
+                            <td><strong>${employee.name}</strong></td>
+                            <td>${employee.manager || 'N/A'}</td>
+                            <td>${employee.status}</td>
+                            <td>${employee.timeAdded}</td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            tableBody.innerHTML = html;
+        }
+
+        function markEmployeeWithStatus(status) {
+            const nameInput = document.getElementById('manualEmployeeName');
+            const employeeName = nameInput.value.trim();
+            
+            if (!employeeName) {
+                showMessage('Please enter an employee name', 'error');
+                return;
+            }
+            
+            const employeeIndex = workingEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                showMessage('Employee not found in working list. Please check the spelling.', 'error');
+                return;
+            }
+            
+            const employee = workingEmployees[employeeIndex];
+            
+            const offEmployee = {
+                name: employee.name,
+                manager: employee.manager,
+                status: status,
+                type: 'manual',
+                timeAdded: new Date().toLocaleString()
+            };
+            
+            offEmployees.push(offEmployee);
+            workingEmployees.splice(employeeIndex, 1);
+            
+            nameInput.value = '';
+            updateDisplay();
+            
+            showMessage(`${employee.name} has been marked as "${status}"`, 'success');
+            switchTab('off');
+        }
+
+        function returnToWork() {
+            const nameInput = document.getElementById('manualEmployeeName');
+            const employeeName = nameInput.value.trim();
+            
+            if (!employeeName) {
+                showMessage('Please enter an employee name', 'error');
+                return;
+            }
+            
+            const employeeIndex = offEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                showMessage('Employee not found in off list. Please check the spelling.', 'error');
+                return;
+            }
+            
+            const employee = offEmployees[employeeIndex];
+            
+            const workingEmployee = {
+                name: employee.name,
+                manager: employee.manager,
+                schedule: 'Returned - Check original schedule',
+                type: 'returned'
+            };
+            
+            workingEmployees.push(workingEmployee);
+            offEmployees.splice(employeeIndex, 1);
+            
+            nameInput.value = '';
+            updateDisplay();
+            
+            showMessage(`${employee.name} has returned to work`, 'success');
+            switchTab('working');
+        }
+
+        function exportData() {
+            if (!xlsxLoaded) {
+                showMessage('Excel export not available. Please refresh the page.', 'error');
+                return;
+            }
+
+            try {
+                const wb = XLSX.utils.book_new();
+                
+                const workingData = [['Employee', 'Manager', 'Schedule', 'Status']];
+                workingEmployees.forEach(emp => {
+                    workingData.push([emp.name, emp.manager, emp.schedule, 'Working']);
+                });
+                const workingWs = XLSX.utils.aoa_to_sheet(workingData);
+                XLSX.utils.book_append_sheet(wb, workingWs, 'Working Today');
+                
+                const offData = [['Employee', 'Manager', 'Status', 'Time Added', 'Type']];
+                offEmployees.forEach(emp => {
+                    offData.push([emp.name, emp.manager, emp.status, emp.timeAdded, emp.type]);
+                });
+                const offWs = XLSX.utils.aoa_to_sheet(offData);
+                XLSX.utils.book_append_sheet(wb, offWs, 'Off Today');
+                
+                const fileName = `Employee_Availability_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                showMessage('Report exported successfully!', 'success');
+            } catch (error) {
+                showMessage('Error exporting report: ' + error.message, 'error');
+            }
+        }
+
         function setupEventListeners() {
             const scheduleFile = document.getElementById('scheduleFile');
             const timeOffFile = document.getElementById('timeOffFile');
             const supportFile = document.getElementById('supportFile');
             
-            if (scheduleFile) scheduleFile.addEventListener('change', function() {
-                showMessage('Schedule file upload functionality will be restored soon', 'success');
-            });
-            if (timeOffFile) timeOffFile.addEventListener('change', function() {
-                showMessage('Time off file upload functionality will be restored soon', 'success');
-            });
-            if (supportFile) supportFile.addEventListener('change', function() {
-                showMessage('Support file upload functionality will be restored soon', 'success');
-            });
+            if (scheduleFile) scheduleFile.addEventListener('change', handleScheduleFile);
+            if (timeOffFile) timeOffFile.addEventListener('change', handleTimeOffFile);
+            if (supportFile) supportFile.addEventListener('change', handleSupportFile);
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            showMessage('Application ready! Basic functionality is working. Full Excel processing will be restored.', 'success');
-            setupEventListeners();
-        });
+        async function init() {
+            try {
+                await new Promise((resolve) => {
+                    if (typeof XLSX !== 'undefined') {
+                        resolve();
+                    } else {
+                        const script = document.createElement('script');
+                        script.onload = resolve;
+                        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+                        document.head.appendChild(script);
+                    }
+                });
+                
+                xlsxLoaded = true;
+                setupEventListeners();
+                showMessage('Application ready! You can now upload your Excel files.', 'success');
+            } catch (error) {
+                showMessage('Warning: Excel file processing may not work. Try refreshing the page.', 'error');
+                setupEventListeners();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
