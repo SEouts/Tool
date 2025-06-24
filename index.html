@@ -301,6 +301,39 @@
                         <option value="">Show All Managers</option>
                     </select>
                 </div>
+
+                <!-- SCHEDULE CONTROLS -->
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #2ed573;">
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;">
+                        <span style="font-weight: 600; color: #495057; margin-right: 10px;">📋 Schedule Controls:</span>
+                        
+                        <button onclick="sortByStartTime()" 
+                                style="background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%); color: white; border: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(46,213,115,0.2);"
+                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(46,213,115,0.3)'"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(46,213,115,0.2)'"
+                                title="Sort by start time (earliest first)">
+                            🕐 Sort by Start Time
+                        </button>
+                        
+                        <button onclick="toggleNearEndFilter()" 
+                                id="nearEndFilterBtn"
+                                style="background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%); color: white; border: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(255,149,0,0.2);"
+                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(255,149,0,0.3)'"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(255,149,0,0.2)'"
+                                title="Hide employees within 2 hours of shift end">
+                            ⏰ Hide <2hrs End
+                        </button>
+                        
+                        <button onclick="toggleOneHourFilter()" 
+                                id="oneHourFilterBtn"
+                                style="background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%); color: white; border: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(255,71,87,0.2);"
+                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(255,71,87,0.3)'"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(255,71,87,0.2)'"
+                                title="Hide employees within 1 hour 15 minutes of shift end">
+                            🚨 Hide <1hr End
+                        </button>
+                    </div>
+                </div>
                 
                 <div class="table-container">
                     <table>
@@ -459,6 +492,190 @@
         let allManagers = new Set();
         let supportSpecialists = [];
         let xlsxLoaded = false;
+        let nearEndFilterActive = false;
+        let oneHourFilterActive = false;
+        let allWorkingEmployees = []; // Store complete list for filtering
+
+        function timeToMinutes(timeStr) {
+            if (!timeStr || timeStr === 'N/A') return 0;
+            
+            const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)/i);
+            if (!match) return 0;
+            
+            let hours = parseInt(match[1]);
+            const minutes = parseInt(match[2]);
+            const period = match[3].toUpperCase();
+            
+            if (period === 'PM' && hours !== 12) {
+                hours += 12;
+            } else if (period === 'AM' && hours === 12) {
+                hours = 0;
+            }
+            
+            return hours * 60 + minutes;
+        }
+
+        function getStartTime(schedule) {
+            if (!schedule || schedule === 'N/A' || schedule.trim() === '') return 999999; // Put N/A at end
+            
+            const parts = schedule.split(' - ');
+            if (parts.length < 1) return 999999;
+            
+            const startTime = parts[0].trim();
+            const minutes = timeToMinutes(startTime);
+            return minutes;
+        }
+
+        function getEndTime(schedule) {
+            if (!schedule || schedule === 'N/A' || schedule.trim() === '') return 999999; // Put N/A at end
+            
+            const parts = schedule.split(' - ');
+            if (parts.length < 2) return 999999;
+            
+            const endTime = parts[1].trim();
+            const minutes = timeToMinutes(endTime);
+            return minutes;
+        }
+
+        function getCurrentTimeInMinutes() {
+            const now = new Date();
+            return now.getHours() * 60 + now.getMinutes();
+        }
+
+        function isWithinTwoHoursOfEnd(schedule) {
+            if (!schedule || schedule === 'N/A' || schedule.trim() === '') return false;
+            
+            const endTimeMinutes = getEndTime(schedule);
+            if (endTimeMinutes === 999999) return false; // Invalid schedule
+            
+            const currentTimeMinutes = getCurrentTimeInMinutes();
+            const timeDifference = endTimeMinutes - currentTimeMinutes;
+            
+            // Within 2 hours (120 minutes) and not past end time
+            return timeDifference <= 120 && timeDifference >= 0;
+        }
+
+        function isWithinOneHourFifteenOfEnd(schedule) {
+            if (!schedule || schedule === 'N/A' || schedule.trim() === '') return false;
+            
+            const endTimeMinutes = getEndTime(schedule);
+            if (endTimeMinutes === 999999) return false; // Invalid schedule
+            
+            const currentTimeMinutes = getCurrentTimeInMinutes();
+            const timeDifference = endTimeMinutes - currentTimeMinutes;
+            
+            // Within 1 hour 15 minutes (75 minutes) and not past end time
+            return timeDifference <= 75 && timeDifference >= 0;
+        }
+
+        function sortByStartTime() {
+            if (workingEmployees.length === 0) {
+                showMessage('No employees to sort. Please upload schedule file first.', 'error');
+                return;
+            }
+            
+            workingEmployees.sort((a, b) => {
+                const timeA = getStartTime(a.schedule);
+                const timeB = getStartTime(b.schedule);
+                return timeA - timeB;
+            });
+            
+            // Use skipSort=true to preserve the time-based sorting order
+            updateTable('working', workingEmployees, true);
+            showMessage('Schedule sorted by start time (earliest to latest)', 'success');
+        }
+
+        function toggleNearEndFilter() {
+            nearEndFilterActive = !nearEndFilterActive;
+            const button = document.getElementById('nearEndFilterBtn');
+            
+            // If other filter is active, turn it off first
+            if (oneHourFilterActive) {
+                oneHourFilterActive = false;
+                const otherButton = document.getElementById('oneHourFilterBtn');
+                if (otherButton) {
+                    otherButton.innerHTML = '🚨 Hide <1hr End';
+                    otherButton.title = 'Hide employees within 1 hour 15 minutes of shift end';
+                    otherButton.style.background = 'linear-gradient(135deg, #ff4757 0%, #ff3838 100%)';
+                }
+            }
+            
+            if (nearEndFilterActive) {
+                // Filter out employees within 2 hours of shift end
+                const currentTime = new Date();
+                const timeString = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                workingEmployees = allWorkingEmployees.filter(emp => !isWithinTwoHoursOfEnd(emp.schedule));
+                
+                if (button) {
+                    button.innerHTML = '👁️ Show All';
+                    button.title = 'Show all employees including those near shift end';
+                    button.style.background = 'linear-gradient(135deg, #6c757d 0%, #495057 100%)'; // Gray to indicate filter is active
+                }
+                
+                showMessage(`Filter active! Hiding employees within 2 hours of shift end (Current time: ${timeString})`, 'success');
+            } else {
+                // Show all employees
+                workingEmployees = [...allWorkingEmployees];
+                
+                if (button) {
+                    button.innerHTML = '⏰ Hide <2hrs End';
+                    button.title = 'Hide employees within 2 hours of shift end';
+                    button.style.background = 'linear-gradient(135deg, #ff9500 0%, #ff5722 100%)';
+                }
+                
+                showMessage('Filter removed - showing all employees', 'success');
+            }
+            
+            updateTable('working', workingEmployees, true);
+            updateCounts();
+        }
+
+        function toggleOneHourFilter() {
+            oneHourFilterActive = !oneHourFilterActive;
+            const button = document.getElementById('oneHourFilterBtn');
+            
+            // If other filter is active, turn it off first
+            if (nearEndFilterActive) {
+                nearEndFilterActive = false;
+                const otherButton = document.getElementById('nearEndFilterBtn');
+                if (otherButton) {
+                    otherButton.innerHTML = '⏰ Hide <2hrs End';
+                    otherButton.title = 'Hide employees within 2 hours of shift end';
+                    otherButton.style.background = 'linear-gradient(135deg, #ff9500 0%, #ff5722 100%)';
+                }
+            }
+            
+            if (oneHourFilterActive) {
+                // Filter out employees within 1 hour 15 minutes of shift end
+                const currentTime = new Date();
+                const timeString = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                workingEmployees = allWorkingEmployees.filter(emp => !isWithinOneHourFifteenOfEnd(emp.schedule));
+                
+                if (button) {
+                    button.innerHTML = '👁️ Show All';
+                    button.title = 'Show all employees including those near shift end';
+                    button.style.background = 'linear-gradient(135deg, #6c757d 0%, #495057 100%)'; // Gray to indicate filter is active
+                }
+                
+                showMessage(`Filter active! Hiding employees within 1hr 15min of shift end (Current time: ${timeString})`, 'success');
+            } else {
+                // Show all employees
+                workingEmployees = [...allWorkingEmployees];
+                
+                if (button) {
+                    button.innerHTML = '🚨 Hide <1hr End';
+                    button.title = 'Hide employees within 1 hour 15 minutes of shift end';
+                    button.style.background = 'linear-gradient(135deg, #ff4757 0%, #ff3838 100%)';
+                }
+                
+                showMessage('Filter removed - showing all employees', 'success');
+            }
+            
+            updateTable('working', workingEmployees, true);
+            updateCounts();
+        }
 
         function switchTab(tabName) {
             if (tabName === 'manual') {
@@ -626,6 +843,7 @@
 
         function processScheduleData(data) {
             workingEmployees = [];
+            allWorkingEmployees = []; // Reset the complete list
             
             for (let i = 1; i < data.length; i++) {
                 const row = data[i];
@@ -640,6 +858,7 @@
                 
                 if (employee.name) {
                     workingEmployees.push(employee);
+                    allWorkingEmployees.push({...employee}); // Store copy in complete list
                     if (employee.manager) allManagers.add(employee.manager);
                 }
             }
@@ -666,6 +885,7 @@
                     if (employee.manager) allManagers.add(employee.manager);
                     
                     workingEmployees = workingEmployees.filter(emp => emp.name !== employee.name);
+                    allWorkingEmployees = allWorkingEmployees.filter(emp => emp.name !== employee.name);
                 }
             }
         }
@@ -901,7 +1121,7 @@
             updateTable('off', offEmployees);
         }
 
-        function updateTable(tabType, employees) {
+        function updateTable(tabType, employees, skipSort = false) {
             const tableBody = document.getElementById(tabType + 'TableBody');
             if (!tableBody) return;
             
@@ -910,7 +1130,11 @@
                 return;
             }
             
-            employees.sort((a, b) => (a.manager || '').localeCompare(b.manager || ''));
+            // Only sort by manager if skipSort is false (default behavior)
+            // When skipSort is true, preserve the current order (used for time sorting)
+            if (!skipSort) {
+                employees.sort((a, b) => (a.manager || '').localeCompare(b.manager || ''));
+            }
             
             let html = '';
             employees.forEach(employee => {
@@ -973,6 +1197,7 @@
             
             offEmployees.push(offEmployee);
             workingEmployees.splice(employeeIndex, 1);
+            allWorkingEmployees = allWorkingEmployees.filter(emp => emp.name !== employee.name);
             
             nameInput.value = '';
             updateDisplay();
@@ -1009,6 +1234,7 @@
             };
             
             workingEmployees.push(workingEmployee);
+            allWorkingEmployees.push({...workingEmployee}); // Add to complete list too
             offEmployees.splice(employeeIndex, 1);
             
             nameInput.value = '';
