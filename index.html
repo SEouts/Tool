@@ -147,26 +147,6 @@
             display: block;
         }
 
-        .summary {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .summary-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        .summary-card h3 {
-            font-size: 2em;
-            margin-bottom: 5px;
-        }
-
         .table-container {
             background: white;
             border-radius: 10px;
@@ -196,94 +176,11 @@
             background: #f8f9fa;
         }
 
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .status-scheduled {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .status-manual {
-            background: #fff3e0;
-            color: #f57c00;
-        }
-
-        .status-partial {
-            background: #fce4ec;
-            color: #c2185b;
-        }
-
-        .manager-filter {
-            margin: 20px 0;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border: 2px solid #e9ecef;
-        }
-
-        .manager-filter h4 {
-            margin-bottom: 15px;
-            color: #4facfe;
-            font-size: 16px;
-        }
-
-        .manager-checkboxes {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-
-        .manager-checkbox {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
-            background: white;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .manager-checkbox:hover {
-            background: #f0f9ff;
-            border-color: #4facfe;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(79, 172, 254, 0.2);
-        }
-
-        .manager-checkbox input[type="checkbox"] {
-            margin-right: 12px;
-            transform: scale(1.3);
-            cursor: pointer;
-            accent-color: #4facfe;
-        }
-
-        .manager-checkbox.selected {
-            background: linear-gradient(135deg, #e3f2fd 0%, #f0f9ff 100%);
-            border-color: #4facfe;
-            color: #1976d2;
-            font-weight: 600;
-        }
-
         .no-data {
             text-align: center;
             padding: 40px;
             color: #6c757d;
             font-size: 18px;
-        }
-
-        .timestamp {
-            font-size: 12px;
-            color: #6c757d;
-            font-style: italic;
         }
 
         .error-msg {
@@ -329,20 +226,7 @@
         </div>
 
         <div id="workingTab" class="tab-content active">
-            <div class="manager-filter">
-                <h4>📋 Filter by Manager:</h4>
-                <div id="workingManagerCheckboxes" class="manager-checkboxes"></div>
-                <div style="text-align: center;">
-                    <button class="btn btn-primary" onclick="clearManagerFilter('working')" style="padding: 8px 16px;">Clear All</button>
-                    <button class="btn btn-success" onclick="selectAllManagers('working')" style="padding: 8px 16px; margin-left: 10px;">Select All</button>
-                </div>
-            </div>
             <div class="table-container">
-                <div style="padding: 10px 15px; background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
-                    <button onclick="clearAllCheckboxes('working')" 
-                            style="background: #333; color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 11px; cursor: pointer; font-weight: 600;"
-                            title="Clear all checkboxes">Clear</button>
-                </div>
                 <table>
                     <thead>
                         <tr>
@@ -360,20 +244,7 @@
         </div>
 
         <div id="offTab" class="tab-content">
-            <div class="manager-filter">
-                <h4>📋 Filter by Manager:</h4>
-                <div id="offManagerCheckboxes" class="manager-checkboxes"></div>
-                <div style="text-align: center;">
-                    <button class="btn btn-primary" onclick="clearManagerFilter('off')" style="padding: 8px 16px;">Clear All</button>
-                    <button class="btn btn-success" onclick="selectAllManagers('off')" style="padding: 8px 16px; margin-left: 10px;">Select All</button>
-                </div>
-            </div>
             <div class="table-container">
-                <div style="padding: 10px 15px; background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
-                    <button onclick="clearAllCheckboxes('off')" 
-                            style="background: #333; color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 11px; cursor: pointer; font-weight: 600;"
-                            title="Clear all checkboxes">Clear</button>
-                </div>
                 <table>
                     <thead>
                         <tr>
@@ -393,9 +264,34 @@
 
         <div id="manualTab" class="tab-content">
             <div style="max-width: 800px; margin: 0 auto;">
+                <div style="margin-bottom: 40px;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
+                        <h2 style="margin-bottom: 8px;">📁 Upload Daily Files</h2>
+                        <p>Start by uploading your schedule and time off files</p>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                        <div class="upload-box">
+                            <h3>📅 Upload Schedule File</h3>
+                            <p>Excel file with employee schedules</p>
+                            <input type="file" id="scheduleFile" accept=".xlsx,.xls,.csv" />
+                        </div>
+                        <div class="upload-box">
+                            <h3>🏖️ Upload Time Off File</h3>
+                            <p>Excel file with scheduled time off</p>
+                            <input type="file" id="timeOffFile" accept=".xlsx,.xls,.csv" />
+                        </div>
+                        <div class="upload-box">
+                            <h3>🤝 Upload Support Specialists</h3>
+                            <p>Excel file with sales support team</p>
+                            <input type="file" id="supportFile" accept=".xlsx,.xls,.csv" />
+                        </div>
+                    </div>
+                </div>
+
                 <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 30px;">
-                    <h2 style="margin-bottom: 10px;">⚡ Sales Admin Panel</h2>
-                    <p>Administrative tools for managing employee availability</p>
+                    <h2 style="margin-bottom: 10px;">🚀 Quick Employee Actions</h2>
+                    <p>Mark employees as off or left early with one click</p>
                 </div>
 
                 <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
@@ -446,6 +342,8 @@
         let workingEmployees = [];
         let offEmployees = [];
         let allManagers = new Set();
+        let supportSpecialists = [];
+        let xlsxLoaded = false;
 
         function switchTab(tabName) {
             if (tabName === 'manual') {
@@ -472,18 +370,6 @@
             const className = type === 'success' ? 'success-msg' : 'error-msg';
             messageArea.innerHTML = `<div class="${className}">${text}</div>`;
             setTimeout(() => messageArea.innerHTML = '', 5000);
-        }
-
-        function clearManagerFilter(tabType) {
-            showMessage('Filter functionality will be available after uploading files', 'error');
-        }
-
-        function selectAllManagers(tabType) {
-            showMessage('Filter functionality will be available after uploading files', 'error');
-        }
-
-        function clearAllCheckboxes(tabType) {
-            showMessage('Clear functionality will be available after uploading files', 'error');
         }
 
         function markEmployeeWithStatus(status) {
@@ -516,9 +402,25 @@
             showMessage('Export functionality will be available after uploading files', 'error');
         }
 
-        // Initialize the application
+        function setupEventListeners() {
+            const scheduleFile = document.getElementById('scheduleFile');
+            const timeOffFile = document.getElementById('timeOffFile');
+            const supportFile = document.getElementById('supportFile');
+            
+            if (scheduleFile) scheduleFile.addEventListener('change', function() {
+                showMessage('Schedule file upload functionality will be restored soon', 'success');
+            });
+            if (timeOffFile) timeOffFile.addEventListener('change', function() {
+                showMessage('Time off file upload functionality will be restored soon', 'success');
+            });
+            if (supportFile) supportFile.addEventListener('change', function() {
+                showMessage('Support file upload functionality will be restored soon', 'success');
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            showMessage('Application ready! Upload your Excel files to get started.', 'success');
+            showMessage('Application ready! Basic functionality is working. Full Excel processing will be restored.', 'success');
+            setupEventListeners();
         });
     </script>
 </body>
