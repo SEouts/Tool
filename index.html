@@ -264,6 +264,63 @@
 
         <div id="manualTab" class="tab-content">
             <div style="max-width: 800px; margin: 0 auto;">
+                <div id="managerWarningBanner" style="display: none; background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; box-shadow: 0 5px 15px rgba(255,71,87,0.3); border: 2px solid #ff1e30;">
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 700;">⚠️ MANAGER OVERLOAD WARNING ⚠️</h3>
+                    <p id="warningMessage" style="margin: 8px 0 0 0; font-size: 16px; font-weight: 600;"></p>
+                </div>
+
+                <div id="reassignmentSection" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; margin-bottom: 30px;">
+                    <h3 style="margin: 0 0 20px 0; text-align: center; font-size: 20px;">🔄 Employee Reassignment Center</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 8px;">Over-Limit Manager:</label>
+                            <select id="overLimitManagerSelect" style="width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px;" onchange="loadManagerEmployees()">
+                                <option value="">Select manager...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 8px;">Assign to Support Specialist:</label>
+                            <select id="supportSpecialistSelect" style="width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px;">
+                                <option value="">Select specialist...</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="managerEmployeesList" style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 15px; margin-bottom: 20px; min-height: 100px;">
+                        <h4 style="margin: 0 0 15px 0;">Employees to Reassign:</h4>
+                        <div id="employeeCheckboxes" style="max-height: 200px; overflow-y: auto;">
+                            <p style="color: rgba(255,255,255,0.7); font-style: italic;">Select a manager to see their employees</p>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center;">
+                        <button class="btn" onclick="reassignSelectedEmployees()" 
+                                style="padding: 15px 30px; font-size: 16px; border-radius: 10px; background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%); color: white; font-weight: 600;">
+                            🔄 Reassign Selected Employees
+                        </button>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <button class="btn btn-success" onclick="toggleSummarySection()" id="summaryToggleButton" 
+                            style="padding: 12px 25px; font-size: 16px; border-radius: 25px;">
+                        📊 Show Manager Summary
+                    </button>
+                </div>
+
+                <div id="managerSummarySection" style="display: none; transition: all 0.3s ease; margin-bottom: 30px;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
+                        <h2 style="margin-bottom: 8px;">📊 Manager Summary</h2>
+                        <p>Employee count by manager for those with employees off today</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <h4 style="color: #ff6b6b; margin-bottom: 15px;">🏖️ Off Today by Manager:</h4>
+                        <div id="offSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;"></div>
+                    </div>
+                </div>
+
                 <div style="margin-bottom: 40px;">
                     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
                         <h2 style="margin-bottom: 8px;">📁 Upload Daily Files</h2>
@@ -549,6 +606,214 @@
         function updateDisplay() {
             updateCounts();
             updateTables();
+            updateManagerSummary();
+            checkManagerLimits();
+        }
+
+        function updateManagerSummary() {
+            const offByManager = {};
+            offEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                offByManager[manager] = (offByManager[manager] || 0) + 1;
+            });
+            
+            const offSummary = document.getElementById('offSummary');
+            if (offSummary) {
+                let offSummaryHtml = '';
+                
+                Object.entries(offByManager).forEach(([manager, count]) => {
+                    if (count > 0 && manager !== 'No Manager') {
+                        const cardColor = count >= 21 ? 'background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%);' : 
+                                         count >= 15 ? 'background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%);' :
+                                         'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);';
+                        
+                        offSummaryHtml += `
+                            <div style="${cardColor} color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                                <h3 style="font-size: 2em; margin-bottom: 5px;">${count}</h3>
+                                <p style="margin: 0;">${manager}</p>
+                            </div>
+                        `;
+                    }
+                });
+                
+                if (offSummaryHtml === '') {
+                    offSummaryHtml = '<p style="text-align: center; color: #6c757d; font-style: italic;">No managers with employees off today</p>';
+                }
+                
+                offSummary.innerHTML = offSummaryHtml;
+            }
+        }
+
+        function checkManagerLimits() {
+            const managerCounts = {};
+            
+            // Count only OFF employees per manager
+            offEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                if (manager !== 'No Manager') {
+                    managerCounts[manager] = (managerCounts[manager] || 0) + 1;
+                }
+            });
+            
+            const overLimitManagers = [];
+            Object.entries(managerCounts).forEach(([manager, count]) => {
+                if (count >= 21) {
+                    overLimitManagers.push({ manager, count });
+                }
+            });
+            
+            const warningBanner = document.getElementById('managerWarningBanner');
+            const warningMessage = document.getElementById('warningMessage');
+            const reassignmentSection = document.getElementById('reassignmentSection');
+            
+            if (overLimitManagers.length > 0) {
+                warningBanner.style.display = 'block';
+                reassignmentSection.style.display = 'block';
+                
+                if (overLimitManagers.length === 1) {
+                    const { manager, count } = overLimitManagers[0];
+                    warningMessage.textContent = `Warning: Manager ${manager} has ${count} employees off today (limit: 20)`;
+                } else {
+                    const managerList = overLimitManagers.map(m => `${m.manager} (${m.count})`).join(', ');
+                    warningMessage.textContent = `Warning: Multiple managers are over the 20 employee limit: ${managerList}`;
+                }
+                
+                updateOverLimitManagerDropdown(overLimitManagers);
+            } else {
+                warningBanner.style.display = 'none';
+                reassignmentSection.style.display = 'none';
+            }
+        }
+
+        function updateOverLimitManagerDropdown(overLimitManagers) {
+            const dropdown = document.getElementById('overLimitManagerSelect');
+            if (!dropdown) return;
+            
+            dropdown.innerHTML = '<option value="">Select manager...</option>';
+            
+            overLimitManagers.forEach(({ manager, count }) => {
+                const option = document.createElement('option');
+                option.value = manager;
+                option.textContent = `${manager} (${count} employees off)`;
+                dropdown.appendChild(option);
+            });
+        }
+
+        function updateSupportSpecialistDropdown() {
+            const dropdown = document.getElementById('supportSpecialistSelect');
+            if (!dropdown) return;
+            
+            dropdown.innerHTML = '<option value="">Select specialist...</option>';
+            
+            supportSpecialists.forEach(specialist => {
+                const option = document.createElement('option');
+                option.value = specialist.name;
+                option.textContent = `${specialist.name} (${specialist.partnershipLevel})`;
+                dropdown.appendChild(option);
+            });
+        }
+
+        function loadManagerEmployees() {
+            const selectedManager = document.getElementById('overLimitManagerSelect').value;
+            const employeeCheckboxes = document.getElementById('employeeCheckboxes');
+            
+            if (!selectedManager) {
+                employeeCheckboxes.innerHTML = '<p style="color: rgba(255,255,255,0.7); font-style: italic;">Select a manager to see their employees</p>';
+                return;
+            }
+            
+            const managerEmployees = offEmployees.filter(emp => emp.manager === selectedManager);
+            
+            if (managerEmployees.length === 0) {
+                employeeCheckboxes.innerHTML = '<p style="color: rgba(255,255,255,0.7); font-style: italic;">No employees available for reassignment</p>';
+                return;
+            }
+            
+            let html = '';
+            managerEmployees.forEach(emp => {
+                html += `
+                    <label style="display: flex; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: 6px; margin-bottom: 8px; cursor: pointer;">
+                        <input type="checkbox" value="${emp.name}" style="margin-right: 12px; transform: scale(1.2);">
+                        <span style="font-weight: 500;">${emp.name}</span>
+                        <span style="margin-left: auto; font-size: 12px; opacity: 0.8;">${emp.status}</span>
+                    </label>
+                `;
+            });
+            
+            employeeCheckboxes.innerHTML = html;
+        }
+
+        function reassignSelectedEmployees() {
+            const selectedManager = document.getElementById('overLimitManagerSelect').value;
+            const selectedSpecialist = document.getElementById('supportSpecialistSelect').value;
+            const employeeCheckboxes = document.querySelectorAll('#employeeCheckboxes input[type="checkbox"]:checked');
+            
+            if (!selectedManager) {
+                showMessage('Please select a manager first', 'error');
+                return;
+            }
+            
+            if (!selectedSpecialist) {
+                showMessage('Please select a support specialist', 'error');
+                return;
+            }
+            
+            if (employeeCheckboxes.length === 0) {
+                showMessage('Please select at least one employee to reassign', 'error');
+                return;
+            }
+            
+            let reassignedCount = 0;
+            const employeeNames = Array.from(employeeCheckboxes).map(cb => cb.value);
+            
+            offEmployees.forEach(emp => {
+                if (employeeNames.includes(emp.name) && emp.manager === selectedManager) {
+                    emp.manager = selectedSpecialist;
+                    emp.reassigned = true;
+                    reassignedCount++;
+                }
+            });
+            
+            document.getElementById('overLimitManagerSelect').value = '';
+            document.getElementById('supportSpecialistSelect').value = '';
+            loadManagerEmployees();
+            
+            updateDisplay();
+            
+            showMessage(`Successfully reassigned ${reassignedCount} employee(s) from ${selectedManager} to ${selectedSpecialist}`, 'success');
+        }
+
+        function toggleSummarySection() {
+            const summarySection = document.getElementById('managerSummarySection');
+            const toggleButton = document.getElementById('summaryToggleButton');
+            
+            if (summarySection.style.display === 'none') {
+                summarySection.style.display = 'block';
+                toggleButton.innerHTML = '📊 Hide Manager Summary';
+                toggleButton.style.background = 'linear-gradient(135deg, #ff4757 0%, #ff3838 100%)';
+            } else {
+                summarySection.style.display = 'none';
+                toggleButton.innerHTML = '📊 Show Manager Summary';
+                toggleButton.style.background = 'linear-gradient(135deg, #2ed573 0%, #7bed9f 100%)';
+            }
+        }
+
+        function processSupportData(data) {
+            supportSpecialists = [];
+            
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || !row[0]) continue;
+                
+                const specialist = {
+                    name: String(row[0]).trim(),
+                    partnershipLevel: String(row[1] || '').trim(),
+                    coverageGuidance: parseInt(row[2]) || 0
+                };
+                
+                if (specialist.name) supportSpecialists.push(specialist);
+            }
+            updateSupportSpecialistDropdown();
         }
 
         function updateCounts() {
