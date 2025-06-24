@@ -244,63 +244,79 @@
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('working')">
-                👥 Working Today (<span id="workingCount">0</span>)
-            </button>
-            <button class="tab" onclick="switchTab('off')">
-                🏖️ Off Today (<span id="offCount">0</span>)
+            <button class="tab active" onclick="switchTab('combined')">
+                🏖️👥 Off Today (<span id="offCount">0</span>) / Working Today (<span id="workingCount">0</span>)
             </button>
             <button class="tab" onclick="switchTab('manual')">
                 ⚡ Sales Admin
             </button>
         </div>
 
-        <div id="workingTab" class="tab-content active">
-            <div class="manager-filter">
-                <label for="workingManagerFilter">🎯 Filter by Manager:</label>
-                <select id="workingManagerFilter" onchange="filterEmployees('working')">
-                    <option value="">Show All Managers</option>
-                </select>
+        <div id="combinedTab" class="tab-content active">
+            <!-- OFF TODAY SECTION -->
+            <div style="margin-bottom: 50px;">
+                <div style="background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(255,71,87,0.2);">
+                    <h2 style="margin-bottom: 8px; font-size: 2.2em;">🏖️ Off Today (<span id="offCountHeader">0</span>)</h2>
+                    <p style="font-size: 1.1em; opacity: 0.9;">Employees who are not working today</p>
+                </div>
+                
+                <div class="manager-filter">
+                    <label for="offManagerFilter">🎯 Filter by Manager/Support Specialist:</label>
+                    <select id="offManagerFilter" onchange="filterEmployees('off')">
+                        <option value="">Show All Managers & Support Specialists</option>
+                    </select>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">✓</th>
+                                <th>Employee</th>
+                                <th>Manager</th>
+                                <th>Status</th>
+                                <th>Time Added</th>
+                            </tr>
+                        </thead>
+                        <tbody id="offTableBody">
+                            <tr><td colspan="5" class="no-data">Upload files to see employees off today</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 50px;">✓</th>
-                            <th>Employee</th>
-                            <th>Manager</th>
-                            <th>Schedule</th>
-                        </tr>
-                    </thead>
-                    <tbody id="workingTableBody">
-                        <tr><td colspan="4" class="no-data">Upload files to see working employees</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
 
-        <div id="offTab" class="tab-content">
-            <div class="manager-filter">
-                <label for="offManagerFilter">🎯 Filter by Manager/Support Specialist:</label>
-                <select id="offManagerFilter" onchange="filterEmployees('off')">
-                    <option value="">Show All Managers & Support Specialists</option>
-                </select>
-            </div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 50px;">✓</th>
-                            <th>Employee</th>
-                            <th>Manager</th>
-                            <th>Status</th>
-                            <th>Time Added</th>
-                        </tr>
-                    </thead>
-                    <tbody id="offTableBody">
-                        <tr><td colspan="5" class="no-data">Upload files to see employees off today</td></tr>
-                    </tbody>
-                </table>
+            <!-- VISUAL SEPARATOR -->
+            <div style="height: 3px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 2px; margin: 40px 0; box-shadow: 0 2px 10px rgba(79,172,254,0.3);"></div>
+
+            <!-- WORKING TODAY SECTION -->
+            <div>
+                <div style="background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(46,213,115,0.2);">
+                    <h2 style="margin-bottom: 8px; font-size: 2.2em;">👥 Working Today (<span id="workingCountHeader">0</span>)</h2>
+                    <p style="font-size: 1.1em; opacity: 0.9;">Employees scheduled to work today</p>
+                </div>
+                
+                <div class="manager-filter">
+                    <label for="workingManagerFilter">🎯 Filter by Manager:</label>
+                    <select id="workingManagerFilter" onchange="filterEmployees('working')">
+                        <option value="">Show All Managers</option>
+                    </select>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">✓</th>
+                                <th>Employee</th>
+                                <th>Manager</th>
+                                <th>Schedule</th>
+                            </tr>
+                        </thead>
+                        <tbody id="workingTableBody">
+                            <tr><td colspan="4" class="no-data">Upload files to see working employees</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -871,9 +887,13 @@
         function updateCounts() {
             const workingCount = document.getElementById('workingCount');
             const offCount = document.getElementById('offCount');
+            const workingCountHeader = document.getElementById('workingCountHeader');
+            const offCountHeader = document.getElementById('offCountHeader');
             
             if (workingCount) workingCount.textContent = workingEmployees.length;
             if (offCount) offCount.textContent = offEmployees.length;
+            if (workingCountHeader) workingCountHeader.textContent = workingEmployees.length;
+            if (offCountHeader) offCountHeader.textContent = offEmployees.length;
         }
 
         function updateTables() {
@@ -958,7 +978,7 @@
             updateDisplay();
             
             showMessage(`${employee.name} has been marked as "${status}"`, 'success');
-            switchTab('off');
+            // Stay on the combined tab since it shows both sections
         }
 
         function returnToWork() {
@@ -995,7 +1015,7 @@
             updateDisplay();
             
             showMessage(`${employee.name} has returned to work`, 'success');
-            switchTab('working');
+            // Stay on the combined tab since it shows both sections
         }
 
         function exportData() {
