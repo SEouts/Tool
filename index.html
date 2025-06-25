@@ -244,10 +244,10 @@
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="window.switchTab('combined')">
+            <button class="tab active" onclick="switchTab('combined')">
                 🏖️👥 Off Today (<span id="offCount">0</span>) / Working Today (<span id="workingCount">0</span>)
             </button>
-            <button class="tab" onclick="window.switchTab('manual')">
+            <button class="tab" onclick="switchTab('manual')">
                 ⚡ Sales Admin
             </button>
         </div>
@@ -421,8 +421,8 @@
     <script>
         console.log('Script starting...');
         
-        // Immediately define window functions
-        window.switchTab = function(tabName) {
+        // Define functions directly in global scope (not on window object)
+        function switchTab(tabName) {
             console.log('switchTab called with:', tabName);
             
             if (tabName === 'manual') {
@@ -442,9 +442,9 @@
             contents.forEach(content => content.classList.remove('active'));
             
             // Add active class to clicked tab
-            const activeTabBtn = document.getElementById(tabName + 'TabBtn');
-            if (activeTabBtn) {
-                activeTabBtn.classList.add('active');
+            const activeTab = document.querySelector(`button[onclick*="${tabName}"]`);
+            if (activeTab) {
+                activeTab.classList.add('active');
             }
             
             // Show the corresponding content
@@ -452,12 +452,21 @@
             if (targetTab) {
                 targetTab.classList.add('active');
             }
-        };
+        }
 
-        console.log('switchTab function defined on window');
+        function showMessage(text, type) {
+            const messageArea = document.getElementById('messageArea');
+            if (messageArea) {
+                const className = type === 'success' ? 'success-msg' : 'error-msg';
+                messageArea.innerHTML = `<div class="${className}">${text}</div>`;
+                setTimeout(() => messageArea.innerHTML = '', 5000);
+            }
+        }
+        
+        console.log('Functions defined in global scope');
         
         // Test if function is accessible
-        if (typeof window.switchTab === 'function') {
+        if (typeof switchTab === 'function') {
             console.log('switchTab is properly defined as function');
         } else {
             console.error('switchTab is NOT properly defined');
