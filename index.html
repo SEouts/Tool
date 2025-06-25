@@ -419,6 +419,15 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     
     <script>
+        // Global variables
+        let workingEmployees = [];
+        let offEmployees = [];
+        let allManagers = new Set();
+        let supportSpecialists = [];
+        let xlsxLoaded = false;
+        let originalEmployeeData = {};
+        let shiftChanges = [];
+
         // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyA3kHzRZaCJtRf19MRC9AQqJ0M30cQyaYU",
@@ -433,14 +442,210 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // Global variables
-        let workingEmployees = [];
-        let offEmployees = [];
-        let allManagers = new Set();
-        let supportSpecialists = [];
-        let xlsxLoaded = false;
-        let originalEmployeeData = {};
-        let shiftChanges = [];
+        // Tab switching function - needs to be globally available immediately
+        function switchTab(tabName) {
+            console.log('Switching to tab:', tabName);
+            
+            if (tabName === 'manual') {
+                const password = prompt('Enter password to access Sales Admin:');
+                if (password !== '789') {
+                    showMessage('Incorrect password. Access denied.', 'error');
+                    return;
+                }
+                showMessage('Access granted to Sales Admin tab', 'success');
+            }
+            
+            // Remove active class from all tabs and content
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            const activeTab = document.querySelector(`button[onclick="switchTab('${tabName}')"]`);
+            console.log('Found tab button:', activeTab);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+            
+            // Show the corresponding content
+            const targetTab = document.getElementById(tabName + 'Tab');
+            console.log('Found tab content:', targetTab);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            } else {
+                console.error('Could not find tab content with ID:', tabName + 'Tab');
+            }
+        }
+
+        // Other functions that need to be globally available
+        function showMessage(text, type) {
+            const messageArea = document.getElementById('messageArea');
+            const className = type === 'success' ? 'success-msg' : 'error-msg';
+            messageArea.innerHTML = `<div class="${className}">${text}</div>`;
+            setTimeout(() => messageArea.innerHTML = '', 5000);
+        }
+
+        // Shift Change Functions
+        function openShiftChangeModal(employeeName) {
+            const employee = workingEmployees.find(emp => emp.name === employeeName);
+            if (!employee) {
+                showMessage('Employee not found', 'error');
+                return;
+            }
+            document.getElementById('shiftEmployeeName').value = employee.name;
+            document.getElementById('shiftNewSchedule').value = employee.schedule || '';
+            document.getElementById('shiftChangeModal').style.display = 'block';
+        }
+
+        function closeShiftChangeModal() {
+            document.getElementById('shiftChangeModal').style.display = 'none';
+        }
+
+        function saveShiftChange() {
+            const employeeName = document.getElementById('shiftEmployeeName').value;
+            const newManager = document.getElementById('shiftNewManager').value;
+            const newSchedule = document.getElementById('shiftNewSchedule').value.trim();
+            const reason = document.getElementById('shiftReason').value;
+
+            if (!reason) {
+                showMessage('Please select a reason for the change', 'error');
+                return;
+            }
+
+            const employeeIndex = workingEmployees.findIndex(emp => emp.name === employeeName);
+            if (employeeIndex === -1) {
+                showMessage('Employee not found', 'error');
+                return;
+            }
+
+            const employee = workingEmployees[employeeIndex];
+            
+            if (newManager) employee.manager = newManager;
+            if (newSchedule) employee.schedule = newSchedule;
+            employee.hasChanges = true;
+            employee.changeReason = reason;
+
+            const changeRecord = {
+                employeeName: employeeName,
+                newManager: newManager || employee.manager,
+                newSchedule: newSchedule || employee.schedule,
+                reason: reason,
+                timestamp: new Date().toLocaleString()
+            };
+            shiftChanges.push(changeRecord);
+
+            closeShiftChangeModal();
+            updateDisplay();
+            showMessage(`Shift change saved for ${employeeName}`, 'success');
+        }
+
+        function markEmployeeWithStatus(status) {
+            const nameInput = document.getElementById('manualEmployeeName');
+            const employeeName = nameInput.value.trim();
+            
+            if (!employeeName) {
+                showMessage('Please enter an employee name', 'error');
+                return;
+            }
+            
+            const employeeIndex = workingEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                showMessage('Employee not found in working list.', 'error');
+                return;
+            }
+            
+            const employee = workingEmployees[employeeIndex];
+            const offEmployee = {
+                name: employee.name,
+                manager: employee.manager,
+                status: status,
+                type: 'manual',
+                timeAdded: new Date().toLocaleString()
+            };
+            
+            offEmployees.push(offEmployee);
+            workingEmployees.splice(employeeIndex, 1);
+            
+            nameInput.value = '';
+            updateDisplay();
+            showMessage(`${employee.name} has been marked as "${status}"`, 'success');
+        }
+
+        function returnToWork() {
+            const nameInput = document.getElementById('manualEmployeeName');
+            const employeeName = nameInput.value.trim();
+            
+            if (!employeeName) {
+                showMessage('Please enter an employee name', 'error');
+                return;
+            }
+            
+            const employeeIndex = offEmployees.findIndex(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (employeeIndex === -1) {
+                showMessage('Employee not found in off list.', 'error');
+                return;
+            }
+            
+            const employee = offEmployees[employeeIndex];
+            const workingEmployee = {
+                name: employee.name,
+                manager: employee.manager,
+                schedule: 'Returned - Check original schedule',
+                type: 'returned'
+            };
+            
+            workingEmployees.push(workingEmployee);
+            offEmployees.splice(employeeIndex, 1);
+            
+            nameInput.value = '';
+            updateDisplay();
+            showMessage(`${employee.name} has returned to work`, 'success');
+        }
+
+        function exportData() {
+            if (!xlsxLoaded) {
+                showMessage('Excel export not available.', 'error');
+                return;
+            }
+
+            try {
+                const wb = XLSX.utils.book_new();
+                
+                const workingData = [['Employee', 'Manager', 'Schedule', 'Status', 'Has Changes']];
+                workingEmployees.forEach(emp => {
+                    workingData.push([emp.name, emp.manager, emp.schedule, 'Working', emp.hasChanges ? 'Yes' : 'No']);
+                });
+                const workingWs = XLSX.utils.aoa_to_sheet(workingData);
+                XLSX.utils.book_append_sheet(wb, workingWs, 'Working Today');
+                
+                const offData = [['Employee', 'Manager', 'Status', 'Time Added', 'Type']];
+                offEmployees.forEach(emp => {
+                    offData.push([emp.name, emp.manager, emp.status, emp.timeAdded, emp.type]);
+                });
+                const offWs = XLSX.utils.aoa_to_sheet(offData);
+                XLSX.utils.book_append_sheet(wb, offWs, 'Off Today');
+
+                if (shiftChanges.length > 0) {
+                    const shiftData = [['Employee', 'New Manager', 'New Schedule', 'Reason', 'Timestamp']];
+                    shiftChanges.forEach(change => {
+                        shiftData.push([change.employeeName, change.newManager, change.newSchedule, change.reason, change.timestamp]);
+                    });
+                    const shiftWs = XLSX.utils.aoa_to_sheet(shiftData);
+                    XLSX.utils.book_append_sheet(wb, shiftWs, 'Shift Changes');
+                }
+                
+                const fileName = `Employee_Availability_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                showMessage('Report exported successfully!', 'success');
+            } catch (error) {
+                showMessage('Error exporting report: ' + error.message, 'error');
+            }
+        }
 
         // Shift Change Functions
         function openShiftChangeModal(employeeName) {
