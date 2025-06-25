@@ -244,10 +244,10 @@
         </div>
 
         <div class="tabs">
-            <button class="tab active" id="combinedTabBtn">
+            <button class="tab active" onclick="window.switchTab('combined')">
                 🏖️👥 Off Today (<span id="offCount">0</span>) / Working Today (<span id="workingCount">0</span>)
             </button>
-            <button class="tab" id="manualTabBtn">
+            <button class="tab" onclick="window.switchTab('manual')">
                 ⚡ Sales Admin
             </button>
         </div>
@@ -419,9 +419,11 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     
     <script>
-        // Define switchTab function immediately in global scope
-        function switchTab(tabName) {
-            console.log('Switching to tab:', tabName);
+        console.log('Script starting...');
+        
+        // Immediately define window functions
+        window.switchTab = function(tabName) {
+            console.log('switchTab called with:', tabName);
             
             if (tabName === 'manual') {
                 const password = prompt('Enter password to access Sales Admin:');
@@ -433,34 +435,32 @@
             }
             
             // Remove active class from all tabs and content
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            contents.forEach(content => content.classList.remove('active'));
             
             // Add active class to clicked tab
             const activeTabBtn = document.getElementById(tabName + 'TabBtn');
-            console.log('Found tab button:', activeTabBtn);
             if (activeTabBtn) {
                 activeTabBtn.classList.add('active');
             }
             
             // Show the corresponding content
             const targetTab = document.getElementById(tabName + 'Tab');
-            console.log('Found tab content:', targetTab);
             if (targetTab) {
                 targetTab.classList.add('active');
-            } else {
-                console.error('Could not find tab content with ID:', tabName + 'Tab');
             }
-        }
+        };
 
-        // Simple message function
-        function showMessage(text, type) {
-            const messageArea = document.getElementById('messageArea');
-            if (messageArea) {
-                const className = type === 'success' ? 'success-msg' : 'error-msg';
-                messageArea.innerHTML = `<div class="${className}">${text}</div>`;
-                setTimeout(() => messageArea.innerHTML = '', 5000);
-            }
+        console.log('switchTab function defined on window');
+        
+        // Test if function is accessible
+        if (typeof window.switchTab === 'function') {
+            console.log('switchTab is properly defined as function');
+        } else {
+            console.error('switchTab is NOT properly defined');
         }
 
         // Global variables
