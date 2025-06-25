@@ -497,6 +497,8 @@
         }
 
         function switchTab(tabName) {
+            console.log('Switching to tab:', tabName); // Debug log
+            
             if (tabName === 'manual') {
                 const password = prompt('Enter password to access Sales Admin:');
                 if (password !== '789') {
@@ -512,14 +514,18 @@
             
             // Add active class to clicked tab
             const activeTab = document.querySelector(`button[onclick="switchTab('${tabName}')"]`);
+            console.log('Found tab button:', activeTab); // Debug log
             if (activeTab) {
                 activeTab.classList.add('active');
             }
             
             // Show the corresponding content
             const targetTab = document.getElementById(tabName + 'Tab');
+            console.log('Found tab content:', targetTab); // Debug log
             if (targetTab) {
                 targetTab.classList.add('active');
+            } else {
+                console.error('Could not find tab content with ID:', tabName + 'Tab');
             }
         }
 
