@@ -267,25 +267,12 @@
                     </select>
                 </div>
 
-                <!-- CLEAR CHECKBOXES BUTTON FOR OFF TODAY -->
                 <div style="background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ff4757; display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-weight: 600; color: #495057;">📝 Task Progress:</span>
                     <button onclick="clearAllCheckboxes('off')" 
                             style="background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%); color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 12px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(255,71,87,0.2);"
                             onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(255,71,87,0.3)'"
                             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(255,71,87,0.2)'"
-                            title="Clear all checkboxes to start fresh">
-                        ✅ Clear All Checkmarks
-                    </button>
-                </div>
-                
-                <!-- CLEAR CHECKBOXES BUTTON FOR WORKING TODAY -->
-                <div style="background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #2ed573; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 600; color: #495057;">📝 Task Progress:</span>
-                    <button onclick="clearAllCheckboxes('working')" 
-                            style="background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%); color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 12px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(46,213,115,0.2);"
-                            onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(46,213,115,0.3)'"
-                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(46,213,115,0.2)'"
                             title="Clear all checkboxes to start fresh">
                         ✅ Clear All Checkmarks
                     </button>
@@ -324,6 +311,17 @@
                     <select id="workingManagerFilter" onchange="filterEmployees('working')">
                         <option value="">Show All Managers</option>
                     </select>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #2ed573; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 600; color: #495057;">📝 Task Progress:</span>
+                    <button onclick="clearAllCheckboxes('working')" 
+                            style="background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%); color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 12px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(46,213,115,0.2);"
+                            onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(46,213,115,0.3)'"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(46,213,115,0.2)'"
+                            title="Clear all checkboxes to start fresh">
+                        ✅ Clear All Checkmarks
+                    </button>
                 </div>
 
                 <!-- SCHEDULE CONTROLS -->
@@ -376,8 +374,7 @@
                 </div>
             </div>
         </div>
-
-        <div id="manualTab" class="tab-content">
+<div id="manualTab" class="tab-content">
             <div style="max-width: 800px; margin: 0 auto;">
                 <div id="managerWarningBanner" style="display: none; background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; box-shadow: 0 5px 15px rgba(255,71,87,0.3); border: 2px solid #ff1e30;">
                     <h3 style="margin: 0; font-size: 18px; font-weight: 700;">⚠️ MANAGER OVERLOAD WARNING ⚠️</h3>
@@ -459,6 +456,16 @@
                             <input type="file" id="supportFile" accept=".xlsx,.xls,.csv" />
                         </div>
                     </div>
+                    
+                    <!-- Clear Previous Day Section -->
+                    <div style="background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%); color: white; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 30px;">
+                        <h3 style="margin-bottom: 15px;">🗂️ End of Day Management</h3>
+                        <p style="margin-bottom: 20px; opacity: 0.9;">Generate report and clear data for next day</p>
+                        <button class="btn" onclick="clearPreviousDay()" 
+                                style="padding: 15px 30px; font-size: 16px; border-radius: 10px; background: white; color: #ff4757; font-weight: 700; border: 2px solid white;">
+                            📊 Clear Previous Day & Generate Report
+                        </button>
+                    </div>
                 </div>
 
                 <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 30px;">
@@ -508,8 +515,7 @@
             </div>
         </div>
     </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -542,6 +548,7 @@
         let allWorkingEmployees = []; // Store complete list for filtering
         let lastUpdateTime = 0;
         let userInterests = new Set(); // Track which managers the user is interested in
+        let originalEmployeeData = {}; // Track original employee data for shift change detection
 
         // Notification system
         function showNotification(message, type = 'info') {
@@ -589,7 +596,122 @@
         `;
         document.head.appendChild(style);
 
-        // Firebase data listeners
+        // Clear Previous Day Function (Secure Version - Local Download Only)
+        async function clearPreviousDay() {
+            // Confirmation dialog
+            const confirmed = confirm(
+                '⚠️ This will:\n\n' +
+                '1. Generate a comprehensive report of today\'s employee data\n' +
+                '2. Download the report as an Excel file\n' +
+                '3. Clear all working and off employees data\n' +
+                '4. Keep support specialists data\n\n' +
+                'Are you sure you want to continue?'
+            );
+            
+            if (!confirmed) return;
+            
+            try {
+                showMessage('Generating end-of-day report...', 'success');
+                
+                // Create comprehensive report data
+                const reportData = [];
+                
+                // Add working employees
+                workingEmployees.forEach(emp => {
+                    const original = originalEmployeeData[emp.name];
+                    reportData.push({
+                        name: emp.name,
+                        originalManager: original?.manager || emp.manager,
+                        manager: emp.manager,
+                        status: 'Working',
+                        originalSchedule: original?.schedule || emp.schedule,
+                        schedule: emp.schedule,
+                        timeAdded: 'N/A',
+                        type: emp.type || 'scheduled'
+                    });
+                });
+                
+                // Add off employees
+                offEmployees.forEach(emp => {
+                    const original = originalEmployeeData[emp.name];
+                    reportData.push({
+                        name: emp.name,
+                        originalManager: original?.manager || emp.manager,
+                        manager: emp.manager,
+                        status: emp.status,
+                        originalSchedule: original?.schedule || 'N/A',
+                        schedule: 'N/A',
+                        timeAdded: emp.timeAdded || 'N/A',
+                        type: emp.type || 'scheduled'
+                    });
+                });
+                
+                // Generate tab name with current date
+                const today = new Date();
+                const tabName = `${today.getMonth() + 1}.${today.getDate()}.${today.getFullYear().toString().slice(-2)}`;
+                
+                // Create local backup
+                await createLocalBackup(reportData, tabName);
+                
+                // Clear data (keep support specialists)
+                workingEmployees = [];
+                allWorkingEmployees = [];
+                offEmployees = [];
+                originalEmployeeData = {};
+                
+                // Update Firebase
+                saveWorkingEmployees();
+                saveOffEmployees();
+                
+                // Update display
+                updateDisplay();
+                
+                showMessage(`📊 End-of-day report completed! Report "${tabName}" downloaded | Data cleared successfully`, 'success');
+                
+            } catch (error) {
+                console.error('Error in clearPreviousDay:', error);
+                showMessage('Error generating report: ' + error.message, 'error');
+            }
+        }
+        
+        async function createLocalBackup(reportData, tabName) {
+            if (!xlsxLoaded) {
+                throw new Error('Excel library not loaded');
+            }
+            
+            try {
+                const wb = XLSX.utils.book_new();
+                
+                // Create report sheet
+                const reportSheet = [
+                    ['Employee Name', 'Original Manager', 'Final Manager/Support Specialist', 'Status', 'Original Schedule', 'Modified Schedule', 'Time Added/Modified', 'Type']
+                ];
+                
+                reportData.forEach(emp => {
+                    reportSheet.push([
+                        emp.name,
+                        emp.originalManager || emp.manager,
+                        emp.manager,
+                        emp.status,
+                        emp.originalSchedule || emp.schedule || 'N/A',
+                        emp.schedule || 'N/A',
+                        emp.timeAdded || 'N/A',
+                        emp.type
+                    ]);
+                });
+                
+                const ws = XLSX.utils.aoa_to_sheet(reportSheet);
+                XLSX.utils.book_append_sheet(wb, ws, tabName);
+                
+                const fileName = `Message_Checking_Report_${tabName.replace(/\./g, '_')}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                
+            } catch (error) {
+                console.error('Error creating local backup:', error);
+                throw error;
+            }
+        }
+// Firebase data listeners
         function setupFirebaseListeners() {
             // Listen for working employees changes
             database.ref('workingEmployees').on('value', (snapshot) => {
@@ -696,7 +818,114 @@
             }
         }
 
-        function timeToMinutes(timeStr) {
+        function switchTab(tabName) {
+            if (tabName === 'manual') {
+                const password = prompt('Enter password to access Sales Admin:');
+                if (password !== '789') {
+                    showMessage('Incorrect password. Access denied.', 'error');
+                    return;
+                }
+                showMessage('Access granted to Sales Admin tab', 'success');
+            }
+            
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            const activeTab = document.querySelector(`button[onclick="switchTab('${tabName}')"]`);
+            if (activeTab) activeTab.classList.add('active');
+            
+            const targetTab = document.getElementById(tabName + 'Tab');
+            if (targetTab) targetTab.classList.add('active');
+        }
+
+        function showMessage(text, type) {
+            const messageArea = document.getElementById('messageArea');
+            const className = type === 'success' ? 'success-msg' : 'error-msg';
+            messageArea.innerHTML = `<div class="${className}">${text}</div>`;
+            setTimeout(() => messageArea.innerHTML = '', 5000);
+        }
+
+        function getManagersWithEmployees(employeeList) {
+            const managersWithEmployees = new Set();
+            employeeList.forEach(emp => {
+                if (emp.manager && emp.manager.trim() !== '' && emp.manager !== 'No Manager') {
+                    managersWithEmployees.add(emp.manager);
+                }
+            });
+            return Array.from(managersWithEmployees).sort();
+        }
+
+        function updateManagerFilters() {
+            // Update Working tab filter
+            const workingFilter = document.getElementById('workingManagerFilter');
+            if (workingFilter) {
+                const workingManagers = getManagersWithEmployees(workingEmployees);
+                workingFilter.innerHTML = '<option value="">Show All Managers</option>';
+                workingManagers.forEach(manager => {
+                    const option = document.createElement('option');
+                    option.value = manager;
+                    option.textContent = manager;
+                    workingFilter.appendChild(option);
+                });
+            }
+
+            // Update Off tab filter (includes both managers and support specialists)
+            const offFilter = document.getElementById('offManagerFilter');
+            if (offFilter) {
+                const offManagers = getManagersWithEmployees(offEmployees);
+                offFilter.innerHTML = '<option value="">Show All Managers & Support Specialists</option>';
+                offManagers.forEach(manager => {
+                    const option = document.createElement('option');
+                    option.value = manager;
+                    option.textContent = manager;
+                    offFilter.appendChild(option);
+                });
+            }
+        }
+
+        function filterEmployees(tabType) {
+            const filterId = tabType + 'ManagerFilter';
+            const selectedManager = document.getElementById(filterId).value;
+            
+            // Track user interest in this manager
+            if (selectedManager) {
+                userInterests.add(selectedManager);
+            }
+            
+            let employeesToShow;
+            if (tabType === 'working') {
+                employeesToShow = selectedManager ? 
+                    workingEmployees.filter(emp => emp.manager === selectedManager) : 
+                    workingEmployees;
+            } else {
+                employeesToShow = selectedManager ? 
+                    offEmployees.filter(emp => emp.manager === selectedManager) : 
+                    offEmployees;
+            }
+            
+            updateTable(tabType, employeesToShow);
+        }
+
+        function updateCounts() {
+            const workingCount = document.getElementById('workingCount');
+            const offCount = document.getElementById('offCount');
+            const workingCountHeader = document.getElementById('workingCountHeader');
+            const offCountHeader = document.getElementById('offCountHeader');
+            
+            if (workingCount) workingCount.textContent = workingEmployees.length;
+            if (offCount) offCount.textContent = offEmployees.length;
+            if (workingCountHeader) workingCountHeader.textContent = workingEmployees.length;
+            if (offCountHeader) offCountHeader.textContent = offEmployees.length;
+        }
+
+        function updateDisplay() {
+            updateCounts();
+            updateManagerFilters();
+            updateTables();
+            updateManagerSummary();
+            checkManagerLimits();
+        }
+function timeToMinutes(timeStr) {
             if (!timeStr || timeStr === 'N/A') return 0;
             
             const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)/i);
@@ -877,263 +1106,57 @@
             updateCounts();
         }
 
-        function switchTab(tabName) {
-            if (tabName === 'manual') {
-                const password = prompt('Enter password to access Sales Admin:');
-                if (password !== '789') {
-                    showMessage('Incorrect password. Access denied.', 'error');
-                    return;
-                }
-                showMessage('Access granted to Sales Admin tab', 'success');
+        function updateTables() {
+            updateTable('working', workingEmployees);
+            updateTable('off', offEmployees);
+        }
+
+        function updateTable(tabType, employees, skipSort = false) {
+            const tableBody = document.getElementById(tabType + 'TableBody');
+            if (!tableBody) return;
+            
+            if (!employees || employees.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="${tabType === 'working' ? 4 : 5}" class="no-data">No employees found</td></tr>`;
+                return;
             }
             
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            // Only sort by manager if skipSort is false (default behavior)
+            // When skipSort is true, preserve the current order (used for time sorting)
+            if (!skipSort) {
+                employees.sort((a, b) => (a.manager || '').localeCompare(b.manager || ''));
+            }
             
-            const activeTab = document.querySelector(`button[onclick="switchTab('${tabName}')"]`);
-            if (activeTab) activeTab.classList.add('active');
-            
-            const targetTab = document.getElementById(tabName + 'Tab');
-            if (targetTab) targetTab.classList.add('active');
-        }
-
-        function showMessage(text, type) {
-            const messageArea = document.getElementById('messageArea');
-            const className = type === 'success' ? 'success-msg' : 'error-msg';
-            messageArea.innerHTML = `<div class="${className}">${text}</div>`;
-            setTimeout(() => messageArea.innerHTML = '', 5000);
-        }
-
-        function getManagersWithEmployees(employeeList) {
-            const managersWithEmployees = new Set();
-            employeeList.forEach(emp => {
-                if (emp.manager && emp.manager.trim() !== '' && emp.manager !== 'No Manager') {
-                    managersWithEmployees.add(emp.manager);
+            let html = '';
+            employees.forEach(employee => {
+                if (tabType === 'working') {
+                    html += `
+                        <tr>
+                            <td style="text-align: center;">
+                                <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
+                            </td>
+                            <td><strong>${employee.name}</strong></td>
+                            <td>${employee.manager || 'N/A'}</td>
+                            <td>${employee.schedule || 'N/A'}</td>
+                        </tr>
+                    `;
+                } else {
+                    html += `
+                        <tr>
+                            <td style="text-align: center;">
+                                <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
+                            </td>
+                            <td><strong>${employee.name}</strong></td>
+                            <td>${employee.manager || 'N/A'}</td>
+                            <td>${employee.status}</td>
+                            <td>${employee.timeAdded}</td>
+                        </tr>
+                    `;
                 }
             });
-            return Array.from(managersWithEmployees).sort();
+            
+            tableBody.innerHTML = html;
         }
-
-        function updateManagerFilters() {
-            // Update Working tab filter
-            const workingFilter = document.getElementById('workingManagerFilter');
-            if (workingFilter) {
-                const workingManagers = getManagersWithEmployees(workingEmployees);
-                workingFilter.innerHTML = '<option value="">Show All Managers</option>';
-                workingManagers.forEach(manager => {
-                    const option = document.createElement('option');
-                    option.value = manager;
-                    option.textContent = manager;
-                    workingFilter.appendChild(option);
-                });
-            }
-
-            // Update Off tab filter (includes both managers and support specialists)
-            const offFilter = document.getElementById('offManagerFilter');
-            if (offFilter) {
-                const offManagers = getManagersWithEmployees(offEmployees);
-                offFilter.innerHTML = '<option value="">Show All Managers & Support Specialists</option>';
-                offManagers.forEach(manager => {
-                    const option = document.createElement('option');
-                    option.value = manager;
-                    option.textContent = manager;
-                    offFilter.appendChild(option);
-                });
-            }
-        }
-
-        function filterEmployees(tabType) {
-            const filterId = tabType + 'ManagerFilter';
-            const selectedManager = document.getElementById(filterId).value;
-            
-            // Track user interest in this manager
-            if (selectedManager) {
-                userInterests.add(selectedManager);
-            }
-            
-            let employeesToShow;
-            if (tabType === 'working') {
-                employeesToShow = selectedManager ? 
-                    workingEmployees.filter(emp => emp.manager === selectedManager) : 
-                    workingEmployees;
-            } else {
-                employeesToShow = selectedManager ? 
-                    offEmployees.filter(emp => emp.manager === selectedManager) : 
-                    offEmployees;
-            }
-            
-            updateTable(tabType, employeesToShow);
-        }
-
-        function handleScheduleFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            if (!xlsxLoaded) {
-                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
-                return;
-            }
-            showMessage('Processing schedule file...', 'success');
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    
-                    processScheduleData(jsonData);
-                    updateDisplay();
-                    showMessage(`Schedule processed! Found ${workingEmployees.length} working employees.`, 'success');
-                } catch (error) {
-                    showMessage('Error reading schedule file: ' + error.message, 'error');
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function handleTimeOffFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            if (!xlsxLoaded) {
-                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
-                return;
-            }
-            showMessage('Processing time off file...', 'success');
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    
-                    processTimeOffData(jsonData);
-                    updateDisplay();
-                    showMessage(`Time off processed! Found ${offEmployees.length} employees off today.`, 'success');
-                } catch (error) {
-                    showMessage('Error reading time off file: ' + error.message, 'error');
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function handleSupportFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            if (!xlsxLoaded) {
-                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
-                return;
-            }
-            showMessage('Processing support specialists file...', 'success');
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    
-                    processSupportData(jsonData);
-                    updateDisplay();
-                    showMessage(`Support specialists loaded! Found ${supportSpecialists.length} specialists available.`, 'success');
-                } catch (error) {
-                    showMessage('Error reading support file: ' + error.message, 'error');
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function processScheduleData(data) {
-            workingEmployees = [];
-            allWorkingEmployees = []; // Reset the complete list
-            
-            for (let i = 1; i < data.length; i++) {
-                const row = data[i];
-                if (!row || !row[0]) continue;
-                
-                const employee = {
-                    name: String(row[0]).trim(),
-                    manager: String(row[1] || '').trim(),
-                    schedule: String(row[2] || '').trim(),
-                    type: 'scheduled'
-                };
-                
-                if (employee.name) {
-                    workingEmployees.push(employee);
-                    allWorkingEmployees.push({...employee}); // Store copy in complete list
-                    if (employee.manager) allManagers.add(employee.manager);
-                }
-            }
-            
-            // Save to Firebase
-            saveWorkingEmployees();
-            saveManagers();
-        }
-
-        function processTimeOffData(data) {
-            for (let i = 1; i < data.length; i++) {
-                const row = data[i];
-                if (!row || !row[2]) continue;
-                
-                const timeOffHours = String(row[0] || '');
-                const isPartialDay = timeOffHours.includes('4 Hours');
-                
-                const employee = {
-                    name: String(row[2]).trim(),
-                    manager: String(row[1] || '').trim(),
-                    status: isPartialDay ? 'Partial Day (4 Hours)' : 'Full Day Off',
-                    type: isPartialDay ? 'partial' : 'scheduled',
-                    timeAdded: 'Scheduled'
-                };
-                
-                if (employee.name) {
-                    offEmployees.push(employee);
-                    if (employee.manager) allManagers.add(employee.manager);
-                    
-                    workingEmployees = workingEmployees.filter(emp => emp.name !== employee.name);
-                    allWorkingEmployees = allWorkingEmployees.filter(emp => emp.name !== employee.name);
-                }
-            }
-            
-            // Save to Firebase
-            saveOffEmployees();
-            saveWorkingEmployees();
-            saveManagers();
-        }
-
-        function processSupportData(data) {
-            supportSpecialists = [];
-            
-            for (let i = 1; i < data.length; i++) {
-                const row = data[i];
-                if (!row || !row[0]) continue;
-                
-                const specialist = {
-                    name: String(row[0]).trim(),
-                    partnershipLevel: String(row[1] || '').trim(),
-                    coverageGuidance: parseInt(row[2]) || 0
-                };
-                
-                if (specialist.name) supportSpecialists.push(specialist);
-            }
-            
-            // Save to Firebase
-            saveSupportSpecialists();
-            updateSupportSpecialistDropdown();
-        }
-
-        function updateDisplay() {
-            updateCounts();
-            updateManagerFilters();
-            updateTables();
-            updateManagerSummary();
-            checkManagerLimits();
-        }
-
-        function updateManagerSummary() {
+function updateManagerSummary() {
             const offByManager = {};
             offEmployees.forEach(emp => {
                 const manager = emp.manager || 'No Manager';
@@ -1164,6 +1187,21 @@
                 }
                 
                 offSummary.innerHTML = offSummaryHtml;
+            }
+        }
+
+        function toggleSummarySection() {
+            const summarySection = document.getElementById('managerSummarySection');
+            const toggleButton = document.getElementById('summaryToggleButton');
+            
+            if (summarySection.style.display === 'none') {
+                summarySection.style.display = 'block';
+                toggleButton.innerHTML = '📊 Hide Manager Summary';
+                toggleButton.style.background = 'linear-gradient(135deg, #ff4757 0%, #ff3838 100%)';
+            } else {
+                summarySection.style.display = 'none';
+                toggleButton.innerHTML = '📊 Show Manager Summary';
+                toggleButton.style.background = 'linear-gradient(135deg, #2ed573 0%, #7bed9f 100%)';
             }
         }
 
@@ -1312,83 +1350,181 @@
             
             showMessage(`Successfully reassigned ${reassignedCount} employee(s) from ${selectedManager} to ${selectedSpecialist}`, 'success');
         }
-
-        function toggleSummarySection() {
-            const summarySection = document.getElementById('managerSummarySection');
-            const toggleButton = document.getElementById('summaryToggleButton');
-            
-            if (summarySection.style.display === 'none') {
-                summarySection.style.display = 'block';
-                toggleButton.innerHTML = '📊 Hide Manager Summary';
-                toggleButton.style.background = 'linear-gradient(135deg, #ff4757 0%, #ff3838 100%)';
-            } else {
-                summarySection.style.display = 'none';
-                toggleButton.innerHTML = '📊 Show Manager Summary';
-                toggleButton.style.background = 'linear-gradient(135deg, #2ed573 0%, #7bed9f 100%)';
-            }
-        }
-
-        function updateCounts() {
-            const workingCount = document.getElementById('workingCount');
-            const offCount = document.getElementById('offCount');
-            const workingCountHeader = document.getElementById('workingCountHeader');
-            const offCountHeader = document.getElementById('offCountHeader');
-            
-            if (workingCount) workingCount.textContent = workingEmployees.length;
-            if (offCount) offCount.textContent = offEmployees.length;
-            if (workingCountHeader) workingCountHeader.textContent = workingEmployees.length;
-            if (offCountHeader) offCountHeader.textContent = offEmployees.length;
-        }
-
-        function updateTables() {
-            updateTable('working', workingEmployees);
-            updateTable('off', offEmployees);
-        }
-
-        function updateTable(tabType, employees, skipSort = false) {
-            const tableBody = document.getElementById(tabType + 'TableBody');
-            if (!tableBody) return;
-            
-            if (!employees || employees.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="${tabType === 'working' ? 4 : 5}" class="no-data">No employees found</td></tr>`;
+function handleScheduleFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!xlsxLoaded) {
+                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
                 return;
             }
+            showMessage('Processing schedule file...', 'success');
             
-            // Only sort by manager if skipSort is false (default behavior)
-            // When skipSort is true, preserve the current order (used for time sorting)
-            if (!skipSort) {
-                employees.sort((a, b) => (a.manager || '').localeCompare(b.manager || ''));
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    processScheduleData(jsonData);
+                    updateDisplay();
+                    showMessage(`Schedule processed! Found ${workingEmployees.length} working employees.`, 'success');
+                } catch (error) {
+                    showMessage('Error reading schedule file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function handleTimeOffFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!xlsxLoaded) {
+                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
+                return;
+            }
+            showMessage('Processing time off file...', 'success');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    processTimeOffData(jsonData);
+                    updateDisplay();
+                    showMessage(`Time off processed! Found ${offEmployees.length} employees off today.`, 'success');
+                } catch (error) {
+                    showMessage('Error reading time off file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function handleSupportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!xlsxLoaded) {
+                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
+                return;
+            }
+            showMessage('Processing support specialists file...', 'success');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    processSupportData(jsonData);
+                    updateDisplay();
+                    showMessage(`Support specialists loaded! Found ${supportSpecialists.length} specialists available.`, 'success');
+                } catch (error) {
+                    showMessage('Error reading support file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processScheduleData(data) {
+            workingEmployees = [];
+            allWorkingEmployees = []; // Reset the complete list
+            
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || !row[0]) continue;
+                
+                const employee = {
+                    name: String(row[0]).trim(),
+                    manager: String(row[1] || '').trim(),
+                    schedule: String(row[2] || '').trim(),
+                    type: 'scheduled'
+                };
+                
+                if (employee.name) {
+                    workingEmployees.push(employee);
+                    allWorkingEmployees.push({...employee}); // Store copy in complete list
+                    
+                    // Store original data for shift change tracking
+                    originalEmployeeData[employee.name] = {
+                        manager: employee.manager,
+                        schedule: employee.schedule,
+                        type: 'scheduled'
+                    };
+                    
+                    if (employee.manager) allManagers.add(employee.manager);
+                }
             }
             
-            let html = '';
-            employees.forEach(employee => {
-                if (tabType === 'working') {
-                    html += `
-                        <tr>
-                            <td style="text-align: center;">
-                                <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
-                            </td>
-                            <td><strong>${employee.name}</strong></td>
-                            <td>${employee.manager || 'N/A'}</td>
-                            <td>${employee.schedule || 'N/A'}</td>
-                        </tr>
-                    `;
-                } else {
-                    html += `
-                        <tr>
-                            <td style="text-align: center;">
-                                <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
-                            </td>
-                            <td><strong>${employee.name}</strong></td>
-                            <td>${employee.manager || 'N/A'}</td>
-                            <td>${employee.status}</td>
-                            <td>${employee.timeAdded}</td>
-                        </tr>
-                    `;
+            // Save to Firebase
+            saveWorkingEmployees();
+            saveManagers();
+        }
+
+        function processTimeOffData(data) {
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || !row[2]) continue;
+                
+                const timeOffHours = String(row[0] || '');
+                const isPartialDay = timeOffHours.includes('4 Hours');
+                
+                const employee = {
+                    name: String(row[2]).trim(),
+                    manager: String(row[1] || '').trim(),
+                    status: isPartialDay ? 'Partial Day (4 Hours)' : 'Full Day Off',
+                    type: isPartialDay ? 'partial' : 'scheduled',
+                    timeAdded: 'Scheduled'
+                };
+                
+                if (employee.name) {
+                    // Store original data if not already stored
+                    if (!originalEmployeeData[employee.name]) {
+                        originalEmployeeData[employee.name] = {
+                            manager: employee.manager,
+                            schedule: 'Scheduled Off',
+                            type: 'scheduled'
+                        };
+                    }
+                    
+                    offEmployees.push(employee);
+                    if (employee.manager) allManagers.add(employee.manager);
+                    
+                    workingEmployees = workingEmployees.filter(emp => emp.name !== employee.name);
+                    allWorkingEmployees = allWorkingEmployees.filter(emp => emp.name !== employee.name);
                 }
-            });
+            }
             
-            tableBody.innerHTML = html;
+            // Save to Firebase
+            saveOffEmployees();
+            saveWorkingEmployees();
+            saveManagers();
+        }
+
+        function processSupportData(data) {
+            supportSpecialists = [];
+            
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || !row[0]) continue;
+                
+                const specialist = {
+                    name: String(row[0]).trim(),
+                    partnershipLevel: String(row[1] || '').trim(),
+                    coverageGuidance: parseInt(row[2]) || 0
+                };
+                
+                if (specialist.name) supportSpecialists.push(specialist);
+            }
+            
+            // Save to Firebase
+            saveSupportSpecialists();
+            updateSupportSpecialistDropdown();
         }
 
         function markEmployeeWithStatus(status) {
@@ -1411,6 +1547,15 @@
             
             const employee = workingEmployees[employeeIndex];
             
+            // Store original data if not already stored
+            if (!originalEmployeeData[employee.name]) {
+                originalEmployeeData[employee.name] = {
+                    manager: employee.manager,
+                    schedule: employee.schedule,
+                    type: employee.type
+                };
+            }
+            
             const offEmployee = {
                 name: employee.name,
                 manager: employee.manager,
@@ -1431,7 +1576,6 @@
             updateDisplay();
             
             showMessage(`${employee.name} has been marked as "${status}"`, 'success');
-            // Stay on the combined tab since it shows both sections
         }
 
         function returnToWork() {
@@ -1454,6 +1598,15 @@
             
             const employee = offEmployees[employeeIndex];
             
+            // Store original data if not already stored
+            if (!originalEmployeeData[employee.name]) {
+                originalEmployeeData[employee.name] = {
+                    manager: employee.manager,
+                    schedule: 'Unknown',
+                    type: 'manual'
+                };
+            }
+            
             const workingEmployee = {
                 name: employee.name,
                 manager: employee.manager,
@@ -1473,7 +1626,6 @@
             updateDisplay();
             
             showMessage(`${employee.name} has returned to work`, 'success');
-            // Stay on the combined tab since it shows both sections
         }
 
         function exportData() {
