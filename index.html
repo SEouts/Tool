@@ -419,40 +419,17 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     
     <script>
-        // Global variables
-        let workingEmployees = [];
-        let offEmployees = [];
-        let allManagers = new Set();
-        let supportSpecialists = [];
-        let xlsxLoaded = false;
-        let originalEmployeeData = {};
-        let shiftChanges = [];
-
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyA3kHzRZaCJtRf19MRC9AQqJ0M30cQyaYU",
-            authDomain: "se-outs-tool.firebaseapp.com",
-            databaseURL: "https://se-outs-tool-default-rtdb.firebaseio.com/",
-            projectId: "se-outs-tool",
-            storageBucket: "se-outs-tool.firebasestorage.app",
-            messagingSenderId: "768819377199",
-            appId: "1:768819377199:web:244cda6ccc825fb6a102da"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
-        // Tab switching function - needs to be globally available immediately
+        // Define switchTab function immediately in global scope
         function switchTab(tabName) {
             console.log('Switching to tab:', tabName);
             
             if (tabName === 'manual') {
                 const password = prompt('Enter password to access Sales Admin:');
                 if (password !== '789') {
-                    showMessage('Incorrect password. Access denied.', 'error');
+                    alert('Incorrect password. Access denied.');
                     return;
                 }
-                showMessage('Access granted to Sales Admin tab', 'success');
+                alert('Access granted to Sales Admin tab');
             }
             
             // Remove active class from all tabs and content
@@ -476,15 +453,40 @@
             }
         }
 
-        // Other functions that need to be globally available
+        // Simple message function
         function showMessage(text, type) {
             const messageArea = document.getElementById('messageArea');
-            const className = type === 'success' ? 'success-msg' : 'error-msg';
-            messageArea.innerHTML = `<div class="${className}">${text}</div>`;
-            setTimeout(() => messageArea.innerHTML = '', 5000);
+            if (messageArea) {
+                const className = type === 'success' ? 'success-msg' : 'error-msg';
+                messageArea.innerHTML = `<div class="${className}">${text}</div>`;
+                setTimeout(() => messageArea.innerHTML = '', 5000);
+            }
         }
 
-        // Shift Change Functions
+        // Global variables
+        let workingEmployees = [];
+        let offEmployees = [];
+        let allManagers = new Set();
+        let supportSpecialists = [];
+        let xlsxLoaded = false;
+        let originalEmployeeData = {};
+        let shiftChanges = [];
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA3kHzRZaCJtRf19MRC9AQqJ0M30cQyaYU",
+            authDomain: "se-outs-tool.firebaseapp.com",
+            databaseURL: "https://se-outs-tool-default-rtdb.firebaseio.com/",
+            projectId: "se-outs-tool",
+            storageBucket: "se-outs-tool.firebasestorage.app",
+            messagingSenderId: "768819377199",
+            appId: "1:768819377199:web:244cda6ccc825fb6a102da"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Other functions that need to be globally available
         function openShiftChangeModal(employeeName) {
             const employee = workingEmployees.find(emp => emp.name === employeeName);
             if (!employee) {
