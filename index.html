@@ -421,7 +421,7 @@
     <script>
         console.log('Script starting...');
         
-        // Define functions directly in global scope (not on window object)
+        // Define functions in global scope immediately
         function switchTab(tabName) {
             console.log('switchTab called with:', tabName);
             
@@ -454,6 +454,9 @@
             }
         }
 
+        // Also assign to window object for compatibility
+        window.switchTab = switchTab;
+
         function showMessage(text, type) {
             const messageArea = document.getElementById('messageArea');
             if (messageArea) {
@@ -461,15 +464,6 @@
                 messageArea.innerHTML = `<div class="${className}">${text}</div>`;
                 setTimeout(() => messageArea.innerHTML = '', 5000);
             }
-        }
-        
-        console.log('Functions defined in global scope');
-        
-        // Test if function is accessible
-        if (typeof switchTab === 'function') {
-            console.log('switchTab is properly defined as function');
-        } else {
-            console.error('switchTab is NOT properly defined');
         }
 
         // Global variables
@@ -495,169 +489,6 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // Other functions that need to be globally available
-        function openShiftChangeModal(employeeName) {
-            const employee = workingEmployees.find(emp => emp.name === employeeName);
-            if (!employee) {
-                showMessage('Employee not found', 'error');
-                return;
-            }
-            document.getElementById('shiftEmployeeName').value = employee.name;
-            document.getElementById('shiftNewSchedule').value = employee.schedule || '';
-            document.getElementById('shiftChangeModal').style.display = 'block';
-        }
-
-        function closeShiftChangeModal() {
-            document.getElementById('shiftChangeModal').style.display = 'none';
-        }
-
-        function saveShiftChange() {
-            const employeeName = document.getElementById('shiftEmployeeName').value;
-            const newManager = document.getElementById('shiftNewManager').value;
-            const newSchedule = document.getElementById('shiftNewSchedule').value.trim();
-            const reason = document.getElementById('shiftReason').value;
-
-            if (!reason) {
-                showMessage('Please select a reason for the change', 'error');
-                return;
-            }
-
-            const employeeIndex = workingEmployees.findIndex(emp => emp.name === employeeName);
-            if (employeeIndex === -1) {
-                showMessage('Employee not found', 'error');
-                return;
-            }
-
-            const employee = workingEmployees[employeeIndex];
-            
-            if (newManager) employee.manager = newManager;
-            if (newSchedule) employee.schedule = newSchedule;
-            employee.hasChanges = true;
-            employee.changeReason = reason;
-
-            const changeRecord = {
-                employeeName: employeeName,
-                newManager: newManager || employee.manager,
-                newSchedule: newSchedule || employee.schedule,
-                reason: reason,
-                timestamp: new Date().toLocaleString()
-            };
-            shiftChanges.push(changeRecord);
-
-            closeShiftChangeModal();
-            updateDisplay();
-            showMessage(`Shift change saved for ${employeeName}`, 'success');
-        }
-
-        function markEmployeeWithStatus(status) {
-            const nameInput = document.getElementById('manualEmployeeName');
-            const employeeName = nameInput.value.trim();
-            
-            if (!employeeName) {
-                showMessage('Please enter an employee name', 'error');
-                return;
-            }
-            
-            const employeeIndex = workingEmployees.findIndex(emp => 
-                emp.name.toLowerCase().includes(employeeName.toLowerCase())
-            );
-            
-            if (employeeIndex === -1) {
-                showMessage('Employee not found in working list.', 'error');
-                return;
-            }
-            
-            const employee = workingEmployees[employeeIndex];
-            const offEmployee = {
-                name: employee.name,
-                manager: employee.manager,
-                status: status,
-                type: 'manual',
-                timeAdded: new Date().toLocaleString()
-            };
-            
-            offEmployees.push(offEmployee);
-            workingEmployees.splice(employeeIndex, 1);
-            
-            nameInput.value = '';
-            updateDisplay();
-            showMessage(`${employee.name} has been marked as "${status}"`, 'success');
-        }
-
-        function returnToWork() {
-            const nameInput = document.getElementById('manualEmployeeName');
-            const employeeName = nameInput.value.trim();
-            
-            if (!employeeName) {
-                showMessage('Please enter an employee name', 'error');
-                return;
-            }
-            
-            const employeeIndex = offEmployees.findIndex(emp => 
-                emp.name.toLowerCase().includes(employeeName.toLowerCase())
-            );
-            
-            if (employeeIndex === -1) {
-                showMessage('Employee not found in off list.', 'error');
-                return;
-            }
-            
-            const employee = offEmployees[employeeIndex];
-            const workingEmployee = {
-                name: employee.name,
-                manager: employee.manager,
-                schedule: 'Returned - Check original schedule',
-                type: 'returned'
-            };
-            
-            workingEmployees.push(workingEmployee);
-            offEmployees.splice(employeeIndex, 1);
-            
-            nameInput.value = '';
-            updateDisplay();
-            showMessage(`${employee.name} has returned to work`, 'success');
-        }
-
-        function exportData() {
-            if (!xlsxLoaded) {
-                showMessage('Excel export not available.', 'error');
-                return;
-            }
-
-            try {
-                const wb = XLSX.utils.book_new();
-                
-                const workingData = [['Employee', 'Manager', 'Schedule', 'Status', 'Has Changes']];
-                workingEmployees.forEach(emp => {
-                    workingData.push([emp.name, emp.manager, emp.schedule, 'Working', emp.hasChanges ? 'Yes' : 'No']);
-                });
-                const workingWs = XLSX.utils.aoa_to_sheet(workingData);
-                XLSX.utils.book_append_sheet(wb, workingWs, 'Working Today');
-                
-                const offData = [['Employee', 'Manager', 'Status', 'Time Added', 'Type']];
-                offEmployees.forEach(emp => {
-                    offData.push([emp.name, emp.manager, emp.status, emp.timeAdded, emp.type]);
-                });
-                const offWs = XLSX.utils.aoa_to_sheet(offData);
-                XLSX.utils.book_append_sheet(wb, offWs, 'Off Today');
-
-                if (shiftChanges.length > 0) {
-                    const shiftData = [['Employee', 'New Manager', 'New Schedule', 'Reason', 'Timestamp']];
-                    shiftChanges.forEach(change => {
-                        shiftData.push([change.employeeName, change.newManager, change.newSchedule, change.reason, change.timestamp]);
-                    });
-                    const shiftWs = XLSX.utils.aoa_to_sheet(shiftData);
-                    XLSX.utils.book_append_sheet(wb, shiftWs, 'Shift Changes');
-                }
-                
-                const fileName = `Employee_Availability_${new Date().toISOString().split('T')[0]}.xlsx`;
-                XLSX.writeFile(wb, fileName);
-                showMessage('Report exported successfully!', 'success');
-            } catch (error) {
-                showMessage('Error exporting report: ' + error.message, 'error');
-            }
-        }
-
         // Shift Change Functions
         function openShiftChangeModal(employeeName) {
             const employee = workingEmployees.find(emp => emp.name === employeeName);
@@ -667,6 +498,18 @@
             }
             document.getElementById('shiftEmployeeName').value = employee.name;
             document.getElementById('shiftNewSchedule').value = employee.schedule || '';
+            
+            // Populate manager dropdown
+            const managerSelect = document.getElementById('shiftNewManager');
+            managerSelect.innerHTML = '<option value="">Keep current manager</option>';
+            Array.from(allManagers).sort().forEach(manager => {
+                const option = document.createElement('option');
+                option.value = manager;
+                option.textContent = manager;
+                if (manager === employee.manager) option.selected = true;
+                managerSelect.appendChild(option);
+            });
+            
             document.getElementById('shiftChangeModal').style.display = 'block';
         }
 
@@ -710,55 +553,6 @@
             closeShiftChangeModal();
             updateDisplay();
             showMessage(`Shift change saved for ${employeeName}`, 'success');
-        }
-
-        function switchTab(tabName) {
-            console.log('Switching to tab:', tabName); // Debug log
-            
-            if (tabName === 'manual') {
-                const password = prompt('Enter password to access Sales Admin:');
-                if (password !== '789') {
-                    showMessage('Incorrect password. Access denied.', 'error');
-                    return;
-                }
-                showMessage('Access granted to Sales Admin tab', 'success');
-            }
-            
-            // Remove active class from all tabs and content
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            // Add active class to clicked tab
-            const activeTab = document.querySelector(`button[onclick="switchTab('${tabName}')"]`);
-            console.log('Found tab button:', activeTab); // Debug log
-            if (activeTab) {
-                activeTab.classList.add('active');
-            }
-            
-            // Show the corresponding content
-            const targetTab = document.getElementById(tabName + 'Tab');
-            console.log('Found tab content:', targetTab); // Debug log
-            if (targetTab) {
-                targetTab.classList.add('active');
-            } else {
-                console.error('Could not find tab content with ID:', tabName + 'Tab');
-            }
-        }
-
-        // Make all functions globally available for onclick handlers
-        window.switchTab = switchTab;
-        window.openShiftChangeModal = openShiftChangeModal;
-        window.closeShiftChangeModal = closeShiftChangeModal;
-        window.saveShiftChange = saveShiftChange;
-        window.markEmployeeWithStatus = markEmployeeWithStatus;
-        window.returnToWork = returnToWork;
-        window.exportData = exportData;
-
-        function showMessage(text, type) {
-            const messageArea = document.getElementById('messageArea');
-            const className = type === 'success' ? 'success-msg' : 'error-msg';
-            messageArea.innerHTML = `<div class="${className}">${text}</div>`;
-            setTimeout(() => messageArea.innerHTML = '', 5000);
         }
 
         function updateCounts() {
@@ -839,6 +633,7 @@
                             };
                             workingEmployees.push(employee);
                             originalEmployeeData[employee.name] = { ...employee };
+                            if (employee.manager) allManagers.add(employee.manager);
                         }
                     }
                     
@@ -969,4 +764,107 @@
                 workingEmployees.forEach(emp => {
                     workingData.push([emp.name, emp.manager, emp.schedule, 'Working', emp.hasChanges ? 'Yes' : 'No']);
                 });
-                const working
+                const workingWs = XLSX.utils.aoa_to_sheet(workingData);
+                XLSX.utils.book_append_sheet(wb, workingWs, 'Working Today');
+                
+                const offData = [['Employee', 'Manager', 'Status', 'Time Added', 'Type']];
+                offEmployees.forEach(emp => {
+                    offData.push([emp.name, emp.manager, emp.status, emp.timeAdded, emp.type]);
+                });
+                const offWs = XLSX.utils.aoa_to_sheet(offData);
+                XLSX.utils.book_append_sheet(wb, offWs, 'Off Today');
+
+                if (shiftChanges.length > 0) {
+                    const shiftData = [['Employee', 'New Manager', 'New Schedule', 'Reason', 'Timestamp']];
+                    shiftChanges.forEach(change => {
+                        shiftData.push([change.employeeName, change.newManager, change.newSchedule, change.reason, change.timestamp]);
+                    });
+                    const shiftWs = XLSX.utils.aoa_to_sheet(shiftData);
+                    XLSX.utils.book_append_sheet(wb, shiftWs, 'Shift Changes');
+                }
+                
+                const fileName = `Employee_Availability_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                showMessage('Report exported successfully!', 'success');
+            } catch (error) {
+                showMessage('Error exporting report: ' + error.message, 'error');
+            }
+        }
+
+        function setupEventListeners() {
+            const scheduleFile = document.getElementById('scheduleFile');
+            const timeOffFile = document.getElementById('timeOffFile');
+            const supportFile = document.getElementById('supportFile');
+            
+            if (scheduleFile) scheduleFile.addEventListener('change', handleScheduleFile);
+            if (timeOffFile) timeOffFile.addEventListener('change', handleTimeOffFile);
+            if (supportFile) supportFile.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    showMessage('Support specialists file uploaded successfully!', 'success');
+                }
+            });
+
+            // Close modal when clicking outside
+            window.onclick = function(event) {
+                const modal = document.getElementById('shiftChangeModal');
+                if (event.target === modal) {
+                    closeShiftChangeModal();
+                }
+            }
+        }
+
+        async function init() {
+            console.log('Initializing application...');
+            try {
+                // Wait for XLSX library to load
+                await new Promise((resolve) => {
+                    if (typeof XLSX !== 'undefined') {
+                        console.log('XLSX already loaded');
+                        resolve();
+                    } else {
+                        console.log('Loading XLSX library...');
+                        const script = document.createElement('script');
+                        script.onload = () => {
+                            console.log('XLSX library loaded');
+                            resolve();
+                        };
+                        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+                        document.head.appendChild(script);
+                    }
+                });
+                
+                xlsxLoaded = true;
+                setupEventListeners();
+                updateDisplay();
+                showMessage('🔥 Employee Availability Management ready! Upload your files to get started.', 'success');
+            } catch (error) {
+                console.error('Error during initialization:', error);
+                showMessage('Warning: Some features may not work properly.', 'error');
+                setupEventListeners();
+            }
+        }
+
+        console.log('Script loaded, waiting for DOM...');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM content loaded, starting init...');
+            init();
+        });
+
+        console.log('Functions defined in global scope');
+        
+        // Test if functions are accessible
+        if (typeof switchTab === 'function') {
+            console.log('switchTab is properly defined as function');
+        } else {
+            console.error('switchTab is NOT properly defined');
+        }
+        
+        if (typeof window.switchTab === 'function') {
+            console.log('window.switchTab is properly defined as function');
+        } else {
+            console.error('window.switchTab is NOT properly defined');
+        }
+    </script>
+</body>
+</html>
