@@ -503,17 +503,34 @@
                     showMessage('Incorrect password. Access denied.', 'error');
                     return;
                 }
+                showMessage('Access granted to Sales Admin tab', 'success');
             }
             
+            // Remove active class from all tabs and content
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
+            // Add active class to clicked tab
             const activeTab = document.querySelector(`button[onclick="switchTab('${tabName}')"]`);
-            if (activeTab) activeTab.classList.add('active');
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
             
+            // Show the corresponding content
             const targetTab = document.getElementById(tabName + 'Tab');
-            if (targetTab) targetTab.classList.add('active');
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
         }
+
+        // Make all functions globally available for onclick handlers
+        window.switchTab = switchTab;
+        window.openShiftChangeModal = openShiftChangeModal;
+        window.closeShiftChangeModal = closeShiftChangeModal;
+        window.saveShiftChange = saveShiftChange;
+        window.markEmployeeWithStatus = markEmployeeWithStatus;
+        window.returnToWork = returnToWork;
+        window.exportData = exportData;
 
         function showMessage(text, type) {
             const messageArea = document.getElementById('messageArea');
