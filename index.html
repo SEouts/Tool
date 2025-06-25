@@ -244,10 +244,10 @@
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('combined')">
+            <button class="tab active" id="combinedTabBtn">
                 🏖️👥 Off Today (<span id="offCount">0</span>) / Working Today (<span id="workingCount">0</span>)
             </button>
-            <button class="tab" onclick="switchTab('manual')">
+            <button class="tab" id="manualTabBtn">
                 ⚡ Sales Admin
             </button>
         </div>
@@ -437,10 +437,10 @@
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
             // Add active class to clicked tab
-            const activeTab = document.querySelector(`button[onclick="switchTab('${tabName}')"]`);
-            console.log('Found tab button:', activeTab);
-            if (activeTab) {
-                activeTab.classList.add('active');
+            const activeTabBtn = document.getElementById(tabName + 'TabBtn');
+            console.log('Found tab button:', activeTabBtn);
+            if (activeTabBtn) {
+                activeTabBtn.classList.add('active');
             }
             
             // Show the corresponding content
