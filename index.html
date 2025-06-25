@@ -686,6 +686,16 @@
             });
         }
 
+        function clearAllCheckboxes(tableType) {
+            const tableBody = document.getElementById(tableType + 'TableBody');
+            if (tableBody) {
+                const checkboxes = tableBody.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+            }
+        }
+
         function timeToMinutes(timeStr) {
             if (!timeStr || timeStr === 'N/A') return 0;
             
@@ -1287,12 +1297,16 @@
                 }
             });
             
+            // CRITICAL FIX: Add the support specialist to allManagers set
+            allManagers.add(selectedSpecialist);
+            
             document.getElementById('overLimitManagerSelect').value = '';
             document.getElementById('supportSpecialistSelect').value = '';
             loadManagerEmployees();
             
-            // Save to Firebase
+            // Save to Firebase - including the updated managers list
             saveOffEmployees();
+            saveManagers(); // This is the key fix - save the updated managers list
             
             updateDisplay();
             
