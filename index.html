@@ -1870,6 +1870,20 @@
             reader.readAsArrayBuffer(file);
         }
 
+        // Function to clean manager names - extract just the name from department formatting
+        function cleanManagerName(managerString) {
+            if (!managerString || managerString.trim() === '') return '';
+            
+            // Check if the format is "Department (Name)" and extract just the name
+            const match = managerString.match(/.*\(([^)]+)\)$/);
+            if (match && match[1]) {
+                return match[1].trim();
+            }
+            
+            // If no parentheses found, return the original string cleaned up
+            return managerString.trim();
+        }
+
         function processScheduleData(data) {
             workingEmployees = [];
             allWorkingEmployees = [];
@@ -1880,7 +1894,7 @@
                 
                 const employee = {
                     name: String(row[0]).trim(),
-                    manager: String(row[1] || '').trim(),
+                    manager: cleanManagerName(String(row[1] || '')),
                     schedule: String(row[2] || '').trim(),
                     type: 'scheduled'
                 };
@@ -1913,7 +1927,7 @@
                 
                 const employee = {
                     name: String(row[2]).trim(),
-                    manager: String(row[1] || '').trim(),
+                    manager: cleanManagerName(String(row[1] || '')),
                     status: isPartialDay ? 'Partial Day (4 Hours)' : 'Full Day Off',
                     type: isPartialDay ? 'partial' : 'scheduled',
                     timeAdded: 'Scheduled'
