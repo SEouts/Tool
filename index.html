@@ -1219,10 +1219,10 @@
 
         // Navigation functions for jumping between sections
         function scrollToWorkingToday() {
-            // Find the Working Today header and scroll to it smoothly
-            const workingTodaySection = document.querySelector('div[style*="background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%)"]');
-            if (workingTodaySection) {
-                workingTodaySection.scrollIntoView({ 
+            // Find the Working Today Task Progress bar and scroll to it smoothly
+            const workingTaskProgress = document.querySelector('div[style*="border-left: 4px solid #2ed573"]');
+            if (workingTaskProgress) {
+                workingTaskProgress.scrollIntoView({ 
                     behavior: 'smooth', 
                     block: 'start' 
                 });
@@ -1232,10 +1232,10 @@
         }
 
         function scrollToOffToday() {
-            // Find the Off Today header and scroll to it smoothly
-            const offTodaySection = document.querySelector('div[style*="background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%)"]');
-            if (offTodaySection) {
-                offTodaySection.scrollIntoView({ 
+            // Find the Off Today Task Progress bar and scroll to it smoothly
+            const offTaskProgress = document.querySelector('div[style*="border-left: 4px solid #ff4757"]');
+            if (offTaskProgress) {
+                offTaskProgress.scrollIntoView({ 
                     behavior: 'smooth', 
                     block: 'start' 
                 });
