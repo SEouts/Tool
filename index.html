@@ -449,13 +449,22 @@
 
                 <div style="background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ff4757; display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-weight: 600; color: #495057;">📝 Task Progress:</span>
-                    <button onclick="clearAllCheckboxes('off')" 
-                            style="background: #000000; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 12px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
-                            onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)'"
-                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)'"
-                            title="Clear all checkboxes to start fresh">
-                        ✅ Clear All Checkmarks
-                    </button>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button onclick="scrollToWorkingToday()" 
+                                style="background: linear-gradient(135deg, #2e71ea 0%, #1a5bd9 100%); color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 12px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(46,113,234,0.2);"
+                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(46,113,234,0.3)'"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(46,113,234,0.2)'"
+                                title="Jump to Working Today section">
+                            ⬇️ Jump to Working Today
+                        </button>
+                        <button onclick="clearAllCheckboxes('off')" 
+                                style="background: #000000; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 12px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
+                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)'"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)'"
+                                title="Clear all checkboxes to start fresh">
+                            ✅ Clear All Checkmarks
+                        </button>
+                    </div>
                 </div>
 
                 <div class="table-container">
@@ -508,13 +517,22 @@
 
                 <div style="background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #2ed573; display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-weight: 600; color: #495057;">📝 Task Progress:</span>
-                    <button onclick="clearAllCheckboxes('working')" 
-                            style="background: #000000; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 12px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
-                            onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)'"
-                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)'"
-                            title="Clear all checkboxes to start fresh">
-                        ✅ Clear All Checkmarks
-                    </button>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button onclick="scrollToOffToday()" 
+                                style="background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%); color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 12px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(255,71,87,0.2);"
+                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(255,71,87,0.3)'"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(255,71,87,0.2)'"
+                                title="Jump to Off Today section">
+                            ⬆️ Jump to Off Today
+                        </button>
+                        <button onclick="clearAllCheckboxes('working')" 
+                                style="background: #000000; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 12px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
+                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.3)'"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.2)'"
+                                title="Clear all checkboxes to start fresh">
+                            ✅ Clear All Checkmarks
+                        </button>
+                    </div>
                 </div>
 
                 <!-- SCHEDULE CONTROLS -->
@@ -1197,6 +1215,33 @@
                 specialists: supportSpecialists,
                 timestamp: Date.now()
             });
+        }
+
+        // Navigation functions for jumping between sections
+        function scrollToWorkingToday() {
+            // Find the Working Today header and scroll to it smoothly
+            const workingTodaySection = document.querySelector('div[style*="background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%)"]');
+            if (workingTodaySection) {
+                workingTodaySection.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+                // Show a brief confirmation message
+                showMessage('Jumped to Working Today section', 'success');
+            }
+        }
+
+        function scrollToOffToday() {
+            // Find the Off Today header and scroll to it smoothly
+            const offTodaySection = document.querySelector('div[style*="background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%)"]');
+            if (offTodaySection) {
+                offTodaySection.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+                // Show a brief confirmation message
+                showMessage('Jumped to Off Today section', 'success');
+            }
         }
 
         function clearAllCheckboxes(tableType) {
