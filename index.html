@@ -1219,8 +1219,8 @@
 
         // Navigation functions for jumping between sections
         function scrollToWorkingToday() {
-            // Find the Working Today Task Progress bar and scroll to it smoothly
-            const workingTaskProgress = document.querySelector('div[style*="border-left: 4px solid #2ed573"]');
+            // Find the Working Today Task Progress bar specifically (it comes after the visual separator)
+            const workingTaskProgress = document.querySelectorAll('div[style*="border-left: 4px solid #2ed573"]')[0];
             if (workingTaskProgress) {
                 workingTaskProgress.scrollIntoView({ 
                     behavior: 'smooth', 
