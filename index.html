@@ -5,13 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Availability Management</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -20,22 +26,53 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
         }
+
         .header {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
             padding: 30px;
             text-align: center;
         }
+
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
             text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
         .controls {
             padding: 30px;
             background: #f8f9fa;
             border-bottom: 1px solid #e9ecef;
         }
+
+        .upload-box {
+            border: 2px dashed #4facfe;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .upload-box:hover {
+            border-color: #00f2fe;
+            background: #f0f9ff;
+        }
+
+        .upload-box input[type="file"] {
+            margin: 10px 0;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 100%;
+        }
+
         .btn {
             padding: 12px 25px;
             border: none;
@@ -47,26 +84,32 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+
         .btn-primary {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
         }
+
         .btn-danger {
             background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%);
             color: white;
         }
+
         .btn-success {
             background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%);
             color: white;
         }
+
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
+
         .tabs {
             display: flex;
             background: #e9ecef;
         }
+
         .tab {
             flex: 1;
             padding: 20px;
@@ -79,10 +122,12 @@
             transition: all 0.3s ease;
             position: relative;
         }
+
         .tab.active {
             background: white;
             color: #4facfe;
         }
+
         .tab.active::after {
             content: '';
             position: absolute;
@@ -92,23 +137,58 @@
             height: 3px;
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         }
+
         .tab-content {
             display: none;
             padding: 30px;
         }
+
         .tab-content.active {
             display: block;
         }
+
+        .manager-filter {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #4facfe;
+        }
+
+        .manager-filter label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+
+        .manager-filter select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .manager-filter select:focus {
+            border-color: #4facfe;
+            outline: none;
+        }
+
         .table-container {
             background: white;
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
         }
+
         th {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
@@ -116,19 +196,23 @@
             text-align: left;
             font-weight: 600;
         }
+
         td {
             padding: 15px;
             border-bottom: 1px solid #e9ecef;
         }
+
         tr:hover {
             background: #f8f9fa;
         }
+
         .no-data {
             text-align: center;
             padding: 40px;
             color: #6c757d;
             font-size: 18px;
         }
+
         .error-msg {
             background: #ffe6e6;
             border: 1px solid #ff9999;
@@ -137,6 +221,7 @@
             border-radius: 5px;
             margin: 10px 0;
         }
+
         .success-msg {
             background: #e6ffe6;
             border: 1px solid #99ff99;
@@ -145,7 +230,8 @@
             border-radius: 5px;
             margin: 10px 0;
         }
-        .modal {
+
+        .shift-change-modal {
             display: none;
             position: fixed;
             z-index: 1000;
@@ -155,80 +241,53 @@
             height: 100%;
             background-color: rgba(0,0,0,0.5);
         }
-        .modal-content {
+
+        .shift-change-content {
             background-color: white;
             margin: 5% auto;
-            padding: 0;
+            padding: 30px;
             border-radius: 15px;
             width: 90%;
-            max-width: 600px;
+            max-width: 500px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.3);
         }
-        .modal-header {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 15px 15px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
         }
-        .modal-body {
-            padding: 30px;
+
+        .close-modal:hover {
+            color: #ff4757;
         }
-        .form-group {
+
+        .input-group {
             margin-bottom: 20px;
         }
-        .form-group label {
+
+        .input-group label {
             display: block;
             font-weight: 600;
             margin-bottom: 8px;
             color: #495057;
         }
-        .form-group input, .form-group select {
+
+        .input-group input {
             width: 100%;
             padding: 12px;
             border: 2px solid #e9ecef;
             border-radius: 8px;
             font-size: 16px;
+            transition: border-color 0.3s ease;
         }
-        .close-btn {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 0;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .action-btn {
-            background: none;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 8px 12px;
-            cursor: pointer;
-            font-size: 14px;
-            margin: 0 2px;
-            transition: all 0.3s ease;
-        }
-        .action-btn:hover {
-            background-color: #f8f9fa;
+
+        .input-group input:focus {
             border-color: #4facfe;
-            color: #4facfe;
-        }
-        .changed-indicator {
-            background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-            margin-left: 8px;
+            outline: none;
         }
     </style>
 </head>
@@ -255,11 +314,29 @@
         <div id="combinedTab" class="tab-content active">
             <!-- OFF TODAY SECTION -->
             <div style="margin-bottom: 50px;">
-                <div style="background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
+                <div style="background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(255,71,87,0.2);">
                     <h2 style="margin-bottom: 8px; font-size: 2.2em;">🏖️ Off Today (<span id="offCountHeader">0</span>)</h2>
                     <p style="font-size: 1.1em; opacity: 0.9;">Employees who are not working today</p>
                 </div>
                 
+                <div class="manager-filter">
+                    <label for="offManagerFilter">🎯 Filter by Manager/Support Specialist:</label>
+                    <select id="offManagerFilter" onchange="filterEmployees('off')">
+                        <option value="">Show All Managers & Support Specialists</option>
+                    </select>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ff4757; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 600; color: #495057;">📝 Task Progress:</span>
+                    <button onclick="clearAllCheckboxes('off')" 
+                            style="background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%); color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 12px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(255,71,87,0.2);"
+                            onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(255,71,87,0.3)'"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(255,71,87,0.2)'"
+                            title="Clear all checkboxes to start fresh">
+                        ✅ Clear All Checkmarks
+                    </button>
+                </div>
+
                 <div class="table-container">
                     <table>
                         <thead>
@@ -278,11 +355,65 @@
                 </div>
             </div>
 
+            <!-- VISUAL SEPARATOR -->
+            <div style="height: 3px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 2px; margin: 40px 0; box-shadow: 0 2px 10px rgba(79,172,254,0.3);"></div>
+
             <!-- WORKING TODAY SECTION -->
             <div>
-                <div style="background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
+                <div style="background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(46,213,115,0.2);">
                     <h2 style="margin-bottom: 8px; font-size: 2.2em;">👥 Working Today (<span id="workingCountHeader">0</span>)</h2>
                     <p style="font-size: 1.1em; opacity: 0.9;">Employees scheduled to work today</p>
+                </div>
+                
+                <div class="manager-filter">
+                    <label for="workingManagerFilter">🎯 Filter by Manager:</label>
+                    <select id="workingManagerFilter" onchange="filterEmployees('working')">
+                        <option value="">Show All Managers</option>
+                    </select>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #2ed573; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 600; color: #495057;">📝 Task Progress:</span>
+                    <button onclick="clearAllCheckboxes('working')" 
+                            style="background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%); color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 12px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(46,213,115,0.2);"
+                            onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(46,213,115,0.3)'"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(46,213,115,0.2)'"
+                            title="Clear all checkboxes to start fresh">
+                        ✅ Clear All Checkmarks
+                    </button>
+                </div>
+
+                <!-- SCHEDULE CONTROLS -->
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #2ed573;">
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;">
+                        <span style="font-weight: 600; color: #495057; margin-right: 10px;">📋 Schedule Controls:</span>
+                        
+                        <button onclick="sortByStartTime()" 
+                                style="background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%); color: white; border: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(46,213,115,0.2);"
+                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(46,213,115,0.3)'"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(46,213,115,0.2)'"
+                                title="Sort by start time (earliest first)">
+                            🕐 Sort by Start Time
+                        </button>
+                        
+                        <button onclick="toggleNearEndFilter()" 
+                                id="nearEndFilterBtn"
+                                style="background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%); color: white; border: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(255,149,0,0.2);"
+                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(255,149,0,0.3)'"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(255,149,0,0.2)'"
+                                title="Hide employees within 2 hours of shift end">
+                            ⏰ Hide &lt;2hrs End
+                        </button>
+                        
+                        <button onclick="toggleOneHourFilter()" 
+                                id="oneHourFilterBtn"
+                                style="background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%); color: white; border: none; border-radius: 8px; padding: 10px 16px; font-size: 14px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(255,71,87,0.2);"
+                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(255,71,87,0.3)'"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(255,71,87,0.2)'"
+                                title="Hide employees within 1 hour 15 minutes of shift end">
+                            🚨 Hide &lt;1hr End
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="table-container">
@@ -293,11 +424,10 @@
                                 <th>Employee</th>
                                 <th>Manager</th>
                                 <th>Schedule</th>
-                                <th style="width: 100px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="workingTableBody">
-                            <tr><td colspan="5" class="no-data">Upload files to see working employees</td></tr>
+                            <tr><td colspan="4" class="no-data">Upload files to see working employees</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -306,61 +436,145 @@
 
         <div id="manualTab" class="tab-content">
             <div style="max-width: 800px; margin: 0 auto;">
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
-                    <h2 style="margin-bottom: 8px;">📁 Upload Daily Files</h2>
-                    <p>Start by uploading your schedule and time off files</p>
+                <div id="managerWarningBanner" style="display: none; background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; box-shadow: 0 5px 15px rgba(255,71,87,0.3); border: 2px solid #ff1e30;">
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 700;">⚠️ MANAGER OVERLOAD WARNING ⚠️</h3>
+                    <p id="warningMessage" style="margin: 8px 0 0 0; font-size: 16px; font-weight: 600;"></p>
                 </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-                    <div style="border: 2px dashed #4facfe; border-radius: 10px; padding: 20px; text-align: center; background: white;">
-                        <h3>📅 Upload Schedule File</h3>
-                        <p>Excel file with employee schedules</p>
-                        <input type="file" id="scheduleFile" accept=".xlsx,.xls,.csv" style="margin: 10px 0; padding: 8px; border: 1px solid #ddd; border-radius: 5px; width: 100%;" />
+
+                <div id="reassignmentSection" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; margin-bottom: 30px;">
+                    <h3 style="margin: 0 0 20px 0; text-align: center; font-size: 20px;">🔄 Employee Reassignment Center</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 8px;">Over-Limit Manager:</label>
+                            <select id="overLimitManagerSelect" style="width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px;" onchange="loadManagerEmployees()">
+                                <option value="">Select manager...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 8px;">Assign to Support Specialist:</label>
+                            <select id="supportSpecialistSelect" style="width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px;">
+                                <option value="">Select specialist...</option>
+                            </select>
+                        </div>
                     </div>
-                    <div style="border: 2px dashed #4facfe; border-radius: 10px; padding: 20px; text-align: center; background: white;">
-                        <h3>🏖️ Upload Time Off File</h3>
-                        <p>Excel file with scheduled time off</p>
-                        <input type="file" id="timeOffFile" accept=".xlsx,.xls,.csv" style="margin: 10px 0; padding: 8px; border: 1px solid #ddd; border-radius: 5px; width: 100%;" />
+                    
+                    <div id="managerEmployeesList" style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 15px; margin-bottom: 20px; min-height: 100px;">
+                        <h4 style="margin: 0 0 15px 0;">Employees to Reassign:</h4>
+                        <div id="employeeCheckboxes" style="max-height: 200px; overflow-y: auto;">
+                            <p style="color: rgba(255,255,255,0.7); font-style: italic;">Select a manager to see their employees</p>
+                        </div>
                     </div>
-                    <div style="border: 2px dashed #4facfe; border-radius: 10px; padding: 20px; text-align: center; background: white;">
-                        <h3>🤝 Upload Support Specialists</h3>
-                        <p>Excel file with sales support team</p>
-                        <input type="file" id="supportFile" accept=".xlsx,.xls,.csv" style="margin: 10px 0; padding: 8px; border: 1px solid #ddd; border-radius: 5px; width: 100%;" />
+                    
+                    <div style="text-align: center;">
+                        <button class="btn" onclick="reassignSelectedEmployees()" 
+                                style="padding: 15px 30px; font-size: 16px; border-radius: 10px; background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%); color: white; font-weight: 600;">
+                            🔄 Reassign Selected Employees
+                        </button>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <button class="btn btn-success" onclick="toggleSummarySection()" id="summaryToggleButton" 
+                            style="padding: 12px 25px; font-size: 16px; border-radius: 25px;">
+                        📊 Show Manager Summary
+                    </button>
+                </div>
+
+                <div id="managerSummarySection" style="display: none; transition: all 0.3s ease; margin-bottom: 30px;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
+                        <h2 style="margin-bottom: 8px;">📊 Manager Summary</h2>
+                        <p>Employee count by manager for those with employees off today</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 30px;">
+                        <h4 style="color: #ff6b6b; margin-bottom: 15px;">🏖️ Off Today by Manager:</h4>
+                        <div id="offSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;"></div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 40px;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; margin-bottom: 25px;">
+                        <h2 style="margin-bottom: 8px;">📁 Upload Daily Files</h2>
+                        <p>Start by uploading your schedule and time off files</p>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                        <div class="upload-box">
+                            <h3>📅 Upload Schedule File</h3>
+                            <p>Excel file with employee schedules</p>
+                            <input type="file" id="scheduleFile" accept=".xlsx,.xls,.csv" />
+                        </div>
+                        <div class="upload-box">
+                            <h3>🏖️ Upload Time Off File</h3>
+                            <p>Excel file with scheduled time off</p>
+                            <input type="file" id="timeOffFile" accept=".xlsx,.xls,.csv" />
+                        </div>
+                        <div class="upload-box">
+                            <h3>🤝 Upload Support Specialists</h3>
+                            <p>Excel file with sales support team</p>
+                            <input type="file" id="supportFile" accept=".xlsx,.xls,.csv" />
+                        </div>
+                    </div>
+                    
+                    <!-- Clear Previous Day Section -->
+                    <div style="background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%); color: white; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 30px;">
+                        <h3 style="margin-bottom: 15px;">🗂️ End of Day Management</h3>
+                        <p style="margin-bottom: 20px; opacity: 0.9;">Generate report and clear data for next day</p>
+                        <button class="btn" onclick="clearPreviousDay()" 
+                                style="padding: 15px 30px; font-size: 16px; border-radius: 10px; background: white; color: #ff4757; font-weight: 700; border: 2px solid white;">
+                            📊 Clear Previous Day & Generate Report
+                        </button>
                     </div>
                 </div>
 
                 <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 30px;">
                     <h2 style="margin-bottom: 10px;">🚀 Quick Employee Actions</h2>
-                    <p>Mark employees as off or left early with one click</p>
+                    <p>Mark employees as off, left early, or change their shift with one click</p>
                 </div>
 
                 <div style="background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
                     <div style="margin-bottom: 30px;">
                         <label style="display: block; font-weight: 600; margin-bottom: 10px; font-size: 16px;">Employee Name:</label>
                         <input type="text" id="manualEmployeeName" placeholder="Enter employee name..." 
-                               style="width: 100%; padding: 15px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 16px;" />
+                               style="width: 100%; padding: 15px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 16px; transition: all 0.3s ease;" />
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                         <button class="btn btn-danger" onclick="markEmployeeWithStatus('Off Today')" 
                                 style="padding: 20px; font-size: 16px; border-radius: 15px;">
                             🏖️ Off Today
                         </button>
-                        <button class="btn btn-primary" onclick="returnToWork()" 
-                                style="padding: 20px; font-size: 16px; border-radius: 15px;">
-                            ✅ Returned To Work
-                        </button>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <button class="btn" onclick="markEmployeeWithStatus('Left Early')" 
                                 style="padding: 20px; font-size: 16px; border-radius: 15px; background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%); color: white;">
                             ⏰ Left Early
+                        </button>
+                        <button class="btn" onclick="openShiftChangeModal()" 
+                                style="padding: 20px; font-size: 16px; border-radius: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            🔄 Shift Change
+                        </button>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <button class="btn btn-primary" onclick="returnToWork()" 
+                                style="padding: 20px; font-size: 16px; border-radius: 15px;">
+                            ✅ Returned To Work
                         </button>
                         <button class="btn btn-success" onclick="exportData()" 
                                 style="padding: 20px; font-size: 16px; border-radius: 15px;">
                             📊 Export Report
                         </button>
+                    </div>
+
+                    <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #4facfe;">
+                        <h4 style="margin-bottom: 10px; color: #4facfe;">💡 How it works:</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #6c757d;">
+                            <li><strong>Off Today:</strong> For employees who called out sick or took unscheduled time off</li>
+                            <li><strong>Left Early:</strong> For employees who left before their scheduled end time</li>
+                            <li><strong>Shift Change:</strong> Change an employee's shift times for the day (e.g. 8am-5pm to 10am-7pm)</li>
+                            <li><strong>Returned To Work:</strong> For employees who came back after being marked as off</li>
+                            <li><strong>Export Report:</strong> Download a summary of today's availability changes</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -368,113 +582,47 @@
     </div>
 
     <!-- Shift Change Modal -->
-    <div id="shiftChangeModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>🔄 Shift Change</h3>
-                <button class="close-btn" onclick="closeShiftChangeModal()">&times;</button>
+    <div id="shiftChangeModal" class="shift-change-modal">
+        <div class="shift-change-content">
+            <span class="close-modal" onclick="closeShiftChangeModal()">&times;</span>
+            <h2 style="margin-bottom: 20px; color: #4facfe; text-align: center;">🔄 Change Employee Shift</h2>
+            
+            <div id="currentEmployeeInfo" style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #4facfe;">
+                <h4 style="margin: 0 0 10px 0; color: #495057;">Current Employee:</h4>
+                <p id="currentEmployeeName" style="margin: 0; font-weight: 600; color: #333;"></p>
+                <p id="currentEmployeeSchedule" style="margin: 5px 0 0 0; color: #6c757d;"></p>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="shiftEmployeeName">Employee Name:</label>
-                    <input type="text" id="shiftEmployeeName" readonly>
-                </div>
-                <div class="form-group">
-                    <label for="shiftNewManager">New Manager:</label>
-                    <select id="shiftNewManager">
-                        <option value="">Keep current manager</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="shiftNewSchedule">New Schedule:</label>
-                    <input type="text" id="shiftNewSchedule" placeholder="e.g., 9:00 AM - 6:00 PM">
-                </div>
-                <div class="form-group">
-                    <label for="shiftReason">Reason for Change:</label>
-                    <select id="shiftReason">
-                        <option value="">Select reason...</option>
-                        <option value="Manager Reassignment">Manager Reassignment</option>
-                        <option value="Schedule Adjustment">Schedule Adjustment</option>
-                        <option value="Coverage Need">Coverage Need</option>
-                        <option value="Employee Request">Employee Request</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                <div style="display: flex; gap: 15px; justify-content: flex-end; margin-top: 30px;">
-                    <button class="btn" onclick="closeShiftChangeModal()" 
-                            style="background: #6c757d; color: white; padding: 12px 24px;">
-                        Cancel
-                    </button>
-                    <button class="btn btn-primary" onclick="saveShiftChange()" 
-                            style="padding: 12px 24px;">
-                        Save Changes
-                    </button>
-                </div>
+            
+            <div class="input-group">
+                <label for="newStartTime">New Start Time:</label>
+                <input type="time" id="newStartTime" />
+            </div>
+            
+            <div class="input-group">
+                <label for="newEndTime">New End Time:</label>
+                <input type="time" id="newEndTime" />
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn" onclick="saveShiftChange()" 
+                        style="padding: 15px 30px; font-size: 16px; border-radius: 10px; background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%); color: white; font-weight: 600; margin-right: 15px;">
+                    💾 Save Shift Change
+                </button>
+                <button class="btn" onclick="closeShiftChangeModal()" 
+                        style="padding: 15px 30px; font-size: 16px; border-radius: 10px; background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white; font-weight: 600;">
+                    ❌ Cancel
+                </button>
             </div>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     
     <script>
-        console.log('Script starting...');
-        
-        // Define functions in global scope immediately
-        function switchTab(tabName) {
-            console.log('switchTab called with:', tabName);
-            
-            if (tabName === 'manual') {
-                const password = prompt('Enter password to access Sales Admin:');
-                if (password !== '789') {
-                    alert('Incorrect password. Access denied.');
-                    return;
-                }
-                alert('Access granted to Sales Admin tab');
-            }
-            
-            // Remove active class from all tabs and content
-            const tabs = document.querySelectorAll('.tab');
-            const contents = document.querySelectorAll('.tab-content');
-            
-            tabs.forEach(tab => tab.classList.remove('active'));
-            contents.forEach(content => content.classList.remove('active'));
-            
-            // Add active class to clicked tab
-            const activeTab = document.querySelector(`button[onclick*="${tabName}"]`);
-            if (activeTab) {
-                activeTab.classList.add('active');
-            }
-            
-            // Show the corresponding content
-            const targetTab = document.getElementById(tabName + 'Tab');
-            if (targetTab) {
-                targetTab.classList.add('active');
-            }
-        }
-
-        // Also assign to window object for compatibility
-        window.switchTab = switchTab;
-
-        function showMessage(text, type) {
-            const messageArea = document.getElementById('messageArea');
-            if (messageArea) {
-                const className = type === 'success' ? 'success-msg' : 'error-msg';
-                messageArea.innerHTML = `<div class="${className}">${text}</div>`;
-                setTimeout(() => messageArea.innerHTML = '', 5000);
-            }
-        }
-
-        // Global variables
-        let workingEmployees = [];
-        let offEmployees = [];
-        let allManagers = new Set();
-        let supportSpecialists = [];
-        let xlsxLoaded = false;
-        let originalEmployeeData = {};
-        let shiftChanges = [];
-
         // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyA3kHzRZaCJtRf19MRC9AQqJ0M30cQyaYU",
@@ -486,85 +634,584 @@
             appId: "1:768819377199:web:244cda6ccc825fb6a102da"
         };
 
+        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // Shift Change Functions
-        function openShiftChangeModal(employeeName) {
-            const employee = workingEmployees.find(emp => emp.name === employeeName);
-            if (!employee) {
-                showMessage('Employee not found', 'error');
+        // Global variables
+        let workingEmployees = [];
+        let offEmployees = [];
+        let allManagers = new Set();
+        let supportSpecialists = [];
+        let xlsxLoaded = false;
+        let nearEndFilterActive = false;
+        let oneHourFilterActive = false;
+        let allWorkingEmployees = [];
+        let lastUpdateTime = 0;
+        let userInterests = new Set();
+        let originalEmployeeData = {};
+        let currentShiftChangeEmployee = null;
+
+        // Notification system
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'info' ? 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' : 'linear-gradient(135deg, #ff4757 0%, #ff3838 100%)'};
+                color: white;
+                padding: 15px 20px;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                z-index: 1000;
+                font-weight: 600;
+                max-width: 300px;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span>${type === 'info' ? '📢' : '⚠️'}</span>
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 0; margin-left: auto;">×</button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Add CSS for notification animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Shift Change Modal Functions
+        function openShiftChangeModal() {
+            const nameInput = document.getElementById('manualEmployeeName');
+            const employeeName = nameInput.value.trim();
+            
+            if (!employeeName) {
+                showMessage('Please enter an employee name first', 'error');
                 return;
             }
-            document.getElementById('shiftEmployeeName').value = employee.name;
-            document.getElementById('shiftNewSchedule').value = employee.schedule || '';
             
-            // Populate manager dropdown
-            const managerSelect = document.getElementById('shiftNewManager');
-            managerSelect.innerHTML = '<option value="">Keep current manager</option>';
-            Array.from(allManagers).sort().forEach(manager => {
-                const option = document.createElement('option');
-                option.value = manager;
-                option.textContent = manager;
-                if (manager === employee.manager) option.selected = true;
-                managerSelect.appendChild(option);
-            });
+            const employee = workingEmployees.find(emp => 
+                emp.name.toLowerCase().includes(employeeName.toLowerCase())
+            );
+            
+            if (!employee) {
+                showMessage('Employee not found in working list. Please check the spelling.', 'error');
+                return;
+            }
+            
+            currentShiftChangeEmployee = employee;
+            
+            document.getElementById('currentEmployeeName').textContent = employee.name;
+            document.getElementById('currentEmployeeSchedule').textContent = `Current: ${employee.schedule || 'No schedule set'}`;
+            
+            if (employee.schedule && employee.schedule !== 'N/A') {
+                const parts = employee.schedule.split(' - ');
+                if (parts.length === 2) {
+                    const startTime = convertTo24Hour(parts[0].trim());
+                    const endTime = convertTo24Hour(parts[1].trim());
+                    
+                    if (startTime) document.getElementById('newStartTime').value = startTime;
+                    if (endTime) document.getElementById('newEndTime').value = endTime;
+                }
+            }
             
             document.getElementById('shiftChangeModal').style.display = 'block';
         }
 
         function closeShiftChangeModal() {
             document.getElementById('shiftChangeModal').style.display = 'none';
+            currentShiftChangeEmployee = null;
+            document.getElementById('newStartTime').value = '';
+            document.getElementById('newEndTime').value = '';
+        }
+
+        function convertTo24Hour(timeStr) {
+            if (!timeStr) return '';
+            
+            const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)/i);
+            if (!match) return '';
+            
+            let hours = parseInt(match[1]);
+            const minutes = match[2];
+            const period = match[3].toUpperCase();
+            
+            if (period === 'PM' && hours !== 12) {
+                hours += 12;
+            } else if (period === 'AM' && hours === 12) {
+                hours = 0;
+            }
+            
+            return `${hours.toString().padStart(2, '0')}:${minutes}`;
+        }
+
+        function convertTo12Hour(timeStr) {
+            if (!timeStr) return '';
+            
+            const [hours, minutes] = timeStr.split(':');
+            let hour12 = parseInt(hours);
+            const period = hour12 >= 12 ? 'PM' : 'AM';
+            
+            if (hour12 === 0) {
+                hour12 = 12;
+            } else if (hour12 > 12) {
+                hour12 -= 12;
+            }
+            
+            return `${hour12}:${minutes} ${period}`;
         }
 
         function saveShiftChange() {
-            const employeeName = document.getElementById('shiftEmployeeName').value;
-            const newManager = document.getElementById('shiftNewManager').value;
-            const newSchedule = document.getElementById('shiftNewSchedule').value.trim();
-            const reason = document.getElementById('shiftReason').value;
-
-            if (!reason) {
-                showMessage('Please select a reason for the change', 'error');
+            if (!currentShiftChangeEmployee) {
+                showMessage('No employee selected for shift change', 'error');
                 return;
             }
-
-            const employeeIndex = workingEmployees.findIndex(emp => emp.name === employeeName);
-            if (employeeIndex === -1) {
-                showMessage('Employee not found', 'error');
-                return;
-            }
-
-            const employee = workingEmployees[employeeIndex];
             
-            if (newManager) employee.manager = newManager;
-            if (newSchedule) employee.schedule = newSchedule;
-            employee.hasChanges = true;
-            employee.changeReason = reason;
-
-            const changeRecord = {
-                employeeName: employeeName,
-                newManager: newManager || employee.manager,
-                newSchedule: newSchedule || employee.schedule,
-                reason: reason,
-                timestamp: new Date().toLocaleString()
-            };
-            shiftChanges.push(changeRecord);
-
-            closeShiftChangeModal();
+            const newStartTime = document.getElementById('newStartTime').value;
+            const newEndTime = document.getElementById('newEndTime').value;
+            
+            if (!newStartTime || !newEndTime) {
+                showMessage('Please enter both start and end times', 'error');
+                return;
+            }
+            
+            const startMinutes = timeToMinutes(convertTo12Hour(newStartTime));
+            const endMinutes = timeToMinutes(convertTo12Hour(newEndTime));
+            
+            if (endMinutes <= startMinutes) {
+                showMessage('End time must be after start time', 'error');
+                return;
+            }
+            
+            const newSchedule = `${convertTo12Hour(newStartTime)} - ${convertTo12Hour(newEndTime)}`;
+            
+            if (!originalEmployeeData[currentShiftChangeEmployee.name]) {
+                originalEmployeeData[currentShiftChangeEmployee.name] = {
+                    manager: currentShiftChangeEmployee.manager,
+                    schedule: currentShiftChangeEmployee.schedule,
+                    type: currentShiftChangeEmployee.type
+                };
+            }
+            
+            const employeeIndex = workingEmployees.findIndex(emp => emp.name === currentShiftChangeEmployee.name);
+            if (employeeIndex !== -1) {
+                workingEmployees[employeeIndex].schedule = newSchedule;
+                workingEmployees[employeeIndex].type = 'shift_changed';
+                
+                const allIndex = allWorkingEmployees.findIndex(emp => emp.name === currentShiftChangeEmployee.name);
+                if (allIndex !== -1) {
+                    allWorkingEmployees[allIndex].schedule = newSchedule;
+                    allWorkingEmployees[allIndex].type = 'shift_changed';
+                }
+            }
+            
+            saveWorkingEmployees();
             updateDisplay();
-            showMessage(`Shift change saved for ${employeeName}`, 'success');
+            
+            document.getElementById('manualEmployeeName').value = '';
+            closeShiftChangeModal();
+            
+            showMessage(`Shift changed for ${currentShiftChangeEmployee.name}: ${newSchedule}`, 'success');
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('shiftChangeModal');
+            if (event.target === modal) {
+                closeShiftChangeModal();
+            }
+        }
+
+        // Firebase data listeners
+        function setupFirebaseListeners() {
+            database.ref('workingEmployees').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.timestamp > lastUpdateTime) {
+                    const oldCount = workingEmployees.length;
+                    workingEmployees = data.employees || [];
+                    allWorkingEmployees = [...workingEmployees];
+                    
+                    if (userInterests.size > 0) {
+                        const relevantChanges = workingEmployees.filter(emp => 
+                            userInterests.has(emp.manager)
+                        );
+                        if (relevantChanges.length > 0 && oldCount !== workingEmployees.length) {
+                            showNotification(`Working Today updated: ${relevantChanges.length} employees in your filtered managers`);
+                        }
+                    }
+                    
+                    updateDisplay();
+                }
+            });
+
+            database.ref('offEmployees').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.timestamp > lastUpdateTime) {
+                    const oldCount = offEmployees.length;
+                    offEmployees = data.employees || [];
+                    
+                    if (userInterests.size > 0) {
+                        const relevantChanges = offEmployees.filter(emp => 
+                            userInterests.has(emp.manager)
+                        );
+                        if (relevantChanges.length > 0 && oldCount !== offEmployees.length) {
+                            showNotification(`Off Today updated: ${relevantChanges.length} employees in your filtered managers`);
+                        }
+                    }
+                    
+                    updateDisplay();
+                }
+            });
+
+            database.ref('managers').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    allManagers = new Set(data.list || []);
+                    updateManagerFilters();
+                }
+            });
+
+            database.ref('supportSpecialists').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    supportSpecialists = data.specialists || [];
+                    updateSupportSpecialistDropdown();
+                }
+            });
+        }
+
+        function saveWorkingEmployees() {
+            const timestamp = Date.now();
+            database.ref('workingEmployees').set({
+                employees: workingEmployees,
+                timestamp: timestamp
+            });
+            lastUpdateTime = timestamp;
+        }
+
+        function saveOffEmployees() {
+            const timestamp = Date.now();
+            database.ref('offEmployees').set({
+                employees: offEmployees,
+                timestamp: timestamp
+            });
+            lastUpdateTime = timestamp;
+        }
+
+        function saveManagers() {
+            database.ref('managers').set({
+                list: Array.from(allManagers),
+                timestamp: Date.now()
+            });
+        }
+
+        function saveSupportSpecialists() {
+            database.ref('supportSpecialists').set({
+                specialists: supportSpecialists,
+                timestamp: Date.now()
+            });
+        }
+
+        function clearAllCheckboxes(tableType) {
+            const tableBody = document.getElementById(tableType + 'TableBody');
+            if (tableBody) {
+                const checkboxes = tableBody.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+            }
+        }
+
+        function switchTab(tabName) {
+            if (tabName === 'manual') {
+                const password = prompt('Enter password to access Sales Admin:');
+                if (password !== '789') {
+                    showMessage('Incorrect password. Access denied.', 'error');
+                    return;
+                }
+                showMessage('Access granted to Sales Admin tab', 'success');
+            }
+            
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            const activeTab = document.querySelector(`button[onclick="switchTab('${tabName}')"]`);
+            if (activeTab) activeTab.classList.add('active');
+            
+            const targetTab = document.getElementById(tabName + 'Tab');
+            if (targetTab) targetTab.classList.add('active');
+        }
+
+        function showMessage(text, type) {
+            const messageArea = document.getElementById('messageArea');
+            const className = type === 'success' ? 'success-msg' : 'error-msg';
+            messageArea.innerHTML = `<div class="${className}">${text}</div>`;
+            setTimeout(() => messageArea.innerHTML = '', 5000);
+        }
+
+        function getManagersWithEmployees(employeeList) {
+            const managersWithEmployees = new Set();
+            employeeList.forEach(emp => {
+                if (emp.manager && emp.manager.trim() !== '' && emp.manager !== 'No Manager') {
+                    managersWithEmployees.add(emp.manager);
+                }
+            });
+            return Array.from(managersWithEmployees).sort();
+        }
+
+        function updateManagerFilters() {
+            const workingFilter = document.getElementById('workingManagerFilter');
+            if (workingFilter) {
+                const workingManagers = getManagersWithEmployees(workingEmployees);
+                workingFilter.innerHTML = '<option value="">Show All Managers</option>';
+                workingManagers.forEach(manager => {
+                    const option = document.createElement('option');
+                    option.value = manager;
+                    option.textContent = manager;
+                    workingFilter.appendChild(option);
+                });
+            }
+
+            const offFilter = document.getElementById('offManagerFilter');
+            if (offFilter) {
+                const offManagers = getManagersWithEmployees(offEmployees);
+                offFilter.innerHTML = '<option value="">Show All Managers &amp; Support Specialists</option>';
+                offManagers.forEach(manager => {
+                    const option = document.createElement('option');
+                    option.value = manager;
+                    option.textContent = manager;
+                    offFilter.appendChild(option);
+                });
+            }
+        }
+
+        function filterEmployees(tabType) {
+            const filterId = tabType + 'ManagerFilter';
+            const selectedManager = document.getElementById(filterId).value;
+            
+            if (selectedManager) {
+                userInterests.add(selectedManager);
+            }
+            
+            let employeesToShow;
+            if (tabType === 'working') {
+                employeesToShow = selectedManager ? 
+                    workingEmployees.filter(emp => emp.manager === selectedManager) : 
+                    workingEmployees;
+            } else {
+                employeesToShow = selectedManager ? 
+                    offEmployees.filter(emp => emp.manager === selectedManager) : 
+                    offEmployees;
+            }
+            
+            updateTable(tabType, employeesToShow);
         }
 
         function updateCounts() {
-            document.getElementById('workingCount').textContent = workingEmployees.length;
-            document.getElementById('offCount').textContent = offEmployees.length;
-            document.getElementById('workingCountHeader').textContent = workingEmployees.length;
-            document.getElementById('offCountHeader').textContent = offEmployees.length;
+            const workingCount = document.getElementById('workingCount');
+            const offCount = document.getElementById('offCount');
+            const workingCountHeader = document.getElementById('workingCountHeader');
+            const offCountHeader = document.getElementById('offCountHeader');
+            
+            if (workingCount) workingCount.textContent = workingEmployees.length;
+            if (offCount) offCount.textContent = offEmployees.length;
+            if (workingCountHeader) workingCountHeader.textContent = workingEmployees.length;
+            if (offCountHeader) offCountHeader.textContent = offEmployees.length;
         }
 
         function updateDisplay() {
             updateCounts();
+            updateManagerFilters();
             updateTables();
+            updateManagerSummary();
+            checkManagerLimits();
+        }
+
+        function timeToMinutes(timeStr) {
+            if (!timeStr || timeStr === 'N/A') return 0;
+            
+            const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)/i);
+            if (!match) return 0;
+            
+            let hours = parseInt(match[1]);
+            const minutes = parseInt(match[2]);
+            const period = match[3].toUpperCase();
+            
+            if (period === 'PM' && hours !== 12) {
+                hours += 12;
+            } else if (period === 'AM' && hours === 12) {
+                hours = 0;
+            }
+            
+            return hours * 60 + minutes;
+        }
+
+        function getStartTime(schedule) {
+            if (!schedule || schedule === 'N/A' || schedule.trim() === '') return 999999;
+            
+            const parts = schedule.split(' - ');
+            if (parts.length < 1) return 999999;
+            
+            const startTime = parts[0].trim();
+            const minutes = timeToMinutes(startTime);
+            return minutes;
+        }
+
+        function getEndTime(schedule) {
+            if (!schedule || schedule === 'N/A' || schedule.trim() === '') return 999999;
+            
+            const parts = schedule.split(' - ');
+            if (parts.length < 2) return 999999;
+            
+            const endTime = parts[1].trim();
+            const minutes = timeToMinutes(endTime);
+            return minutes;
+        }
+
+        function getCurrentTimeInMinutes() {
+            const now = new Date();
+            return now.getHours() * 60 + now.getMinutes();
+        }
+
+        function isWithinTwoHoursOfEnd(schedule) {
+            if (!schedule || schedule === 'N/A' || schedule.trim() === '') return false;
+            
+            const endTimeMinutes = getEndTime(schedule);
+            if (endTimeMinutes === 999999) return false;
+            
+            const currentTimeMinutes = getCurrentTimeInMinutes();
+            const timeDifference = endTimeMinutes - currentTimeMinutes;
+            
+            return timeDifference <= 120 && timeDifference >= 0;
+        }
+
+        function isWithinOneHourFifteenOfEnd(schedule) {
+            if (!schedule || schedule === 'N/A' || schedule.trim() === '') return false;
+            
+            const endTimeMinutes = getEndTime(schedule);
+            if (endTimeMinutes === 999999) return false;
+            
+            const currentTimeMinutes = getCurrentTimeInMinutes();
+            const timeDifference = endTimeMinutes - currentTimeMinutes;
+            
+            return timeDifference <= 75 && timeDifference >= 0;
+        }
+
+        function sortByStartTime() {
+            if (workingEmployees.length === 0) {
+                showMessage('No employees to sort. Please upload schedule file first.', 'error');
+                return;
+            }
+            
+            workingEmployees.sort((a, b) => {
+                const timeA = getStartTime(a.schedule);
+                const timeB = getStartTime(b.schedule);
+                return timeA - timeB;
+            });
+            
+            updateTable('working', workingEmployees, true);
+            showMessage('Schedule sorted by start time (earliest to latest)', 'success');
+        }
+
+        function toggleNearEndFilter() {
+            nearEndFilterActive = !nearEndFilterActive;
+            const button = document.getElementById('nearEndFilterBtn');
+            
+            if (oneHourFilterActive) {
+                oneHourFilterActive = false;
+                const otherButton = document.getElementById('oneHourFilterBtn');
+                if (otherButton) {
+                    otherButton.innerHTML = '🚨 Hide &lt;1hr End';
+                    otherButton.title = 'Hide employees within 1 hour 15 minutes of shift end';
+                    otherButton.style.background = 'linear-gradient(135deg, #ff4757 0%, #ff3838 100%)';
+                }
+            }
+            
+            if (nearEndFilterActive) {
+                const currentTime = new Date();
+                const timeString = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                workingEmployees = allWorkingEmployees.filter(emp => !isWithinTwoHoursOfEnd(emp.schedule));
+                
+                if (button) {
+                    button.innerHTML = '👁️ Show All';
+                    button.title = 'Show all employees including those near shift end';
+                    button.style.background = 'linear-gradient(135deg, #6c757d 0%, #495057 100%)';
+                }
+                
+                showMessage(`Filter active! Hiding employees within 2 hours of shift end (Current time: ${timeString})`, 'success');
+            } else {
+                workingEmployees = [...allWorkingEmployees];
+                
+                if (button) {
+                    button.innerHTML = '⏰ Hide &lt;2hrs End';
+                    button.title = 'Hide employees within 2 hours of shift end';
+                    button.style.background = 'linear-gradient(135deg, #ff9500 0%, #ff5722 100%)';
+                }
+                
+                showMessage('Filter removed - showing all employees', 'success');
+            }
+            
+            updateTable('working', workingEmployees, true);
+            updateCounts();
+        }
+
+        function toggleOneHourFilter() {
+            oneHourFilterActive = !oneHourFilterActive;
+            const button = document.getElementById('oneHourFilterBtn');
+            
+            if (nearEndFilterActive) {
+                nearEndFilterActive = false;
+                const otherButton = document.getElementById('nearEndFilterBtn');
+                if (otherButton) {
+                    otherButton.innerHTML = '⏰ Hide &lt;2hrs End';
+                    otherButton.title = 'Hide employees within 2 hours of shift end';
+                    otherButton.style.background = 'linear-gradient(135deg, #ff9500 0%, #ff5722 100%)';
+                }
+            }
+            
+            if (oneHourFilterActive) {
+                const currentTime = new Date();
+                const timeString = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                workingEmployees = allWorkingEmployees.filter(emp => !isWithinOneHourFifteenOfEnd(emp.schedule));
+                
+                if (button) {
+                    button.innerHTML = '👁️ Show All';
+                    button.title = 'Show all employees including those near shift end';
+                    button.style.background = 'linear-gradient(135deg, #6c757d 0%, #495057 100%)';
+                }
+                
+                showMessage(`Filter active! Hiding employees within 1hr 15min of shift end (Current time: ${timeString})`, 'success');
+            } else {
+                workingEmployees = [...allWorkingEmployees];
+                
+                if (button) {
+                    button.innerHTML = '🚨 Hide &lt;1hr End';
+                    button.title = 'Hide employees within 1 hour 15 minutes of shift end';
+                    button.style.background = 'linear-gradient(135deg, #ff4757 0%, #ff3838 100%)';
+                }
+                
+                showMessage('Filter removed - showing all employees', 'success');
+            }
+            
+            updateTable('working', workingEmployees, true);
+            updateCounts();
         }
 
         function updateTables() {
@@ -572,32 +1219,39 @@
             updateTable('off', offEmployees);
         }
 
-        function updateTable(tabType, employees) {
+        function updateTable(tabType, employees, skipSort = false) {
             const tableBody = document.getElementById(tabType + 'TableBody');
             if (!tableBody) return;
             
             if (!employees || employees.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="no-data">No employees found</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="${tabType === 'working' ? 4 : 5}" class="no-data">No employees found</td></tr>`;
                 return;
+            }
+            
+            if (!skipSort) {
+                employees.sort((a, b) => (a.manager || '').localeCompare(b.manager || ''));
             }
             
             let html = '';
             employees.forEach(employee => {
                 if (tabType === 'working') {
-                    const changeIndicator = employee.hasChanges ? '<span class="changed-indicator">CHANGED</span>' : '';
+                    const shiftChangeIndicator = employee.type === 'shift_changed' ? ' 🔄' : '';
                     html += `
                         <tr>
-                            <td><input type="checkbox" /></td>
-                            <td><strong>${employee.name}</strong>${changeIndicator}</td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
+                            </td>
+                            <td><strong>${employee.name}${shiftChangeIndicator}</strong></td>
                             <td>${employee.manager || 'N/A'}</td>
                             <td>${employee.schedule || 'N/A'}</td>
-                            <td><button class="action-btn" onclick="openShiftChangeModal('${employee.name}')">🔄 Change</button></td>
                         </tr>
                     `;
                 } else {
                     html += `
                         <tr>
-                            <td><input type="checkbox" /></td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" style="transform: scale(1.2); cursor: pointer;" />
+                            </td>
                             <td><strong>${employee.name}</strong></td>
                             <td>${employee.manager || 'N/A'}</td>
                             <td>${employee.status}</td>
@@ -606,12 +1260,318 @@
                     `;
                 }
             });
+            
             tableBody.innerHTML = html;
+        }
+
+        function updateManagerSummary() {
+            const offByManager = {};
+            offEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                offByManager[manager] = (offByManager[manager] || 0) + 1;
+            });
+            
+            const offSummary = document.getElementById('offSummary');
+            if (offSummary) {
+                let offSummaryHtml = '';
+                
+                Object.entries(offByManager).forEach(([manager, count]) => {
+                    if (count > 0 && manager !== 'No Manager') {
+                        const cardColor = count >= 21 ? 'background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%);' : 
+                                         count >= 15 ? 'background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%);' :
+                                         'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);';
+                        
+                        offSummaryHtml += `
+                            <div style="${cardColor} color: white; padding: 20px; border-radius: 10px; text-align: center;">
+                                <h3 style="font-size: 2em; margin-bottom: 5px;">${count}</h3>
+                                <p style="margin: 0;">${manager}</p>
+                            </div>
+                        `;
+                    }
+                });
+                
+                if (offSummaryHtml === '') {
+                    offSummaryHtml = '<p style="text-align: center; color: #6c757d; font-style: italic;">No managers with employees off today</p>';
+                }
+                
+                offSummary.innerHTML = offSummaryHtml;
+            }
+        }
+
+        function toggleSummarySection() {
+            const summarySection = document.getElementById('managerSummarySection');
+            const toggleButton = document.getElementById('summaryToggleButton');
+            
+            if (summarySection.style.display === 'none') {
+                summarySection.style.display = 'block';
+                toggleButton.innerHTML = '📊 Hide Manager Summary';
+                toggleButton.style.background = 'linear-gradient(135deg, #ff4757 0%, #ff3838 100%)';
+            } else {
+                summarySection.style.display = 'none';
+                toggleButton.innerHTML = '📊 Show Manager Summary';
+                toggleButton.style.background = 'linear-gradient(135deg, #2ed573 0%, #7bed9f 100%)';
+            }
+        }
+
+        function checkManagerLimits() {
+            const managerCounts = {};
+            
+            offEmployees.forEach(emp => {
+                const manager = emp.manager || 'No Manager';
+                if (manager !== 'No Manager') {
+                    managerCounts[manager] = (managerCounts[manager] || 0) + 1;
+                }
+            });
+            
+            const overLimitManagers = [];
+            Object.entries(managerCounts).forEach(([manager, count]) => {
+                if (count >= 21) {
+                    overLimitManagers.push({ manager, count });
+                }
+            });
+            
+            const warningBanner = document.getElementById('managerWarningBanner');
+            const warningMessage = document.getElementById('warningMessage');
+            const reassignmentSection = document.getElementById('reassignmentSection');
+            
+            if (overLimitManagers.length > 0) {
+                warningBanner.style.display = 'block';
+                reassignmentSection.style.display = 'block';
+                
+                if (overLimitManagers.length === 1) {
+                    const { manager, count } = overLimitManagers[0];
+                    warningMessage.textContent = `Warning: Manager ${manager} has ${count} employees off today (limit: 20)`;
+                } else {
+                    const managerList = overLimitManagers.map(m => `${m.manager} (${m.count})`).join(', ');
+                    warningMessage.textContent = `Warning: Multiple managers are over the 20 employee limit: ${managerList}`;
+                }
+                
+                updateOverLimitManagerDropdown(overLimitManagers);
+            } else {
+                warningBanner.style.display = 'none';
+                reassignmentSection.style.display = 'none';
+            }
+        }
+
+        function updateOverLimitManagerDropdown(overLimitManagers) {
+            const dropdown = document.getElementById('overLimitManagerSelect');
+            if (!dropdown) return;
+            
+            dropdown.innerHTML = '<option value="">Select manager...</option>';
+            
+            overLimitManagers.forEach(({ manager, count }) => {
+                const option = document.createElement('option');
+                option.value = manager;
+                option.textContent = `${manager} (${count} employees off)`;
+                dropdown.appendChild(option);
+            });
+        }
+
+        function updateSupportSpecialistDropdown() {
+            const dropdown = document.getElementById('supportSpecialistSelect');
+            if (!dropdown) return;
+            
+            dropdown.innerHTML = '<option value="">Select specialist...</option>';
+            
+            supportSpecialists.forEach(specialist => {
+                const option = document.createElement('option');
+                option.value = specialist.name;
+                option.textContent = `${specialist.name} (${specialist.partnershipLevel})`;
+                dropdown.appendChild(option);
+            });
+        }
+
+        function loadManagerEmployees() {
+            const selectedManager = document.getElementById('overLimitManagerSelect').value;
+            const employeeCheckboxes = document.getElementById('employeeCheckboxes');
+            
+            if (!selectedManager) {
+                employeeCheckboxes.innerHTML = '<p style="color: rgba(255,255,255,0.7); font-style: italic;">Select a manager to see their employees</p>';
+                return;
+            }
+            
+            const managerEmployees = offEmployees.filter(emp => emp.manager === selectedManager);
+            
+            if (managerEmployees.length === 0) {
+                employeeCheckboxes.innerHTML = '<p style="color: rgba(255,255,255,0.7); font-style: italic;">No employees available for reassignment</p>';
+                return;
+            }
+            
+            let html = '';
+            managerEmployees.forEach(emp => {
+                html += `
+                    <label style="display: flex; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: 6px; margin-bottom: 8px; cursor: pointer;">
+                        <input type="checkbox" value="${emp.name}" style="margin-right: 12px; transform: scale(1.2);">
+                        <span style="font-weight: 500;">${emp.name}</span>
+                        <span style="margin-left: auto; font-size: 12px; opacity: 0.8;">${emp.status}</span>
+                    </label>
+                `;
+            });
+            
+            employeeCheckboxes.innerHTML = html;
+        }
+
+        function reassignSelectedEmployees() {
+            const selectedManager = document.getElementById('overLimitManagerSelect').value;
+            const selectedSpecialist = document.getElementById('supportSpecialistSelect').value;
+            const employeeCheckboxes = document.querySelectorAll('#employeeCheckboxes input[type="checkbox"]:checked');
+            
+            if (!selectedManager) {
+                showMessage('Please select a manager first', 'error');
+                return;
+            }
+            
+            if (!selectedSpecialist) {
+                showMessage('Please select a support specialist', 'error');
+                return;
+            }
+            
+            if (employeeCheckboxes.length === 0) {
+                showMessage('Please select at least one employee to reassign', 'error');
+                return;
+            }
+            
+            let reassignedCount = 0;
+            const employeeNames = Array.from(employeeCheckboxes).map(cb => cb.value);
+            
+            offEmployees.forEach(emp => {
+                if (employeeNames.includes(emp.name) && emp.manager === selectedManager) {
+                    emp.manager = selectedSpecialist;
+                    emp.reassigned = true;
+                    reassignedCount++;
+                }
+            });
+            
+            allManagers.add(selectedSpecialist);
+            
+            document.getElementById('overLimitManagerSelect').value = '';
+            document.getElementById('supportSpecialistSelect').value = '';
+            loadManagerEmployees();
+            
+            saveOffEmployees();
+            saveManagers();
+            
+            updateDisplay();
+            
+            showMessage(`Successfully reassigned ${reassignedCount} employee(s) from ${selectedManager} to ${selectedSpecialist}`, 'success');
+        }
+
+        async function clearPreviousDay() {
+            const confirmed = confirm(
+                '⚠️ This will:\n\n' +
+                '1. Generate a comprehensive report of today\'s employee data\n' +
+                '2. Download the report as an Excel file\n' +
+                '3. Clear all working and off employees data\n' +
+                '4. Keep support specialists data\n\n' +
+                'Are you sure you want to continue?'
+            );
+            
+            if (!confirmed) return;
+            
+            try {
+                showMessage('Generating end-of-day report...', 'success');
+                
+                const reportData = [];
+                
+                workingEmployees.forEach(emp => {
+                    const original = originalEmployeeData[emp.name];
+                    reportData.push({
+                        name: emp.name,
+                        originalManager: original?.manager || emp.manager,
+                        manager: emp.manager,
+                        status: 'Working',
+                        originalSchedule: original?.schedule || emp.schedule,
+                        schedule: emp.schedule,
+                        timeAdded: 'N/A',
+                        type: emp.type || 'scheduled',
+                        changeType: emp.type === 'shift_changed' ? 'Shift Changed' : 'No Change'
+                    });
+                });
+                
+                offEmployees.forEach(emp => {
+                    const original = originalEmployeeData[emp.name];
+                    reportData.push({
+                        name: emp.name,
+                        originalManager: original?.manager || emp.manager,
+                        manager: emp.manager,
+                        status: emp.status,
+                        originalSchedule: original?.schedule || 'N/A',
+                        schedule: 'N/A',
+                        timeAdded: emp.timeAdded || 'N/A',
+                        type: emp.type || 'scheduled',
+                        changeType: 'Status Change'
+                    });
+                });
+                
+                const today = new Date();
+                const tabName = `${today.getMonth() + 1}.${today.getDate()}.${today.getFullYear().toString().slice(-2)}`;
+                
+                await createLocalBackup(reportData, tabName);
+                
+                workingEmployees = [];
+                allWorkingEmployees = [];
+                offEmployees = [];
+                originalEmployeeData = {};
+                
+                saveWorkingEmployees();
+                saveOffEmployees();
+                
+                updateDisplay();
+                
+                showMessage(`📊 End-of-day report completed! Report "${tabName}" downloaded | Data cleared successfully`, 'success');
+                
+            } catch (error) {
+                console.error('Error in clearPreviousDay:', error);
+                showMessage('Error generating report: ' + error.message, 'error');
+            }
+        }
+        
+        async function createLocalBackup(reportData, tabName) {
+            if (!xlsxLoaded) {
+                throw new Error('Excel library not loaded');
+            }
+            
+            try {
+                const wb = XLSX.utils.book_new();
+                
+                const reportSheet = [
+                    ['Employee Name', 'Original Manager', 'Final Manager/Support Specialist', 'Status', 'Original Schedule', 'Modified Schedule', 'Time Added/Modified', 'Type', 'Change Type']
+                ];
+                
+                reportData.forEach(emp => {
+                    reportSheet.push([
+                        emp.name,
+                        emp.originalManager || emp.manager,
+                        emp.manager,
+                        emp.status,
+                        emp.originalSchedule || emp.schedule || 'N/A',
+                        emp.schedule || 'N/A',
+                        emp.timeAdded || 'N/A',
+                        emp.type,
+                        emp.changeType || 'No Change'
+                    ]);
+                });
+                
+                const ws = XLSX.utils.aoa_to_sheet(reportSheet);
+                XLSX.utils.book_append_sheet(wb, ws, tabName);
+                
+                const fileName = `Message_Checking_Report_${tabName.replace(/\./g, '_')}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                
+            } catch (error) {
+                console.error('Error creating local backup:', error);
+                throw error;
+            }
         }
 
         function handleScheduleFile(event) {
             const file = event.target.files[0];
-            if (!file || !xlsxLoaded) return;
+            if (!file) return;
+            if (!xlsxLoaded) {
+                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
+                return;
+            }
+            showMessage('Processing schedule file...', 'success');
             
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -621,22 +1581,7 @@
                     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                     
-                    workingEmployees = [];
-                    for (let i = 1; i < jsonData.length; i++) {
-                        const row = jsonData[i];
-                        if (row && row[0]) {
-                            const employee = {
-                                name: String(row[0]).trim(),
-                                manager: String(row[1] || '').trim(),
-                                schedule: String(row[2] || '').trim(),
-                                type: 'scheduled'
-                            };
-                            workingEmployees.push(employee);
-                            originalEmployeeData[employee.name] = { ...employee };
-                            if (employee.manager) allManagers.add(employee.manager);
-                        }
-                    }
-                    
+                    processScheduleData(jsonData);
                     updateDisplay();
                     showMessage(`Schedule processed! Found ${workingEmployees.length} working employees.`, 'success');
                 } catch (error) {
@@ -648,7 +1593,12 @@
 
         function handleTimeOffFile(event) {
             const file = event.target.files[0];
-            if (!file || !xlsxLoaded) return;
+            if (!file) return;
+            if (!xlsxLoaded) {
+                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
+                return;
+            }
+            showMessage('Processing time off file...', 'success');
             
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -658,21 +1608,7 @@
                     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                     
-                    for (let i = 1; i < jsonData.length; i++) {
-                        const row = jsonData[i];
-                        if (row && row[2]) {
-                            const employee = {
-                                name: String(row[2]).trim(),
-                                manager: String(row[1] || '').trim(),
-                                status: 'Full Day Off',
-                                type: 'scheduled',
-                                timeAdded: 'Scheduled'
-                            };
-                            offEmployees.push(employee);
-                            workingEmployees = workingEmployees.filter(emp => emp.name !== employee.name);
-                        }
-                    }
-                    
+                    processTimeOffData(jsonData);
                     updateDisplay();
                     showMessage(`Time off processed! Found ${offEmployees.length} employees off today.`, 'success');
                 } catch (error) {
@@ -680,6 +1616,124 @@
                 }
             };
             reader.readAsArrayBuffer(file);
+        }
+
+        function handleSupportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!xlsxLoaded) {
+                showMessage('Excel processing library not ready. Please wait and try again.', 'error');
+                return;
+            }
+            showMessage('Processing support specialists file...', 'success');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    processSupportData(jsonData);
+                    updateDisplay();
+                    showMessage(`Support specialists loaded! Found ${supportSpecialists.length} specialists available.`, 'success');
+                } catch (error) {
+                    showMessage('Error reading support file: ' + error.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processScheduleData(data) {
+            workingEmployees = [];
+            allWorkingEmployees = [];
+            
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || !row[0]) continue;
+                
+                const employee = {
+                    name: String(row[0]).trim(),
+                    manager: String(row[1] || '').trim(),
+                    schedule: String(row[2] || '').trim(),
+                    type: 'scheduled'
+                };
+                
+                if (employee.name) {
+                    workingEmployees.push(employee);
+                    allWorkingEmployees.push({...employee});
+                    
+                    originalEmployeeData[employee.name] = {
+                        manager: employee.manager,
+                        schedule: employee.schedule,
+                        type: 'scheduled'
+                    };
+                    
+                    if (employee.manager) allManagers.add(employee.manager);
+                }
+            }
+            
+            saveWorkingEmployees();
+            saveManagers();
+        }
+
+        function processTimeOffData(data) {
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || !row[2]) continue;
+                
+                const timeOffHours = String(row[0] || '');
+                const isPartialDay = timeOffHours.includes('4 Hours');
+                
+                const employee = {
+                    name: String(row[2]).trim(),
+                    manager: String(row[1] || '').trim(),
+                    status: isPartialDay ? 'Partial Day (4 Hours)' : 'Full Day Off',
+                    type: isPartialDay ? 'partial' : 'scheduled',
+                    timeAdded: 'Scheduled'
+                };
+                
+                if (employee.name) {
+                    if (!originalEmployeeData[employee.name]) {
+                        originalEmployeeData[employee.name] = {
+                            manager: employee.manager,
+                            schedule: 'Scheduled Off',
+                            type: 'scheduled'
+                        };
+                    }
+                    
+                    offEmployees.push(employee);
+                    if (employee.manager) allManagers.add(employee.manager);
+                    
+                    workingEmployees = workingEmployees.filter(emp => emp.name !== employee.name);
+                    allWorkingEmployees = allWorkingEmployees.filter(emp => emp.name !== employee.name);
+                }
+            }
+            
+            saveOffEmployees();
+            saveWorkingEmployees();
+            saveManagers();
+        }
+
+        function processSupportData(data) {
+            supportSpecialists = [];
+            
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row || !row[0]) continue;
+                
+                const specialist = {
+                    name: String(row[0]).trim(),
+                    partnershipLevel: String(row[1] || '').trim(),
+                    coverageGuidance: parseInt(row[2]) || 0
+                };
+                
+                if (specialist.name) supportSpecialists.push(specialist);
+            }
+            
+            saveSupportSpecialists();
+            updateSupportSpecialistDropdown();
         }
 
         function markEmployeeWithStatus(status) {
@@ -696,11 +1750,20 @@
             );
             
             if (employeeIndex === -1) {
-                showMessage('Employee not found in working list.', 'error');
+                showMessage('Employee not found in working list. Please check the spelling.', 'error');
                 return;
             }
             
             const employee = workingEmployees[employeeIndex];
+            
+            if (!originalEmployeeData[employee.name]) {
+                originalEmployeeData[employee.name] = {
+                    manager: employee.manager,
+                    schedule: employee.schedule,
+                    type: employee.type
+                };
+            }
+            
             const offEmployee = {
                 name: employee.name,
                 manager: employee.manager,
@@ -711,9 +1774,14 @@
             
             offEmployees.push(offEmployee);
             workingEmployees.splice(employeeIndex, 1);
+            allWorkingEmployees = allWorkingEmployees.filter(emp => emp.name !== employee.name);
+            
+            saveOffEmployees();
+            saveWorkingEmployees();
             
             nameInput.value = '';
             updateDisplay();
+            
             showMessage(`${employee.name} has been marked as "${status}"`, 'success');
         }
 
@@ -731,11 +1799,20 @@
             );
             
             if (employeeIndex === -1) {
-                showMessage('Employee not found in off list.', 'error');
+                showMessage('Employee not found in off list. Please check the spelling.', 'error');
                 return;
             }
             
             const employee = offEmployees[employeeIndex];
+            
+            if (!originalEmployeeData[employee.name]) {
+                originalEmployeeData[employee.name] = {
+                    manager: employee.manager,
+                    schedule: 'Unknown',
+                    type: 'manual'
+                };
+            }
+            
             const workingEmployee = {
                 name: employee.name,
                 manager: employee.manager,
@@ -744,25 +1821,36 @@
             };
             
             workingEmployees.push(workingEmployee);
+            allWorkingEmployees.push({...workingEmployee});
             offEmployees.splice(employeeIndex, 1);
+            
+            saveOffEmployees();
+            saveWorkingEmployees();
             
             nameInput.value = '';
             updateDisplay();
+            
             showMessage(`${employee.name} has returned to work`, 'success');
         }
 
         function exportData() {
             if (!xlsxLoaded) {
-                showMessage('Excel export not available.', 'error');
+                showMessage('Excel export not available. Please refresh the page.', 'error');
                 return;
             }
 
             try {
                 const wb = XLSX.utils.book_new();
                 
-                const workingData = [['Employee', 'Manager', 'Schedule', 'Status', 'Has Changes']];
+                const workingData = [['Employee', 'Manager', 'Schedule', 'Status', 'Type']];
                 workingEmployees.forEach(emp => {
-                    workingData.push([emp.name, emp.manager, emp.schedule, 'Working', emp.hasChanges ? 'Yes' : 'No']);
+                    workingData.push([
+                        emp.name, 
+                        emp.manager, 
+                        emp.schedule, 
+                        'Working',
+                        emp.type === 'shift_changed' ? 'Shift Changed' : emp.type || 'scheduled'
+                    ]);
                 });
                 const workingWs = XLSX.utils.aoa_to_sheet(workingData);
                 XLSX.utils.book_append_sheet(wb, workingWs, 'Working Today');
@@ -773,15 +1861,6 @@
                 });
                 const offWs = XLSX.utils.aoa_to_sheet(offData);
                 XLSX.utils.book_append_sheet(wb, offWs, 'Off Today');
-
-                if (shiftChanges.length > 0) {
-                    const shiftData = [['Employee', 'New Manager', 'New Schedule', 'Reason', 'Timestamp']];
-                    shiftChanges.forEach(change => {
-                        shiftData.push([change.employeeName, change.newManager, change.newSchedule, change.reason, change.timestamp]);
-                    });
-                    const shiftWs = XLSX.utils.aoa_to_sheet(shiftData);
-                    XLSX.utils.book_append_sheet(wb, shiftWs, 'Shift Changes');
-                }
                 
                 const fileName = `Employee_Availability_${new Date().toISOString().split('T')[0]}.xlsx`;
                 XLSX.writeFile(wb, fileName);
@@ -798,37 +1877,20 @@
             
             if (scheduleFile) scheduleFile.addEventListener('change', handleScheduleFile);
             if (timeOffFile) timeOffFile.addEventListener('change', handleTimeOffFile);
-            if (supportFile) supportFile.addEventListener('change', function(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    showMessage('Support specialists file uploaded successfully!', 'success');
-                }
-            });
-
-            // Close modal when clicking outside
-            window.onclick = function(event) {
-                const modal = document.getElementById('shiftChangeModal');
-                if (event.target === modal) {
-                    closeShiftChangeModal();
-                }
-            }
+            if (supportFile) supportFile.addEventListener('change', handleSupportFile);
         }
 
         async function init() {
-            console.log('Initializing application...');
             try {
-                // Wait for XLSX library to load
+                setupFirebaseListeners();
+                await loadDataFromFirebase();
+                
                 await new Promise((resolve) => {
                     if (typeof XLSX !== 'undefined') {
-                        console.log('XLSX already loaded');
                         resolve();
                     } else {
-                        console.log('Loading XLSX library...');
                         const script = document.createElement('script');
-                        script.onload = () => {
-                            console.log('XLSX library loaded');
-                            resolve();
-                        };
+                        script.onload = resolve;
                         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
                         document.head.appendChild(script);
                     }
@@ -836,35 +1898,48 @@
                 
                 xlsxLoaded = true;
                 setupEventListeners();
-                updateDisplay();
-                showMessage('🔥 Employee Availability Management ready! Upload your files to get started.', 'success');
+                showMessage('🔥 Firebase connected! Real-time sync active for all team members.', 'success');
             } catch (error) {
-                console.error('Error during initialization:', error);
-                showMessage('Warning: Some features may not work properly.', 'error');
+                showMessage('Warning: Firebase connection failed. Tool will work locally only.', 'error');
                 setupEventListeners();
             }
         }
 
-        console.log('Script loaded, waiting for DOM...');
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM content loaded, starting init...');
-            init();
-        });
+        async function loadDataFromFirebase() {
+            try {
+                const workingSnapshot = await database.ref('workingEmployees').once('value');
+                const workingData = workingSnapshot.val();
+                if (workingData) {
+                    workingEmployees = workingData.employees || [];
+                    allWorkingEmployees = [...workingEmployees];
+                    lastUpdateTime = workingData.timestamp || 0;
+                }
 
-        console.log('Functions defined in global scope');
-        
-        // Test if functions are accessible
-        if (typeof switchTab === 'function') {
-            console.log('switchTab is properly defined as function');
-        } else {
-            console.error('switchTab is NOT properly defined');
+                const offSnapshot = await database.ref('offEmployees').once('value');
+                const offData = offSnapshot.val();
+                if (offData) {
+                    offEmployees = offData.employees || [];
+                }
+
+                const managersSnapshot = await database.ref('managers').once('value');
+                const managersData = managersSnapshot.val();
+                if (managersData) {
+                    allManagers = new Set(managersData.list || []);
+                }
+
+                const supportSnapshot = await database.ref('supportSpecialists').once('value');
+                const supportData = supportSnapshot.val();
+                if (supportData) {
+                    supportSpecialists = supportData.specialists || [];
+                }
+
+                updateDisplay();
+            } catch (error) {
+                console.warn('Failed to load data from Firebase:', error);
+            }
         }
-        
-        if (typeof window.switchTab === 'function') {
-            console.log('window.switchTab is properly defined as function');
-        } else {
-            console.error('window.switchTab is NOT properly defined');
-        }
+
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
