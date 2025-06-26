@@ -153,28 +153,136 @@
             background: #f8f9fa;
             border-radius: 10px;
             border-left: 4px solid #4facfe;
+            transition: all 0.3s ease;
         }
 
-        .manager-filter label {
-            display: block;
+        .manager-filter.collapsed {
+            padding: 10px 15px;
+        }
+
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .filter-header:hover {
+            background: rgba(79, 172, 254, 0.1);
+            border-radius: 5px;
+            padding: 5px;
+            margin: -5px;
+        }
+
+        .filter-content {
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .filter-content.hidden {
+            display: none;
+        }
+
+        .filter-header label {
             font-weight: 600;
-            margin-bottom: 8px;
             color: #495057;
+            margin: 0;
         }
 
-        .manager-filter select {
-            width: 100%;
+        .expand-icon {
+            font-size: 18px;
+            transition: transform 0.3s ease;
+            color: #4facfe;
+        }
+
+        .expand-icon.rotated {
+            transform: rotate(180deg);
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
             padding: 10px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 16px;
             background: white;
-            transition: border-color 0.3s ease;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
         }
 
-        .manager-filter select:focus {
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            border: 1px solid #e9ecef;
+        }
+
+        .checkbox-item:hover {
+            background: #e3f2fd;
             border-color: #4facfe;
-            outline: none;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 8px;
+            transform: scale(1.1);
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 500;
+            color: #495057;
+            flex: 1;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .select-all-btn {
+            background: linear-gradient(135deg, #2ed573 0%, #7bed9f 100%);
+            color: white;
+        }
+
+        .clear-all-btn {
+            background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%);
+            color: white;
+        }
+
+        .apply-filter-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .selected-summary {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 2px solid #4facfe;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #495057;
         }
 
         .table-container {
@@ -319,11 +427,24 @@
                     <p style="font-size: 1.1em; opacity: 0.9;">Employees who are not working today</p>
                 </div>
                 
-                <div class="manager-filter">
-                    <label for="offManagerFilter">🎯 Filter by Manager/Support Specialist:</label>
-                    <select id="offManagerFilter" onchange="filterEmployees('off')">
-                        <option value="">Show All Managers & Support Specialists</option>
-                    </select>
+                <div class="manager-filter" id="offManagerFilter">
+                    <div class="filter-header" onclick="toggleManagerFilter('off')">
+                        <label>🎯 Filter by Manager/Support Specialist</label>
+                        <span class="expand-icon" id="offExpandIcon">▼</span>
+                    </div>
+                    <div class="filter-content" id="offFilterContent">
+                        <div class="selected-summary" id="offSelectedSummary">
+                            No managers selected - showing all employees
+                        </div>
+                        <div class="filter-controls">
+                            <button class="filter-btn select-all-btn" onclick="selectAllManagers('off')">Select All</button>
+                            <button class="filter-btn clear-all-btn" onclick="clearAllManagers('off')">Clear All</button>
+                            <button class="filter-btn apply-filter-btn" onclick="applyManagerFilter('off')">Apply Filter</button>
+                        </div>
+                        <div class="checkbox-grid" id="offManagerCheckboxes">
+                            <!-- Manager checkboxes will be populated here -->
+                        </div>
+                    </div>
                 </div>
 
                 <div style="background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ff4757; display: flex; justify-content: space-between; align-items: center;">
@@ -365,11 +486,24 @@
                     <p style="font-size: 1.1em; opacity: 0.9;">Employees scheduled to work today</p>
                 </div>
                 
-                <div class="manager-filter">
-                    <label for="workingManagerFilter">🎯 Filter by Manager:</label>
-                    <select id="workingManagerFilter" onchange="filterEmployees('working')">
-                        <option value="">Show All Managers</option>
-                    </select>
+                <div class="manager-filter" id="workingManagerFilter">
+                    <div class="filter-header" onclick="toggleManagerFilter('working')">
+                        <label>🎯 Filter by Manager</label>
+                        <span class="expand-icon" id="workingExpandIcon">▼</span>
+                    </div>
+                    <div class="filter-content" id="workingFilterContent">
+                        <div class="selected-summary" id="workingSelectedSummary">
+                            No managers selected - showing all employees
+                        </div>
+                        <div class="filter-controls">
+                            <button class="filter-btn select-all-btn" onclick="selectAllManagers('working')">Select All</button>
+                            <button class="filter-btn clear-all-btn" onclick="clearAllManagers('working')">Clear All</button>
+                            <button class="filter-btn apply-filter-btn" onclick="applyManagerFilter('working')">Apply Filter</button>
+                        </div>
+                        <div class="checkbox-grid" id="workingManagerCheckboxes">
+                            <!-- Manager checkboxes will be populated here -->
+                        </div>
+                    </div>
                 </div>
 
                 <div style="background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #2ed573; display: flex; justify-content: space-between; align-items: center;">
@@ -652,6 +786,143 @@
         let originalEmployeeData = {};
         let currentShiftChangeEmployee = null;
 
+        // Filter state for manager selections
+        let selectedManagers = {
+            working: new Set(),
+            off: new Set()
+        };
+
+        let filterCollapsed = {
+            working: true,
+            off: true
+        };
+
+        // Multi-select manager filter functions
+        function toggleManagerFilter(tabType) {
+            const filterContent = document.getElementById(tabType + 'FilterContent');
+            const expandIcon = document.getElementById(tabType + 'ExpandIcon');
+            const filterContainer = document.getElementById(tabType + 'ManagerFilter');
+            
+            filterCollapsed[tabType] = !filterCollapsed[tabType];
+            
+            if (filterCollapsed[tabType]) {
+                filterContent.classList.add('hidden');
+                expandIcon.classList.remove('rotated');
+                filterContainer.classList.add('collapsed');
+            } else {
+                filterContent.classList.remove('hidden');
+                expandIcon.classList.add('rotated');
+                filterContainer.classList.remove('collapsed');
+            }
+        }
+
+        function updateManagerCheckboxes(tabType) {
+            const checkboxContainer = document.getElementById(tabType + 'ManagerCheckboxes');
+            const employeeList = tabType === 'working' ? workingEmployees : offEmployees;
+            
+            // Get managers with employees
+            const managersWithEmployees = getManagersWithEmployees(employeeList);
+            
+            let html = '';
+            managersWithEmployees.forEach(manager => {
+                const isChecked = selectedManagers[tabType].has(manager) ? 'checked' : '';
+                html += `
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="${tabType}_${manager.replace(/\s+/g, '_')}" 
+                               value="${manager}" ${isChecked} 
+                               onchange="updateManagerSelection('${tabType}', '${manager}', this.checked)">
+                        <label for="${tabType}_${manager.replace(/\s+/g, '_')}">${manager}</label>
+                    </div>
+                `;
+            });
+            
+            if (html === '') {
+                html = '<div style="text-align: center; color: #6c757d; padding: 20px;">No managers found</div>';
+            }
+            
+            checkboxContainer.innerHTML = html;
+        }
+
+        function updateManagerSelection(tabType, manager, isSelected) {
+            if (isSelected) {
+                selectedManagers[tabType].add(manager);
+                userInterests.add(manager);
+            } else {
+                selectedManagers[tabType].delete(manager);
+            }
+            updateSelectedSummary(tabType);
+        }
+
+        function updateSelectedSummary(tabType) {
+            const summaryElement = document.getElementById(tabType + 'SelectedSummary');
+            const selectedCount = selectedManagers[tabType].size;
+            
+            if (selectedCount === 0) {
+                summaryElement.textContent = 'No managers selected - showing all employees';
+                summaryElement.style.background = 'white';
+                summaryElement.style.border = '2px solid #e9ecef';
+            } else if (selectedCount === 1) {
+                const manager = Array.from(selectedManagers[tabType])[0];
+                summaryElement.textContent = `Selected: ${manager}`;
+                summaryElement.style.background = '#e3f2fd';
+                summaryElement.style.border = '2px solid #4facfe';
+            } else {
+                summaryElement.textContent = `Selected: ${selectedCount} managers`;
+                summaryElement.style.background = '#e3f2fd';
+                summaryElement.style.border = '2px solid #4facfe';
+            }
+        }
+
+        function selectAllManagers(tabType) {
+            const employeeList = tabType === 'working' ? workingEmployees : offEmployees;
+            const managersWithEmployees = getManagersWithEmployees(employeeList);
+            
+            selectedManagers[tabType].clear();
+            managersWithEmployees.forEach(manager => {
+                selectedManagers[tabType].add(manager);
+                userInterests.add(manager);
+            });
+            
+            updateManagerCheckboxes(tabType);
+            updateSelectedSummary(tabType);
+        }
+
+        function clearAllManagers(tabType) {
+            selectedManagers[tabType].clear();
+            updateManagerCheckboxes(tabType);
+            updateSelectedSummary(tabType);
+        }
+
+        function applyManagerFilter(tabType) {
+            let employeesToShow;
+            
+            if (selectedManagers[tabType].size === 0) {
+                // No managers selected, show all
+                employeesToShow = tabType === 'working' ? workingEmployees : offEmployees;
+            } else {
+                // Filter by selected managers
+                const sourceList = tabType === 'working' ? workingEmployees : offEmployees;
+                employeesToShow = sourceList.filter(emp => 
+                    selectedManagers[tabType].has(emp.manager)
+                );
+            }
+            
+            updateTable(tabType, employeesToShow);
+            
+            // Auto-collapse the filter after applying
+            if (!filterCollapsed[tabType]) {
+                toggleManagerFilter(tabType);
+            }
+            
+            // Show success message
+            const selectedCount = selectedManagers[tabType].size;
+            if (selectedCount === 0) {
+                showMessage('Filter cleared - showing all employees', 'success');
+            } else {
+                showMessage(`Filter applied: showing employees from ${selectedCount} selected manager(s)`, 'success');
+            }
+        }
+
         // Notification system
         function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
@@ -882,7 +1153,8 @@
                 const data = snapshot.val();
                 if (data) {
                     allManagers = new Set(data.list || []);
-                    updateManagerFilters();
+                    updateManagerCheckboxes('working');
+                    updateManagerCheckboxes('off');
                 }
             });
 
@@ -974,54 +1246,6 @@
             return Array.from(managersWithEmployees).sort();
         }
 
-        function updateManagerFilters() {
-            const workingFilter = document.getElementById('workingManagerFilter');
-            if (workingFilter) {
-                const workingManagers = getManagersWithEmployees(workingEmployees);
-                workingFilter.innerHTML = '<option value="">Show All Managers</option>';
-                workingManagers.forEach(manager => {
-                    const option = document.createElement('option');
-                    option.value = manager;
-                    option.textContent = manager;
-                    workingFilter.appendChild(option);
-                });
-            }
-
-            const offFilter = document.getElementById('offManagerFilter');
-            if (offFilter) {
-                const offManagers = getManagersWithEmployees(offEmployees);
-                offFilter.innerHTML = '<option value="">Show All Managers &amp; Support Specialists</option>';
-                offManagers.forEach(manager => {
-                    const option = document.createElement('option');
-                    option.value = manager;
-                    option.textContent = manager;
-                    offFilter.appendChild(option);
-                });
-            }
-        }
-
-        function filterEmployees(tabType) {
-            const filterId = tabType + 'ManagerFilter';
-            const selectedManager = document.getElementById(filterId).value;
-            
-            if (selectedManager) {
-                userInterests.add(selectedManager);
-            }
-            
-            let employeesToShow;
-            if (tabType === 'working') {
-                employeesToShow = selectedManager ? 
-                    workingEmployees.filter(emp => emp.manager === selectedManager) : 
-                    workingEmployees;
-            } else {
-                employeesToShow = selectedManager ? 
-                    offEmployees.filter(emp => emp.manager === selectedManager) : 
-                    offEmployees;
-            }
-            
-            updateTable(tabType, employeesToShow);
-        }
-
         function updateCounts() {
             const workingCount = document.getElementById('workingCount');
             const offCount = document.getElementById('offCount');
@@ -1036,7 +1260,8 @@
 
         function updateDisplay() {
             updateCounts();
-            updateManagerFilters();
+            updateManagerCheckboxes('working');
+            updateManagerCheckboxes('off');
             updateTables();
             updateManagerSummary();
             checkManagerLimits();
