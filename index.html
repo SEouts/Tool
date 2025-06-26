@@ -1884,6 +1884,39 @@
             return managerString.trim();
         }
 
+        // Function to clean schedule strings - extract just the shift times
+        function cleanScheduleString(scheduleString) {
+            if (!scheduleString || scheduleString.trim() === '' || scheduleString === 'N/A') {
+                return 'N/A';
+            }
+            
+            // Handle formats like "Name:MM/DD/YYYY, H:MM AM – MM/DD/YYYY, H:MM PM"
+            // Extract just the time portions
+            const timePattern = /(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))/g;
+            const times = scheduleString.match(timePattern);
+            
+            if (times && times.length >= 2) {
+                // Return in format "start - end"
+                return `${times[0].trim()} - ${times[1].trim()}`;
+            }
+            
+            // If it's already in a clean format like "9:00 AM - 6:00 PM", return as is
+            if (scheduleString.includes(' - ') && !scheduleString.includes('/')) {
+                return scheduleString.trim();
+            }
+            
+            // If no pattern matches, try to extract times with a different approach
+            const colonPattern = /(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))/gi;
+            const extractedTimes = scheduleString.match(colonPattern);
+            
+            if (extractedTimes && extractedTimes.length >= 2) {
+                return `${extractedTimes[0].trim()} - ${extractedTimes[1].trim()}`;
+            }
+            
+            // Fallback: return original if we can't parse it
+            return scheduleString.trim();
+        }
+
         function processScheduleData(data) {
             workingEmployees = [];
             allWorkingEmployees = [];
@@ -1895,7 +1928,7 @@
                 const employee = {
                     name: String(row[0]).trim(),
                     manager: cleanManagerName(String(row[1] || '')),
-                    schedule: String(row[2] || '').trim(),
+                    schedule: cleanScheduleString(String(row[2] || '')),
                     type: 'scheduled'
                 };
                 
